@@ -37,63 +37,20 @@
 
 #pragma once
 
-#include <array>
-#include <cmath>
-#include <exception>
-#include <fstream>
-#include <functional>
-#include <iostream>
-#include <limits>
-#include <list>
+#include <map>
 #include <memory>
-#include <numeric>
-#include <sstream>
-#include <unordered_map>
+#include <string>
 #include <vector>
 
-#include <pacbio/data/MSAByColumn.h>
-#include <pacbio/data/MSAByRow.h>
-#include <pacbio/juliet/ErrorEstimates.h>
-#include <pacbio/juliet/TargetConfig.h>
-#include <pacbio/juliet/VariantGene.h>
-#include <pbcopper/json/JSON.h>
-
 namespace PacBio {
-namespace Juliet {
-/// Given a MSA and p-values for each nucleotide of each position,
-/// generate machine-interpretable and human-readable output about mutated
-/// amino acids.
-class AminoAcidCaller
+namespace Data {
+
+struct MSARow
 {
-public:
-    AminoAcidCaller(const std::vector<std::shared_ptr<Data::ArrayRead>>& reads,
-                    const ErrorEstimates& error, const TargetConfig& targetConfig);
-
-public:
-    /// Generate JSON output of variant amino acids
-    JSON::Json JSON();
-
-public:
-    /// Generate HTML output of variant amino acids
-    static void HTML(std::ostream& out, const JSON::Json& j, bool onlyKnownDRMs, bool details);
-
-public:
-    std::unique_ptr<Data::MSAByColumn> msa_;
-
-private:
-    static constexpr float alpha = 0.01;
-    void CallVariants();
-    int CountNumberOfTests(const std::vector<TargetGene>& genes) const;
-    std::string FindDRMs(const std::string& geneName, const std::vector<TargetGene>& genes,
-                         const int position) const;
-
-private:
-    Data::MSAByRow nucMatrix_;
-    std::vector<VariantGene> variantGenes_;
-    const ErrorEstimates error_;
-    const TargetConfig targetConfig_;
-
-    static const std::unordered_map<std::string, char> codonToAmino_;
+    MSARow(const int size) : Bases(size, ' ') {}
+    std::vector<char> Bases;
+    std::map<int, std::string> Insertions;
+    std::shared_ptr<Data::ArrayRead> Read;
 };
 }
-}  // ::PacBio::Juliet
+}  // ::PacBio::Data

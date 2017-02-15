@@ -42,12 +42,13 @@
 #include <vector>
 
 #include <pacbio/data/ArrayRead.h>
+#include <pacbio/data/MSAByRow.h>
 #include <pacbio/data/MSAColumn.h>
 
 namespace PacBio {
 namespace Data {
 /// Multiple sequence alignment containing counts
-class MSA
+class MSAByColumn
 {
 private:
     using MsaVec = std::vector<MSAColumn>;
@@ -57,11 +58,7 @@ public:
     using MsaItConst = MsaVec::const_iterator;
 
 public:
-    MSA(const std::vector<Data::ArrayRead>& reads);
-    MSA(const std::vector<Data::ArrayRead>& reads, const boost::optional<uint8_t> qualQv,
-        const boost::optional<uint8_t> delQv, const boost::optional<uint8_t> subQv,
-        const boost::optional<uint8_t> insQv);
-    MSA(const std::vector<Data::ArrayRead>& reads, const MSA& prior);
+    MSAByColumn(const MSAByRow& nucMat);
 
 public:
     /// Parameter is an index in ABSOLUTE reference space
@@ -86,12 +83,8 @@ public:
     int endPos = 0;
 
 private:
-    void BeginEnd(const std::vector<Data::ArrayRead>& reads);
-    void FillCounts(const std::vector<ArrayRead>& reads);
-    void FillCounts(const std::vector<ArrayRead>& reads, const boost::optional<uint8_t> qualQv,
-                    const boost::optional<uint8_t> delQv, const boost::optional<uint8_t> subQv,
-                    const boost::optional<uint8_t> insQv);
-    void FillCounts(const std::vector<ArrayRead>& reads, const MSA& prior);
+    void BeginEnd(const Data::ArrayRead& read);
+    void FillCounts(const ArrayRead& read, const QvThresholds& qvThresholds);
 };
 }  // namespace Data
 }  // namespace PacBio

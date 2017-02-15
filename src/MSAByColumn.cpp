@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Pacific Biosciences of California, Inc.
+// Copyright (c) 2011-2016, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,65 +35,47 @@
 
 // Author: Armin Töpfer
 
-#pragma once
-
-#include <array>
-#include <cmath>
-#include <exception>
-#include <fstream>
-#include <functional>
-#include <iostream>
-#include <limits>
-#include <list>
-#include <memory>
 #include <numeric>
-#include <sstream>
-#include <unordered_map>
 #include <vector>
 
+#include <pacbio/data/ArrayRead.h>
+#include <pacbio/data/MSAColumn.h>
+#include <pacbio/data/QvThresholds.h>
+
 #include <pacbio/data/MSAByColumn.h>
-#include <pacbio/data/MSAByRow.h>
-#include <pacbio/juliet/ErrorEstimates.h>
-#include <pacbio/juliet/TargetConfig.h>
-#include <pacbio/juliet/VariantGene.h>
-#include <pbcopper/json/JSON.h>
 
 namespace PacBio {
-namespace Juliet {
-/// Given a MSA and p-values for each nucleotide of each position,
-/// generate machine-interpretable and human-readable output about mutated
-/// amino acids.
-class AminoAcidCaller
+namespace Data {
+MSAByColumn::MSAByColumn(const MSAByRow& msaRows)
 {
-public:
-    AminoAcidCaller(const std::vector<std::shared_ptr<Data::ArrayRead>>& reads,
-                    const ErrorEstimates& error, const TargetConfig& targetConfig);
+    beginPos = msaRows.BeginPos - 1;
+    endPos = msaRows.EndPos - 1;
+    counts.resize(msaRows.EndPos - msaRows.BeginPos);
+    int pos = msaRows.BeginPos;
+    for (auto& c : counts)
+        c.refPos = pos++;
 
-public:
-    /// Generate JSON output of variant amino acids
-    JSON::Json JSON();
-
-public:
-    /// Generate HTML output of variant amino acids
-    static void HTML(std::ostream& out, const JSON::Json& j, bool onlyKnownDRMs, bool details);
-
-public:
-    std::unique_ptr<Data::MSAByColumn> msa_;
-
-private:
-    static constexpr float alpha = 0.01;
-    void CallVariants();
-    int CountNumberOfTests(const std::vector<TargetGene>& genes) const;
-    std::string FindDRMs(const std::string& geneName, const std::vector<TargetGene>& genes,
-                         const int position) const;
-
-private:
-    Data::MSAByRow nucMatrix_;
-    std::vector<VariantGene> variantGenes_;
-    const ErrorEstimates error_;
-    const TargetConfig targetConfig_;
-
-    static const std::unordered_map<std::string, char> codonToAmino_;
-};
+    for (const auto& row : msaRows.Matrix) {
+        int localPos = 0;
+        for (const auto& c : row.Bases) {
+            switch (c) {
+                case 'A':
+                case 'C':
+                case 'G':
+                case 'T':
+                case '-':
+                    counts.at(localPos)[c]++;
+                case ' ':
+                    ++localPos;
+                    break;
+                default:
+                    throw std::runtime_error("Unexpected base " + std::string(1, c));
+            }
+        }
+        for (const auto& ins : row.Insertions) {
+            counts[ins.first].insertions[ins.second]++;
+        }
+    }
 }
-}  // ::PacBio::Juliet
+}  // namespace Data
+}  // namespace PacBio
