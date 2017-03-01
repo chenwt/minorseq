@@ -48,6 +48,7 @@
 
 #include <pbbam/BamReader.h>
 #include <pbbam/BamRecord.h>
+#include <pbbam/DataSet.h>
 
 #include <pbcopper/json/JSON.h>
 #include <pbcopper/utility/FileUtils.h>
@@ -90,13 +91,22 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings,
     for (const auto& inputFile : settings.InputFiles) {
         const auto outputPrefix = globalOutputPrefix + Utility::FilePrefix(inputFile);
 
+        BAM::DataSet ds(inputFile);
+
+        const auto bamfiles = ds.BamFiles();
+        if (bamfiles.size() != 1)
+            throw std::runtime_error("Only one bam file is allowed! Found " +
+                                     std::to_string(bamfiles.size()));
+
+        const auto header = bamfiles.front().Header();
+        const auto bamfileName = bamfiles.front().Filename();
+
         ErrorEstimates error;
         if (settings.SubstitutionRate != 0.0 && settings.DeletionRate != 0.0) {
             error = ErrorEstimates(settings.SubstitutionRate, settings.DeletionRate);
         } else {
             std::string chemistry;
-            const BAM::BamReader bamReader(inputFile);
-            const auto readGroups = bamReader.Header().ReadGroups();
+            const auto readGroups = header.ReadGroups();
             for (const auto& rg : readGroups) {
                 if (chemistry.empty())
                     chemistry = rg.SequencingChemistry();
@@ -107,10 +117,10 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings,
         }
 
         // Convert BamRecords to unrolled ArrayReads
-        auto CreateReads = [&inputFile, &settings]() {
+        auto CreateReads = [&bamfileName, &settings]() {
             std::vector<std::shared_ptr<Data::ArrayRead>> sharedReadsLocal;
             std::vector<Data::ArrayRead> reads;
-            reads = IO::ParseBam(inputFile, settings.RegionStart, settings.RegionEnd);
+            reads = IO::ParseBam(bamfileName, settings.RegionStart, settings.RegionEnd);
             for (auto&& r : reads)
                 sharedReadsLocal.emplace_back(std::make_shared<Data::ArrayRead>(std::move(r)));
             return sharedReadsLocal;

@@ -41,6 +41,7 @@
 #include <string>
 #include <vector>
 
+#include <pbbam/DataSet.h>
 #include <pbcopper/cli/CLI.h>
 #include <pbcopper/utility/FileUtils.h>
 
@@ -62,15 +63,38 @@ static int Runner(const PacBio::CLI::Results& options)
     FuseSettings settings(options);
     for (const auto& input : options.PositionalArguments()) {
         Fuse fuse(input);
-        std::string outputFileName = PacBio::Utility::FilePrefix(input) + ".cons";
+        const auto filePrefix = PacBio::Utility::FilePrefix(input);
+        auto outputFileName = filePrefix + ".fasta";
+        auto outputDatasetFileName = filePrefix + ".referenceset.xml";
         if (!settings.OutputPrefix.empty()) {
             std::string infix;
-            if (settings.OutputPrefix.back() != '/') infix = '_';
-            outputFileName = settings.OutputPrefix + infix + outputFileName;
+            if (options.PositionalArguments().size() > 1) {
+                if (settings.OutputPrefix.back() != '/') infix = '_';
+                outputFileName = settings.OutputPrefix + infix + outputFileName;
+                outputDatasetFileName = settings.OutputPrefix + infix + outputDatasetFileName;
+            } else {
+                if (settings.OutputPrefix.back() == '/') {
+                    outputFileName = settings.OutputPrefix + outputFileName;
+                    outputDatasetFileName = settings.OutputPrefix + outputDatasetFileName;
+                } else {
+                    outputFileName = settings.OutputPrefix + ".fasta";
+                    outputDatasetFileName = settings.OutputPrefix + ".referenceset.xml";
+                }
+            }
         }
         std::ofstream outputFile(outputFileName);
         outputFile << ">CONSENSUS" << std::endl;
         outputFile << fuse.ConsensusSequence() << std::endl;
+
+        // Write Dataset
+        using BAM::DataSet;
+        const std::string metatype = "PacBio.ReferenceFile.ReferenceFastaFile";
+        DataSet fuseSet(DataSet::TypeEnum::REFERENCE);
+        BAM::ExternalResource resource(metatype, outputFileName);
+        fuseSet.ExternalResources().Add(resource);
+        fuseSet.Name(fuseSet.TimeStampedName());
+        std::ofstream fuseDSout(outputDatasetFileName);
+        fuseSet.SaveToStream(fuseDSout);
     }
 
     return EXIT_SUCCESS;

@@ -38,6 +38,7 @@
 // Inspired by work of David Seifert
 
 #include <pacbio/align/SimdAlignment.h>
+#include <pbbam/DataSet.h>
 
 #include <pacbio/cleric/Cleric.h>
 
@@ -97,7 +98,22 @@ void Cleric::Convert(const std::string& outputFile)
     h.ClearSequences();
     h.AddSequence(BAM::SequenceInfo(toReferenceName_, std::to_string(toReferenceGapless_.size())));
 
-    BAM::BamWriter out(outputFile, h);
+    const auto outputBamFile = outputFile + ".bam";
+
+    // Write Dataset
+    {
+        using BAM::DataSet;
+        const std::string metatype = "PacBio.AlignmentFile.AlignmentBamFile";
+        DataSet clericSet(DataSet::TypeEnum::ALIGNMENT);
+        BAM::ExternalResource resource(metatype, outputBamFile);
+        clericSet.ExternalResources().Add(resource);
+        clericSet.Name(clericSet.TimeStampedName());
+        std::ofstream clericDSout(outputFile + ".alignmentset.xml");
+        clericSet.SaveToStream(clericDSout);
+    }
+
+    // Convert and write to BAM
+    BAM::BamWriter out(outputBamFile, h);
     BAM::BamRecord read;
     while (in.GetNext(read)) {
         std::string source_str = fromReferenceSequence_;
