@@ -97,7 +97,7 @@ PacBio::CLI::Interface ClericSettings::CreateCLI()
             "bamfile",
             "Bam",
             "Aligned .bam file",
-            "PacBio.BAM"
+            "PacBio.DataSet.AlignmentSet"
         },
         {
             "original_reference",
