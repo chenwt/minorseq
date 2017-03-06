@@ -233,8 +233,8 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
         {
             "alignment_set",
             "AlignmentSet",
-            "Alignment DataSet or aligned .bam file",
-            "PacBio.DataSet.AlignmentSet"
+            "Consensus (CCS) Alignment DataSet or aligned .bam file",
+            "PacBio.DataSet.ConsensusAlignmentSet"
         }
     });
 
