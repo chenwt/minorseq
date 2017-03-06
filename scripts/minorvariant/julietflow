@@ -133,7 +133,7 @@ for i in $(seq 1 ${max}); do
 done
 
 # Re-map last alignment against original reference
-cleric ${run_prefix}_${max}.align.bam ${run_prefix}_${max}_ref.fasta $target -o ${run_prefix}_cleric
+cleric ${run_prefix}_${max}.align.bam ${run_prefix}_${max}_ref.fasta $target ${run_prefix}_cleric.bam
 juliet ${run_prefix}_cleric.bam -c ${config}
 cp ${run_prefix}_cleric.html ${wdir}/${run_prefix}.html
 

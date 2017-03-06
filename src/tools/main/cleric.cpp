@@ -54,14 +54,24 @@
 
 namespace PacBio {
 namespace Cleric {
-static void ParseInputFiles(const std::vector<std::string>& inputs, std::string* bamPath,
-                            std::string* fromReference, std::string* fromReferenceName,
-                            std::string* toReference, std::string* toReferenceName)
+static void ParsePositionalArgs(const std::vector<std::string>& args, std::string* bamPath,
+                                std::string* fromReference, std::string* fromReferenceName,
+                                std::string* toReference, std::string* toReferenceName,
+                                std::string* outputFile)
 {
     using BAM::DataSet;
 
     std::vector<std::string> fastaPaths;
-    for (const auto& i : inputs) {
+    for (const auto& i : args) {
+        const bool fileExist = PacBio::Utility::FileExists(i);
+        if (!fileExist) {
+            if (!outputFile->empty())
+                throw std::runtime_error(
+                    "Only one output file allowed. Following files do not exist: " + *outputFile +
+                    " and " + i);
+            *outputFile = i;
+            continue;
+        }
         DataSet ds(i);
         switch (ds.Type()) {
             case BAM::DataSet::TypeEnum::SUBREAD:
@@ -123,9 +133,9 @@ static int Runner(const PacBio::CLI::Results& options)
         std::cerr << "ERROR: Please provide BAM input, see --help" << std::endl;
         return EXIT_FAILURE;
     }
-    if (options.PositionalArguments().size() < 2 || options.PositionalArguments().size() >= 4) {
-        std::cerr << "ERROR: Please provide _one_ BAM input and maximal _two_ "
-                     "FASTA files, see --help"
+    if (options.PositionalArguments().size() < 3 || options.PositionalArguments().size() >= 5) {
+        std::cerr << "ERROR: Please provide _one_ BAM input, maximal _two_ "
+                     "FASTA files, and _one_ output file. See --help"
                   << std::endl;
         return EXIT_FAILURE;
     }
@@ -138,16 +148,15 @@ static int Runner(const PacBio::CLI::Results& options)
     std::string fromReferenceName;
     std::string toReference;
     std::string toReferenceName;
-    ParseInputFiles(settings.InputFiles, &bamPath, &fromReference, &fromReferenceName, &toReference,
-                    &toReferenceName);
+    std::string outputFile;
 
-    std::string output;
-    if (settings.OutputPrefix.empty())
-        output = PacBio::Utility::FilePrefix(bamPath) + "_cleric";
-    else
-        output = settings.OutputPrefix;
+    ParsePositionalArgs(settings.InputFiles, &bamPath, &fromReference, &fromReferenceName,
+                        &toReference, &toReferenceName, &outputFile);
 
-    Cleric cleric(bamPath, output, fromReference, fromReferenceName, toReference, toReferenceName);
+    if (outputFile.empty()) outputFile = PacBio::Utility::FilePrefix(bamPath) + "_cleric";
+
+    Cleric cleric(bamPath, outputFile, fromReference, fromReferenceName, toReference,
+                  toReferenceName);
 
     return EXIT_SUCCESS;
 }

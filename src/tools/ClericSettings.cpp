@@ -45,24 +45,10 @@
 
 namespace PacBio {
 namespace Cleric {
-namespace OptionNames {
-using PlainOption = Data::PlainOption;
-// clang-format off
-const PlainOption Output{
-    "output",
-    { "output", "o"},
-    "Output BAM File Name",
-    "Output file name for generated bam file [Default: Input file prefix + _cleric.bam].",
-    CLI::Option::StringType("")
-};
-// clang-format on
-}  // namespace OptionNames
 
 ClericSettings::ClericSettings(const PacBio::CLI::Results& options)
     : InputFiles(options.PositionalArguments())
 {
-    if (!options[OptionNames::Output].empty())
-        OutputPrefix = std::forward<std::string>(options[OptionNames::Output]);
 }
 PacBio::CLI::Interface ClericSettings::CreateCLI()
 {
@@ -80,17 +66,16 @@ PacBio::CLI::Interface ClericSettings::CreateCLI()
     i.AddPositionalArguments({
         {"bam", "Source BAM", "FILE"},
         {"ref", "Reference Fasta", "FILE"},
-        {"target", "Target Fasta", "FILE"}
+        {"target", "Target Fasta", "FILE"},
+        {"output", "Output BAM", "FILE"}
     });
 
     i.AddOptions(
     {
-        OptionNames::Output
     });
 
     const std::string id = "uny.tasks.cleric";
     Task tcTask(id);
-    tcTask.AddOption(OptionNames::Output);
 
     tcTask.InputFileTypes({
         {

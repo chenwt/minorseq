@@ -37,8 +37,11 @@
 
 // Inspired by work of David Seifert
 
+#include <boost/algorithm/string.hpp>
+
 #include <pacbio/align/SimdAlignment.h>
 #include <pbbam/DataSet.h>
+#include <pbcopper/utility/FileUtils.h>
 
 #include <pacbio/cleric/Cleric.h>
 
@@ -53,7 +56,7 @@ void Cleric::Align(const std::string& fromReference, const std::string& toRefere
     *toReferenceAligned = align.Query;
 }
 
-void Cleric::Convert(const std::string& outputFile)
+void Cleric::Convert(std::string outputFile)
 {
     using BAM::Cigar;
     using BAM::CigarOperation;
@@ -98,22 +101,25 @@ void Cleric::Convert(const std::string& outputFile)
     h.ClearSequences();
     h.AddSequence(BAM::SequenceInfo(toReferenceName_, std::to_string(toReferenceGapless_.size())));
 
-    const auto outputBamFile = outputFile + ".bam";
+    const bool isXml = Utility::FileExtension(outputFile) == "xml";
+    if (isXml) boost::replace_last(outputFile, ".consensusalignmentset.xml", ".bam");
 
     // Write Dataset
     {
         using BAM::DataSet;
         const std::string metatype = "PacBio.AlignmentFile.AlignmentBamFile";
         DataSet clericSet(DataSet::TypeEnum::ALIGNMENT);
-        BAM::ExternalResource resource(metatype, outputBamFile);
+        BAM::ExternalResource resource(metatype, outputFile);
         clericSet.ExternalResources().Add(resource);
         clericSet.Name(clericSet.TimeStampedName());
-        std::ofstream clericDSout(outputFile + ".alignmentset.xml");
+
+        const auto outputPrefix = outputFile.substr(0, outputFile.size() - 4);
+        std::ofstream clericDSout(outputPrefix + ".consensusalignmentset.xml");
         clericSet.SaveToStream(clericDSout);
     }
 
     // Convert and write to BAM
-    BAM::BamWriter out(outputBamFile, h);
+    BAM::BamWriter out(outputFile, h);
     BAM::BamRecord read;
     while (in.GetNext(read)) {
         std::string source_str = fromReferenceSequence_;
