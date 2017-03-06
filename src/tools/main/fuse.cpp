@@ -61,41 +61,28 @@ static int Runner(const PacBio::CLI::Results& options)
 
     // Parse options
     FuseSettings settings(options);
-    for (const auto& input : options.PositionalArguments()) {
-        Fuse fuse(input);
-        const auto filePrefix = PacBio::Utility::FilePrefix(input);
-        auto outputFileName = filePrefix + ".fasta";
-        auto outputDatasetFileName = filePrefix + ".referenceset.xml";
-        if (!settings.OutputPrefix.empty()) {
-            std::string infix;
-            if (options.PositionalArguments().size() > 1) {
-                if (settings.OutputPrefix.back() != '/') infix = '_';
-                outputFileName = settings.OutputPrefix + infix + outputFileName;
-                outputDatasetFileName = settings.OutputPrefix + infix + outputDatasetFileName;
-            } else {
-                if (settings.OutputPrefix.back() == '/') {
-                    outputFileName = settings.OutputPrefix + outputFileName;
-                    outputDatasetFileName = settings.OutputPrefix + outputDatasetFileName;
-                } else {
-                    outputFileName = settings.OutputPrefix + ".fasta";
-                    outputDatasetFileName = settings.OutputPrefix + ".referenceset.xml";
-                }
-            }
-        }
-        std::ofstream outputFile(outputFileName);
-        outputFile << ">CONSENSUS" << std::endl;
-        outputFile << fuse.ConsensusSequence() << std::endl;
 
-        // Write Dataset
-        using BAM::DataSet;
-        const std::string metatype = "PacBio.ReferenceFile.ReferenceFastaFile";
-        DataSet fuseSet(DataSet::TypeEnum::REFERENCE);
-        BAM::ExternalResource resource(metatype, outputFileName);
-        fuseSet.ExternalResources().Add(resource);
-        fuseSet.Name(fuseSet.TimeStampedName());
-        std::ofstream fuseDSout(outputDatasetFileName);
-        fuseSet.SaveToStream(fuseDSout);
-    }
+    Fuse fuse(settings.InputFile);
+
+    auto outputFile = settings.OutputFile;
+    const bool isXml = Utility::FileExtension(outputFile) == "xml";
+    if (isXml) boost::ireplace_all(outputFile, ".referenceset.xml", ".fasta");
+
+    std::ofstream outputFastaStream(outputFile);
+    outputFastaStream << ">CONSENSUS" << std::endl;
+    outputFastaStream << fuse.ConsensusSequence() << std::endl;
+
+    // Write Dataset
+    using BAM::DataSet;
+    const std::string metatype = "PacBio.ReferenceFile.ReferenceFastaFile";
+    DataSet fuseSet(DataSet::TypeEnum::REFERENCE);
+    BAM::ExternalResource resource(metatype, outputFile);
+    fuseSet.ExternalResources().Add(resource);
+    fuseSet.Name(fuseSet.TimeStampedName());
+
+    const auto outputPrefix = outputFile.substr(0, outputFile.size() - 6);
+    std::ofstream fuseDSout(outputPrefix + ".referenceset.xml");
+    fuseSet.SaveToStream(fuseDSout);
 
     return EXIT_SUCCESS;
 }

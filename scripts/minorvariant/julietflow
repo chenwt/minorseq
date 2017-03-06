@@ -128,7 +128,7 @@ if [ ! -f ${run_prefix}_0.align.bam ]; then align ${reference} 0; fi
 
 # Iteratively align against previous consensus
 for i in $(seq 1 ${max}); do
-    if [ ! -f ${run_prefix}_${i}.fasta ]; then fuse ${run_prefix}_$(($i-1)).align.bam -o ${run_prefix}_${i}_ref; fi
+    if [ ! -f ${run_prefix}_${i}.fasta ]; then fuse ${run_prefix}_$(($i-1)).align.bam ${run_prefix}_${i}_ref.fasta; fi
     if [ ! -f ${run_prefix}_${i}.align.bam ]; then align ${run_prefix}_${i}_ref.fasta ${i}; fi
 done
 
