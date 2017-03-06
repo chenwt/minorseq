@@ -71,35 +71,35 @@ const PlainOption DRMOnly{
     CLI::Option::BoolType()
 };
 const PlainOption SaveMSA{
-    "Save MSA counts",
+    "save_msa_counts",
     { "save-msa" },
     "Save MSA counts",
     "Save the MSA counts that are used for minor variant calling after QV filtering.",
     CLI::Option::BoolType()
 };
 const PlainOption Mode{
-    "Execution mode",
+    "execution_mode",
     { "mode", "m" },
     "Execution mode",
     "Execution mode: amino, phasing, or error",
     CLI::Option::StringType("amino")
 };
 const PlainOption SubstitutionRate{
-    "SubstitutionRate",
+    "substitution_rate",
     { "sub", "s" },
-    "SubstitutionRate",
+    "Substitution Rate",
     "Substitution Rate, specify to override the learned rate",
     CLI::Option::FloatType(0)
 };
 const PlainOption DeletionRate{
-    "DeletionRate",
+    "deletion_rate",
     { "del", "d" },
     "DeletionRate",
     "Deletion Rate, specify to override the learned rate",
     CLI::Option::FloatType(0)
 };
 const PlainOption TargetConfig{
-    "Target config",
+    "target_config",
     { "config", "c" },
     "Target config",
     "Path to the JSON target config, containing regions of interest, the JSON string itself, or a predefined config tag like <HIV>",
@@ -113,14 +113,14 @@ const PlainOption Verbose{
     CLI::Option::BoolType()
 };
 const PlainOption MergeOutliers{
-    "Merge Outliers",
+    "merge_outliers",
     { "merge-outliers" },
     "Merge Outliers",
     "Merge outliers haplotypes.",
     CLI::Option::BoolType()
 };
 const PlainOption Debug{
-    "Debug",
+    "debug",
     { "debug" },
     "Debug",
     "Debug returns all amino acids, irrelevant of their significance.",
