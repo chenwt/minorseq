@@ -41,6 +41,7 @@
 
 #include <pacbio/align/SimdAlignment.h>
 #include <pbbam/DataSet.h>
+#include <pbbam/MD5.h>
 #include <pbcopper/utility/FileUtils.h>
 
 #include <pacbio/cleric/Cleric.h>
@@ -99,7 +100,10 @@ void Cleric::Convert(std::string outputFile)
 
     BAM::BamHeader h = in.Header().DeepCopy();
     h.ClearSequences();
-    h.AddSequence(BAM::SequenceInfo(toReferenceName_, std::to_string(toReferenceGapless_.size())));
+    auto bamRefSequence =
+        BAM::SequenceInfo(toReferenceName_, std::to_string(toReferenceGapless_.size()));
+    bamRefSequence.Checksum(BAM::MD5Hash(toReferenceSequence_));
+    h.AddSequence(bamRefSequence);
 
     const bool isXml = Utility::FileExtension(outputFile) == "xml";
     if (isXml) boost::replace_last(outputFile, ".consensusalignmentset.xml", ".bam");
