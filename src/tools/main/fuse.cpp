@@ -72,6 +72,7 @@ static int Runner(const PacBio::CLI::Results& options)
     outputFastaStream << ">CONSENSUS" << std::endl;
     outputFastaStream << fuse.ConsensusSequence() << std::endl;
 
+#if 0
     // Write Dataset
     using BAM::DataSet;
     const std::string metatype = "PacBio.ReferenceFile.ReferenceFastaFile";
@@ -83,6 +84,7 @@ static int Runner(const PacBio::CLI::Results& options)
     const auto outputPrefix = outputFile.substr(0, outputFile.size() - 6);
     std::ofstream fuseDSout(outputPrefix + ".referenceset.xml");
     fuseSet.SaveToStream(fuseDSout);
+#endif
 
     return EXIT_SUCCESS;
 }
