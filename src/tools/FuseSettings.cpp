@@ -113,9 +113,9 @@ PacBio::CLI::Interface FuseSettings::CreateCLI()
     tcTask.InputFileTypes({
         {
             "alignment_set",
-            "AlignmentSet",
-            "Alignment DataSet or aligned .bam file",
-            "PacBio.DataSet.AlignmentSet"
+            "CCS AlignmentSet",
+            "Consensus Alignment DataSet or aligned .bam file",
+            "PacBio.DataSet.ConsensusAlignmentSet"
         }
     });
 
