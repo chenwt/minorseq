@@ -29,7 +29,9 @@ if [ ! -d pbcommand ]; then
 fi
 rm -rf venv_tmp
 python /mnt/software/v/virtualenv/13.0.1/virtualenv.py venv_tmp
+set +u
 source venv_tmp/bin/activate
+set -u
 pip install nose
 (cd pbcommand && python setup.py install)
 nose --verbose --with-xunit tests/python/test_tool_contracts.py
