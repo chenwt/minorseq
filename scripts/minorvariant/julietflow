@@ -112,17 +112,14 @@ fi
 
 function align()
 {
+  if [ -n "$(which pbalign)" ] ; then
+    pbalign ${input} ${1} ${run_prefix}_${2}.align.xml --nproc ${cores} --algorithmOptions '--scoreMatrix "-1 4 4 4 6 4 -1 4 4 6 4 4 -1 4 6 4 4 4 -1 6 6 6 6 6 6"' --maxMatch 15 >> console 2>&1
+  else
     blasr ${input} $1 --placeGapConsistently --bam --out out.bam --nproc ${cores} --scoreMatrix "-1 4 4 4 6 4 -1 4 4 6 4 4 -1 4 6 4 4 4 -1 6 6 6 6 6 6" --maxMatch 15 >> console 2>&1
-    samtools sort -@${cores} -o ${run_prefix}.align.bam out.bam >> console 2>&1
-    samtools index ${run_prefix}.align.bam >> console 2>&1
+    samtools sort -@${cores} -o ${run_prefix}_${2}.align.bam out.bam >> console 2>&1
+    samtools index ${run_prefix}_${2}.align.bam >> console 2>&1
     rm out.bam
-}
-
-# Create provided directory tree and cd
-function mmkdir()
-{
-    mkdir -p $1;
-    cd $1
+  fi
 }
 
 # Create temporary directory, under which all work will be performed
@@ -130,28 +127,21 @@ tdir=$(mktemp -d) && cd ${tdir}
 
 # Generally, never do work if file is already present.
 # Align against given reference and create consensus sequence
-mmkdir 0
-if [ ! -f ${run_prefix}.align.bam ]; then align ${reference}; fi
-if [ ! -f ${run_prefix}.cons ]; then cp ${reference} ${run_prefix}.cons; fi
-cd ..
+if [ ! -f ${run_prefix}_0.align.bam ]; then align ${reference} 0; fi
 
 # Iteratively align against previous consensus
 for i in $(seq 1 ${max}); do
-    mmkdir ${i}
-    if [ ! -f ${run_prefix}.cons ]; then fuse ../$(($i-1))/${run_prefix}.align.bam; fi
-    if [ ! -f ${run_prefix}.align.bam ]; then align ${run_prefix}.cons; fi
-    cd ..
+    if [ ! -f ${run_prefix}_${i}.fasta ]; then fuse ${run_prefix}_$(($i-1)).align.bam ${run_prefix}_${i}_ref.fasta; fi
+    if [ ! -f ${run_prefix}_${i}.align.bam ]; then align ${run_prefix}_${i}_ref.fasta ${i}; fi
 done
 
 # Re-map last alignment against original reference
-mmkdir merge
-cleric ../${max}/${run_prefix}.align.bam ../${max}/${run_prefix}.cons $target
+cleric ${run_prefix}_${max}.align.bam ${run_prefix}_${max}_ref.fasta $target ${run_prefix}_cleric.bam
 juliet ${run_prefix}_cleric.bam -c ${config}
-cp ${run_prefix}_cleric.html ${wdir}/
+cp ${run_prefix}_cleric.html ${wdir}/${run_prefix}.html
 
 if [[ "${keep}" = "1" ]]; then
   mkdir ${wdir}/tmp
-  cd ..
   cp -R * ${wdir}/tmp/
 fi
 

@@ -40,7 +40,7 @@ resistance mutation positions.
 ### Predefined target config
 Running on predefined organism:
 ```
-$ juliet -c "<HIV>" data.align.bam -o patientZero
+$ juliet -c "<HIV>" data.align.bam patientZero.html
 ```
 
 <img src="img/juliet_hiv-hiv.png" width="500px">
@@ -77,7 +77,7 @@ Save following as hiv.json:
 
 Run with own target config:
 ```
-$ juliet -c hiv.json data.align.bam -o patientZero
+$ juliet -c hiv.json data.align.bam patientZero.html
 ```
 
 <img src="img/juliet_hiv-own.png" width="500px">
@@ -88,7 +88,7 @@ If no target config has been specific, it is recommended to at least specify the
 region of interest to mark the correct reading frame. The output will be labeled
 with unknown as gene name:
 ```
-$ juliet data.align.bam -o patientZero
+$ juliet data.align.bam patientZero.html
 ```
 
 <img src="img/juliet_hiv-unknown.png" width="500px">

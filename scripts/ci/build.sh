@@ -22,3 +22,17 @@ echo "## Build source"
 
 echo "## tests"
 ( cd build && ninja check )
+
+export PATH=$PWD/build:$PATH
+# Tool contract test
+if [ ! -d pbcommand ]; then
+  git clone ssh://git@bitbucket.nanofluidics.com:7999/sl/pbcommand.git
+fi
+rm -rf venv_tmp
+python /mnt/software/v/virtualenv/13.0.1/virtualenv.py venv_tmp
+set +u
+source venv_tmp/bin/activate
+set -u
+pip install nose
+(cd pbcommand && python setup.py install)
+nosetests --verbose --with-xunit tests/python/test_tool_contracts.py
