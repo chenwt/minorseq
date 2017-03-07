@@ -49,8 +49,8 @@ namespace Fuse {
 /// Contains user provided CLI configuration for ConsensusFixer
 struct FuseSettings
 {
-    std::vector<std::string> InputFiles;
-    std::string OutputPrefix;
+    std::string InputFile;
+    std::string OutputFile;
     int RegionStart = 0;
     int RegionEnd = std::numeric_limits<int>::max();
 

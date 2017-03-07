@@ -65,7 +65,7 @@ public:
     }
 
 private:
-    void Convert(const std::string& outputFile);
+    void Convert(std::string outputFile);
     void Align(const std::string& fromReference, const std::string& toReference,
                std::string* fromReferenceAligned, std::string* toReferenceAligned);
 

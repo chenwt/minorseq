@@ -46,6 +46,7 @@
 #include <pbcopper/utility/FileUtils.h>
 
 #include <pbbam/BamReader.h>
+#include <pbbam/DataSet.h>
 #include <pbbam/FastaReader.h>
 
 #include <pacbio/cleric/Cleric.h>
@@ -53,30 +54,56 @@
 
 namespace PacBio {
 namespace Cleric {
-static void ParseInputFiles(const std::vector<std::string>& inputs, std::string* bamPath,
-                            std::string* fromReference, std::string* fromReferenceName,
-                            std::string* toReference, std::string* toReferenceName)
+static void ParsePositionalArgs(const std::vector<std::string>& args, std::string* bamPath,
+                                std::string* fromReference, std::string* fromReferenceName,
+                                std::string* toReference, std::string* toReferenceName,
+                                std::string* outputFile)
 {
+    using BAM::DataSet;
+
     std::vector<std::string> fastaPaths;
-    for (const auto& i : inputs) {
-        std::unique_ptr<BAM::BamReader> reader;
-        try {
-            reader = std::unique_ptr<BAM::BamReader>(new BAM::BamReader(i));
-        } catch (const std::runtime_error& e) {
-            // If this is trigerred, the input file is not a BAM file.
-            fastaPaths.push_back(i);
+    for (const auto& i : args) {
+        const bool fileExist = PacBio::Utility::FileExists(i);
+        if (!fileExist) {
+            if (!outputFile->empty())
+                throw std::runtime_error(
+                    "Only one output file allowed. Following files do not exist: " + *outputFile +
+                    " and " + i);
+            *outputFile = i;
             continue;
         }
+        DataSet ds(i);
+        switch (ds.Type()) {
+            case BAM::DataSet::TypeEnum::SUBREAD:
+            case BAM::DataSet::TypeEnum::ALIGNMENT:
+            case BAM::DataSet::TypeEnum::CONSENSUS_ALIGNMENT: {
+                if (!bamPath->empty()) throw std::runtime_error("Only one BAM input is allowed!");
 
-        if (!bamPath->empty()) throw std::runtime_error("Only one BAM input is allowed!");
-        *bamPath = i;
-        if (reader->Header().Sequences().empty())
-            throw std::runtime_error("Could not find reference sequence name");
-        *fromReferenceName = reader->Header().Sequences().begin()->Name();
+                const auto bamfiles = ds.BamFiles();
+                if (bamfiles.size() != 1) throw std::runtime_error("Only one bam file is allowed!");
+
+                const auto header = bamfiles.front().Header();
+                *bamPath = bamfiles.front().Filename();
+                if (header.Sequences().empty())
+                    throw std::runtime_error("Could not find reference sequence name");
+                *fromReferenceName = header.Sequences().begin()->Name();
+                break;
+            }
+            case BAM::DataSet::TypeEnum::REFERENCE:
+                fastaPaths.push_back(i);
+                break;
+            default:
+                throw std::runtime_error("Unsupported input file: " + i + " of type " +
+                                         DataSet::TypeToName(ds.Type()));
+        }
     }
 
     for (const auto& fasta : fastaPaths) {
-        BAM::FastaReader msaReader(fasta);
+        DataSet ds(fasta);
+        const auto fastaFiles = ds.FastaFiles();
+        if (fastaFiles.size() != 1)
+            throw std::runtime_error("Only one fasta file allowed per dataset: " + fasta);
+        BAM::FastaReader msaReader(fastaFiles.front());
 
         BAM::FastaSequence f;
         while (msaReader.GetNext(f)) {
@@ -106,9 +133,9 @@ static int Runner(const PacBio::CLI::Results& options)
         std::cerr << "ERROR: Please provide BAM input, see --help" << std::endl;
         return EXIT_FAILURE;
     }
-    if (options.PositionalArguments().size() < 2 || options.PositionalArguments().size() >= 4) {
-        std::cerr << "ERROR: Please provide _one_ BAM input and maximal _two_ "
-                     "FASTA files, see --help"
+    if (options.PositionalArguments().size() < 3 || options.PositionalArguments().size() >= 5) {
+        std::cerr << "ERROR: Please provide _one_ BAM input, maximal _two_ "
+                     "FASTA files, and _one_ output file. See --help"
                   << std::endl;
         return EXIT_FAILURE;
     }
@@ -121,16 +148,15 @@ static int Runner(const PacBio::CLI::Results& options)
     std::string fromReferenceName;
     std::string toReference;
     std::string toReferenceName;
-    ParseInputFiles(settings.InputFiles, &bamPath, &fromReference, &fromReferenceName, &toReference,
-                    &toReferenceName);
+    std::string outputFile;
 
-    std::string output;
-    if (settings.OutputPrefix.empty())
-        output = PacBio::Utility::FilePrefix(bamPath) + "_cleric.bam";
-    else
-        output = settings.OutputPrefix + ".bam";
+    ParsePositionalArgs(settings.InputFiles, &bamPath, &fromReference, &fromReferenceName,
+                        &toReference, &toReferenceName, &outputFile);
 
-    Cleric cleric(bamPath, output, fromReference, fromReferenceName, toReference, toReferenceName);
+    if (outputFile.empty()) outputFile = PacBio::Utility::FilePrefix(bamPath) + "_cleric";
+
+    Cleric cleric(bamPath, outputFile, fromReference, fromReferenceName, toReference,
+                  toReferenceName);
 
     return EXIT_SUCCESS;
 }

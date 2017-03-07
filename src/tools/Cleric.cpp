@@ -37,7 +37,13 @@
 
 // Inspired by work of David Seifert
 
+#include <boost/algorithm/string.hpp>
+
 #include <pacbio/align/SimdAlignment.h>
+#include <pbbam/DataSet.h>
+#include <pbbam/MD5.h>
+#include <pbbam/PbiFile.h>
+#include <pbcopper/utility/FileUtils.h>
 
 #include <pacbio/cleric/Cleric.h>
 
@@ -52,7 +58,7 @@ void Cleric::Align(const std::string& fromReference, const std::string& toRefere
     *toReferenceAligned = align.Query;
 }
 
-void Cleric::Convert(const std::string& outputFile)
+void Cleric::Convert(std::string outputFile)
 {
     using BAM::Cigar;
     using BAM::CigarOperation;
@@ -95,9 +101,35 @@ void Cleric::Convert(const std::string& outputFile)
 
     BAM::BamHeader h = in.Header().DeepCopy();
     h.ClearSequences();
-    h.AddSequence(BAM::SequenceInfo(toReferenceName_, std::to_string(toReferenceGapless_.size())));
+    auto bamRefSequence =
+        BAM::SequenceInfo(toReferenceName_, std::to_string(toReferenceGapless_.size()));
+    bamRefSequence.Checksum(BAM::MD5Hash(toReferenceSequence_));
+    h.AddSequence(bamRefSequence);
 
-    BAM::BamWriter out(outputFile, h);
+    const bool isXml = Utility::FileExtension(outputFile) == "xml";
+    if (isXml) boost::replace_last(outputFile, ".consensusalignmentset.xml", ".bam");
+
+    // Write Dataset
+    {
+        using BAM::DataSet;
+        const std::string metatype = "PacBio.AlignmentFile.AlignmentBamFile";
+        DataSet clericSet(DataSet::TypeEnum::ALIGNMENT);
+        BAM::ExternalResource resource(metatype, outputFile);
+
+        BAM::FileIndex pbi("PacBio.Index.PacBioIndex", outputFile + ".pbi");
+        resource.FileIndices().Add(pbi);
+
+        clericSet.ExternalResources().Add(resource);
+        clericSet.Name(clericSet.TimeStampedName());
+
+        const auto outputPrefix = outputFile.substr(0, outputFile.size() - 4);
+        std::ofstream clericDSout(outputPrefix + ".consensusalignmentset.xml");
+        clericSet.SaveToStream(clericDSout);
+    }
+
+    // Convert and write to BAM
+    std::unique_ptr<BAM::BamWriter> out =
+        std::unique_ptr<BAM::BamWriter>(new BAM::BamWriter(outputFile, h));
     BAM::BamRecord read;
     while (in.GetNext(read)) {
         std::string source_str = fromReferenceSequence_;
@@ -726,8 +758,10 @@ void Cleric::Convert(const std::string& outputFile)
             read.Impl().EditTag("NM", new_edit_distance);
         else
             read.Impl().AddTag("NM", new_edit_distance);
-        out.Write(read);
+        out->Write(read);
     }
+    out.reset(nullptr);
+    BAM::PbiFile::CreateFrom(outputFile);
 }
 }
 }  // ::PacBio::Realign
