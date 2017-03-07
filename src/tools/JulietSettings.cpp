@@ -198,7 +198,7 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
         OptionNames::Debug
     });
 
-    const std::string id = "uny.tasks.juliet";
+    const std::string id = "minorseq.tasks.juliet";
     Task tcTask(id);
     tcTask.AddOption(OptionNames::Mode);
     tcTask.AddOption(OptionNames::Region);

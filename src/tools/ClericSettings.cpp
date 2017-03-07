@@ -74,7 +74,7 @@ PacBio::CLI::Interface ClericSettings::CreateCLI()
     {
     });
 
-    const std::string id = "uny.tasks.cleric";
+    const std::string id = "minorseq.tasks.cleric";
     Task tcTask(id);
 
     tcTask.InputFileTypes({

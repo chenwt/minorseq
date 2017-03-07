@@ -92,7 +92,7 @@ PacBio::CLI::Interface FuseSettings::CreateCLI()
         {"output", "Output fasta file.", "FILE"}
     });
 
-    const std::string id = "uny.tasks.fuse";
+    const std::string id = "minorseq.tasks.fuse";
     Task tcTask(id);
 
     tcTask.InputFileTypes({
