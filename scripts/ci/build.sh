@@ -34,4 +34,4 @@ source venv_tmp/bin/activate
 set -u
 pip install nose
 (cd pbcommand && python setup.py install)
-nose --verbose --with-xunit tests/python/test_tool_contracts.py
+nosetests --verbose --with-xunit tests/python/test_tool_contracts.py
