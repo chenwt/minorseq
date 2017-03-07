@@ -19,15 +19,13 @@ Fuse includes in-frame insertions with a certain distance to each other.
 Major deletions are being removed.
 
 ## Output
-*Fuse* provides a FASTA file per input. If no output prefix has been specified
-via `-o`, the output files are called `inputPrefix.cons`, otherwise
-`outputPrefix_inputPrefix.cons`. There is no warning, existing files will be
-overwritten.
+*Fuse* provides a FASTA file per input. Output file is provided by the second
+argument.
 
 ## Example
 Simple example:
 ```
-fuse m530526.align.bam
+fuse m530526.align.bam m530526.fasta
 ```
 
-Output: `m530526.cons`
+Output: `m530526.fasta`

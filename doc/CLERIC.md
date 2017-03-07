@@ -22,16 +22,16 @@ reference. This is done by aligning the original and target reference sequences.
 A transitive alignment is used to generate the new alignment.
 
 ## Output
-*Cleric* provides a BAM file with the file named as provided via `-o`.
+*Cleric* provides a BAM file with the file named as provided via the last argument.
 
 ## Example
 Simple example:
 ```
-cleric m530526.align.bam reference.fasta new_ref.fasta
+cleric m530526.align.bam reference.fasta new_ref.fasta cleric_output.bam
 ```
 
 Or:
 ```
 cat reference.fasta new_ref.fasta > combined.fasta
-cleric m530526.align.bam combined.fasta
+cleric m530526.align.bam combined.fasta cleric_output.bam
 ```

@@ -53,7 +53,7 @@ public:
 
 private:
     std::ostream& LogCI(const std::string& prefix);
-    void AminoPhasing(const JulietSettings& settings, const std::string& globalOutputPrefix);
+    void AminoPhasing(const JulietSettings& settings);
     void Error(const JulietSettings& settings);
 };
 }

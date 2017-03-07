@@ -41,6 +41,7 @@
 #include <string>
 #include <vector>
 
+#include <pbbam/DataSet.h>
 #include <pbcopper/cli/CLI.h>
 #include <pbcopper/utility/FileUtils.h>
 
@@ -60,18 +61,30 @@ static int Runner(const PacBio::CLI::Results& options)
 
     // Parse options
     FuseSettings settings(options);
-    for (const auto& input : options.PositionalArguments()) {
-        Fuse fuse(input);
-        std::string outputFileName = PacBio::Utility::FilePrefix(input) + ".cons";
-        if (!settings.OutputPrefix.empty()) {
-            std::string infix;
-            if (settings.OutputPrefix.back() != '/') infix = '_';
-            outputFileName = settings.OutputPrefix + infix + outputFileName;
-        }
-        std::ofstream outputFile(outputFileName);
-        outputFile << ">CONSENSUS" << std::endl;
-        outputFile << fuse.ConsensusSequence() << std::endl;
-    }
+
+    Fuse fuse(settings.InputFile);
+
+    auto outputFile = settings.OutputFile;
+    const bool isXml = Utility::FileExtension(outputFile) == "xml";
+    if (isXml) boost::ireplace_all(outputFile, ".referenceset.xml", ".fasta");
+
+    std::ofstream outputFastaStream(outputFile);
+    outputFastaStream << ">CONSENSUS" << std::endl;
+    outputFastaStream << fuse.ConsensusSequence() << std::endl;
+
+#if 0
+    // Write Dataset
+    using BAM::DataSet;
+    const std::string metatype = "PacBio.ReferenceFile.ReferenceFastaFile";
+    DataSet fuseSet(DataSet::TypeEnum::REFERENCE);
+    BAM::ExternalResource resource(metatype, outputFile);
+    fuseSet.ExternalResources().Add(resource);
+    fuseSet.Name(fuseSet.TimeStampedName());
+
+    const auto outputPrefix = outputFile.substr(0, outputFile.size() - 6);
+    std::ofstream fuseDSout(outputPrefix + ".referenceset.xml");
+    fuseSet.SaveToStream(fuseDSout);
+#endif
 
     return EXIT_SUCCESS;
 }
