@@ -23,6 +23,7 @@ echo "## Build source"
 echo "## tests"
 ( cd build && ninja check )
 
+export PATH=$PWD/build:$PATH
 # Tool contract test
 if [ ! -d pbcommand ]; then
   git clone ssh://git@bitbucket.nanofluidics.com:7999/sl/pbcommand.git
