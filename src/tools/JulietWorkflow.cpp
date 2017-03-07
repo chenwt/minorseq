@@ -75,85 +75,124 @@ std::ostream& JulietWorkflow::LogCI(const std::string& prefix)
 
 void JulietWorkflow::Run(const JulietSettings& settings)
 {
-    auto globalOutputPrefix = settings.OutputPrefix;
-    globalOutputPrefix += globalOutputPrefix.empty() ? "" : "/";
-
     if (settings.Mode == AnalysisMode::AMINO || settings.Mode == AnalysisMode::PHASING) {
-        AminoPhasing(settings, globalOutputPrefix);
+        AminoPhasing(settings);
     } else if (settings.Mode == AnalysisMode::ERROR) {
         Error(settings);
     }
 }
 
-void JulietWorkflow::AminoPhasing(const JulietSettings& settings,
-                                  const std::string& globalOutputPrefix)
+void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
 {
-    for (const auto& inputFile : settings.InputFiles) {
-        const auto outputPrefix = globalOutputPrefix + Utility::FilePrefix(inputFile);
+    using BAM::DataSet;
 
-        BAM::DataSet ds(inputFile);
-
-        const auto bamfiles = ds.BamFiles();
-        if (bamfiles.size() != 1)
-            throw std::runtime_error("Only one bam file is allowed! Found " +
-                                     std::to_string(bamfiles.size()));
-
-        const auto header = bamfiles.front().Header();
-        const auto bamfileName = bamfiles.front().Filename();
-
-        ErrorEstimates error;
-        if (settings.SubstitutionRate != 0.0 && settings.DeletionRate != 0.0) {
-            error = ErrorEstimates(settings.SubstitutionRate, settings.DeletionRate);
-        } else {
-            std::string chemistry;
-            const auto readGroups = header.ReadGroups();
-            for (const auto& rg : readGroups) {
-                if (chemistry.empty())
-                    chemistry = rg.SequencingChemistry();
-                else if (chemistry != rg.SequencingChemistry())
-                    throw std::runtime_error("Mixed chemistries are not allowed");
-            }
-            error = ErrorEstimates(chemistry);
+    std::string outputHtml;
+    std::string outputJson;
+    std::string outputMsa;
+    std::string bamInput;
+    for (const auto& i : settings.InputFiles) {
+        const auto fileExt = PacBio::Utility::FileExtension(i);
+        if (fileExt == "json") {
+            if (!outputJson.empty()) throw std::runtime_error("Only one json output file allowed");
+            outputJson = i;
+            continue;
         }
+        if (fileExt == "html") {
+            if (!outputHtml.empty()) throw std::runtime_error("Only one html output file allowed");
+            outputHtml = i;
+            continue;
+        }
+        if (fileExt == "msa") {
+            if (!outputMsa.empty()) throw std::runtime_error("Only one msa output file allowed");
+            outputHtml = i;
+            continue;
+        }
+        DataSet ds(i);
+        switch (ds.Type()) {
+            case DataSet::TypeEnum::SUBREAD:
+            case DataSet::TypeEnum::ALIGNMENT:
+            case DataSet::TypeEnum::CONSENSUS_ALIGNMENT:
+                bamInput = i;
+                break;
+            default:
+                throw std::runtime_error("Unsupported input file: " + i + " of type " +
+                                         DataSet::TypeToName(ds.Type()));
+        }
+    }
 
-        // Convert BamRecords to unrolled ArrayReads
-        auto CreateReads = [&bamfileName, &settings]() {
-            std::vector<std::shared_ptr<Data::ArrayRead>> sharedReadsLocal;
-            std::vector<Data::ArrayRead> reads;
-            reads = IO::ParseBam(bamfileName, settings.RegionStart, settings.RegionEnd);
-            for (auto&& r : reads)
-                sharedReadsLocal.emplace_back(std::make_shared<Data::ArrayRead>(std::move(r)));
-            return sharedReadsLocal;
-        };
-        std::vector<std::shared_ptr<Data::ArrayRead>> sharedReads = CreateReads();
+    if (bamInput.empty()) throw std::runtime_error("Missing input file!");
+    if (outputHtml.empty() && outputJson.empty() && outputMsa.empty()) {
+        const auto prefix = PacBio::Utility::FilePrefix(bamInput);
+        outputHtml = prefix + ".html";
+        outputJson = prefix + ".json";
+    }
 
-        // Call variants
-        AminoAcidCaller aac(sharedReads, error, settings);
-        if (settings.Mode == AnalysisMode::PHASING) aac.PhaseVariants();
+    DataSet ds(bamInput);
 
-        const auto json = aac.JSON();
+    const auto bamfiles = ds.BamFiles();
+    if (bamfiles.size() != 1)
+        throw std::runtime_error("Only one bam file is allowed! Found " +
+                                 std::to_string(bamfiles.size()));
 
-        std::ofstream jsonStream(outputPrefix + ".json");
+    const auto header = bamfiles.front().Header();
+    const auto bamfileName = bamfiles.front().Filename();
+
+    ErrorEstimates error;
+    if (settings.SubstitutionRate != 0.0 && settings.DeletionRate != 0.0) {
+        error = ErrorEstimates(settings.SubstitutionRate, settings.DeletionRate);
+    } else {
+        std::string chemistry;
+        const auto readGroups = header.ReadGroups();
+        for (const auto& rg : readGroups) {
+            if (chemistry.empty())
+                chemistry = rg.SequencingChemistry();
+            else if (chemistry != rg.SequencingChemistry())
+                throw std::runtime_error("Mixed chemistries are not allowed");
+        }
+        error = ErrorEstimates(chemistry);
+    }
+
+    // Convert BamRecords to unrolled ArrayReads
+    auto CreateReads = [&bamfileName, &settings]() {
+        std::vector<std::shared_ptr<Data::ArrayRead>> sharedReadsLocal;
+        std::vector<Data::ArrayRead> reads;
+        reads = IO::ParseBam(bamfileName, settings.RegionStart, settings.RegionEnd);
+        for (auto&& r : reads)
+            sharedReadsLocal.emplace_back(std::make_shared<Data::ArrayRead>(std::move(r)));
+        return sharedReadsLocal;
+    };
+    std::vector<std::shared_ptr<Data::ArrayRead>> sharedReads = CreateReads();
+
+    // Call variants
+    AminoAcidCaller aac(sharedReads, error, settings);
+    if (settings.Mode == AnalysisMode::PHASING) aac.PhaseVariants();
+
+    const auto json = aac.JSON();
+
+    if (!outputJson.empty()) {
+        std::ofstream jsonStream(outputJson);
         jsonStream << json.dump(2) << std::endl;
+    }
 
-        std::ofstream htmlStream(outputPrefix + ".html");
+    if (!outputHtml.empty()) {
+        std::ofstream htmlStream(outputHtml);
         JsonToHtml::HTML(htmlStream, json, settings.TargetConfigUser.referenceName,
                          settings.DRMOnly, settings.Details);
+    }
 
-        // Store msa + p-values
-        if (settings.SaveMSA) {
-            std::ofstream msaStream(outputPrefix + ".msa");
-            msaStream << "pos A C G T - N" << std::endl;
-            int pos = aac.msaByColumn_.beginPos;
-            for (auto& column : aac.msaByColumn_) {
-                msaStream << ++pos;
-                const std::array<int, 6>& counts = column;
-                for (const auto& c : counts)
-                    msaStream << " " << c;
-                msaStream << std::endl;
-            }
-            msaStream.close();
+    // Store msa + p-values
+    if (!outputMsa.empty()) {
+        std::ofstream msaStream(outputMsa);
+        msaStream << "pos A C G T - N" << std::endl;
+        int pos = aac.msaByColumn_.beginPos;
+        for (auto& column : aac.msaByColumn_) {
+            msaStream << ++pos;
+            const std::array<int, 6>& counts = column;
+            for (const auto& c : counts)
+                msaStream << " " << c;
+            msaStream << std::endl;
         }
+        msaStream.close();
     }
 }
 void JulietWorkflow::Error(const JulietSettings& settings)

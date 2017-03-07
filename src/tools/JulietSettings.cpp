@@ -56,25 +56,11 @@ const PlainOption Region{
     "Genomic region of interest, reads will be clipped to that region, empty means all reads.",
     CLI::Option::StringType("")
 };
-const PlainOption Output{
-    "output",
-    { "output", "o"},
-    "Output Prefix",
-    "Output prefix for generated files [Default: Input file prefix].",
-    CLI::Option::StringType("")
-};
 const PlainOption DRMOnly{
     "only_known_drms",
     { "drm-only", "k" },
     "Only Known DRMs",
     "Only report known DRM positions.",
-    CLI::Option::BoolType()
-};
-const PlainOption SaveMSA{
-    "save_msa_counts",
-    { "save-msa" },
-    "Save MSA counts",
-    "Save the MSA counts that are used for minor variant calling after QV filtering.",
     CLI::Option::BoolType()
 };
 const PlainOption Mode{
@@ -131,10 +117,8 @@ const PlainOption Debug{
 
 JulietSettings::JulietSettings(const PacBio::CLI::Results& options)
     : InputFiles(options.PositionalArguments())
-    , OutputPrefix(std::forward<std::string>(options[OptionNames::Output]))
     , TargetConfigUser(std::forward<std::string>(options[OptionNames::TargetConfig]))
     , DRMOnly(options[OptionNames::DRMOnly])
-    , SaveMSA(options[OptionNames::SaveMSA])
     , MergeOutliers(options[OptionNames::MergeOutliers])
     , Verbose(options[OptionNames::Verbose])
     , Debug(options[OptionNames::Debug])
@@ -203,11 +187,9 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
 
     i.AddOptions(
     {
-        OptionNames::Output,
         OptionNames::Mode,
         OptionNames::Region,
         OptionNames::DRMOnly,
-        OptionNames::SaveMSA,
         OptionNames::TargetConfig,
         OptionNames::MergeOutliers,
         OptionNames::SubstitutionRate,
@@ -218,11 +200,9 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
 
     const std::string id = "uny.tasks.juliet";
     Task tcTask(id);
-    tcTask.AddOption(OptionNames::Output);
     tcTask.AddOption(OptionNames::Mode);
     tcTask.AddOption(OptionNames::Region);
     tcTask.AddOption(OptionNames::DRMOnly);
-    tcTask.AddOption(OptionNames::SaveMSA);
     tcTask.AddOption(OptionNames::TargetConfig);
     tcTask.AddOption(OptionNames::MergeOutliers);
     tcTask.AddOption(OptionNames::SubstitutionRate);
