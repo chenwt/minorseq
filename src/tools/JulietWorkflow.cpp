@@ -156,7 +156,7 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
     auto CreateReads = [&bamfileName, &settings]() {
         std::vector<std::shared_ptr<Data::ArrayRead>> sharedReadsLocal;
         std::vector<Data::ArrayRead> reads;
-        reads = IO::ParseBam(bamfileName, settings.RegionStart, settings.RegionEnd);
+        reads = IO::BamToArrayReads(bamfileName, settings.RegionStart, settings.RegionEnd);
         for (auto&& r : reads)
             sharedReadsLocal.emplace_back(std::make_shared<Data::ArrayRead>(std::move(r)));
         return sharedReadsLocal;
@@ -199,7 +199,7 @@ void JulietWorkflow::Error(const JulietSettings& settings)
 {
     for (const auto& inputFile : settings.InputFiles) {
         std::vector<Data::ArrayRead> reads;
-        reads = IO::ParseBam(inputFile, settings.RegionStart, settings.RegionEnd);
+        reads = IO::BamToArrayReads(inputFile, settings.RegionStart, settings.RegionEnd);
         Data::MSAByColumn msa(reads);
         double sub = 0;
         double del = 0;

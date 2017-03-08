@@ -12,7 +12,7 @@ Install the minorseq suite and one of the binaries is called `cleric`.
 ## Input data
 *Cleric* operates on aligned records in the BAM format, the original reference
 and the target reference as FASTA.
-BAM file has to PacBio-compliant, meaning, cigar `M` is forbidden.
+BAM file have to PacBio-compliant, meaning, cigar `M` is forbidden.
 Two sequences have to be provided, either in individual files or combined in one.
 The header of the original reference must match the reference name in the BAM.
 

@@ -11,7 +11,7 @@ Install the minorseq suite and one of the binaries is called `fuse`.
 
 ## Input data
 *Fuse* operates on aligned records in the BAM format.
-BAM files has to PacBio-compliant, meaning, cigar `M` is forbidden.
+BAM files have to PacBio-compliant, meaning, cigar `M` is forbidden.
 
 ## Scope
 Current scope of *Fuse* is creation of a high-quality consensus sequence.
