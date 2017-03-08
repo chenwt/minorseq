@@ -47,11 +47,10 @@
 #include <numeric>
 #include <vector>
 
-#include <pbbam/EntireFileQuery.h>
-#include <pbbam/PbiFilterQuery.h>
-
 #include <pacbio/data/ArrayRead.h>
 #include <pbbam/BamRecord.h>
+
+#include <pacbio/io/BamParser.h>
 
 #include <pacbio/fuse/Fuse.h>
 
@@ -132,13 +131,7 @@ std::pair<int, std::string> Fuse::FindInsertions(
 
 std::vector<Data::ArrayRead> Fuse::FetchAlignedReads(const std::string& ccsInput) const
 {
-    BAM::DataSet ds(ccsInput);
-    const auto filter = BAM::PbiFilter::FromDataSet(ds);
-    std::unique_ptr<BAM::internal::IQuery> query(nullptr);
-    if (filter.IsEmpty())
-        query.reset(new BAM::EntireFileQuery(ds));
-    else
-        query.reset(new BAM::PbiFilterQuery(filter, ds));
+    auto query = IO::BamQuery(ccsInput);
 
     std::vector<Data::ArrayRead> reads;
     int idx = 0;
