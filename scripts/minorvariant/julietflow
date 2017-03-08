@@ -138,8 +138,8 @@ done
 
 # Re-map last alignment against original reference
 cleric ${run_prefix}_${max}.align.bam ${run_prefix}_${max}_ref.fasta $target ${run_prefix}_cleric.bam
-juliet ${run_prefix}_cleric.bam -c ${config} -m ${mode}
-cp ${run_prefix}_cleric.html ${wdir}/${run_prefix}.html
+juliet ${run_prefix}_cleric.bam -c ${config} -m ${mode} ${run_prefix}.html ${run_prefix}.json
+cp ${run_prefix}.html ${run_prefix}.json ${wdir}/
 
 if [[ "${keep}" = "1" ]]; then
   mkdir ${wdir}/tmp
