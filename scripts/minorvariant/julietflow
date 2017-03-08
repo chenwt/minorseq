@@ -19,8 +19,9 @@ function echoHelp() {
   -i [arg]  BAM CCS file to process. Required.
   -r [arg]  Reference FASTA file. Required.
   -c [arg]  Juliet target config. Default='<HIV>'
+  -m [arg]  Execution mode. Default='amino'
   -j [arg]  Number of CPU cores. Default=1
-  -m [arg]  Maximal number of re-align iterations. Default=1
+  -e [arg]  Maximal number of re-align iterations. Default=1
   -t [arg]  Target reference FASTA, per default using --ref.
   -k        Keep temporary files
   -h --help This help page"
@@ -31,6 +32,7 @@ function echoHelp() {
 config='<HIV>'
 cores=1
 max=1
+mode='amino'
 keep="0"
 helpRequested="0"
 
@@ -39,7 +41,7 @@ if [[ $# -eq 0 ]]; then
 fi
 
 PROGNAME=${0##*/}
-SHORTOPTS="hmi:r:c:j:t:m:k"
+SHORTOPTS="hi:r:c:j:t:m:e:k"
 LONGOPTS="help"
 
 ARGS=$(getopt -s bash --options $SHORTOPTS  \
@@ -64,9 +66,12 @@ while [[ $# -gt 0 ]] ; do
     -t)
       shift
       target=$1;;
-    -m)
+    -e)
       shift
       max=$1;;
+    -m)
+      shift
+      mode=$1;;
     -k)
       keep="1";;
     -h | --help)
@@ -133,7 +138,7 @@ done
 
 # Re-map last alignment against original reference
 cleric ${run_prefix}_${max}.align.bam ${run_prefix}_${max}_ref.fasta $target ${run_prefix}_cleric.bam
-juliet ${run_prefix}_cleric.bam -c ${config}
+juliet ${run_prefix}_cleric.bam -c ${config} -m ${mode}
 cp ${run_prefix}_cleric.html ${wdir}/${run_prefix}.html
 
 if [[ "${keep}" = "1" ]]; then
