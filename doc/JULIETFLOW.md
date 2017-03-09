@@ -8,7 +8,7 @@ The script is located under `scripts/minorvariant/julietflow`.
 ## Input data
 *Julietflow* operates on unaligned ccs reads in the BAM format and a close
 reference sequence.
-BAM files has to PacBio-compliant, meaning, cigar `M` is forbidden, and input
+BAM files have to PacBio-compliant, meaning, cigar `M` is forbidden, and input
 reads have to be greater RQ 0.99.
 
 ## Scope

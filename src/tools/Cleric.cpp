@@ -39,11 +39,13 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include <pacbio/align/SimdAlignment.h>
+#include <pbcopper/utility/FileUtils.h>
+
 #include <pbbam/DataSet.h>
 #include <pbbam/MD5.h>
-#include <pbbam/PbiFile.h>
-#include <pbcopper/utility/FileUtils.h>
+
+#include <pacbio/align/SimdAlignment.h>
+#include <pacbio/io/BamParser.h>
 
 #include <pacbio/cleric/Cleric.h>
 
@@ -64,12 +66,22 @@ void Cleric::Convert(std::string outputFile)
     using BAM::CigarOperation;
     using BAM::CigarOperationType;
 
-    BAM::BamReader in(alignmentPath_);
+    // Get data source
+    auto query = IO::BamQuery(alignmentPath_);
 
-    if (in.Header().Sequences().empty())
-        throw std::runtime_error("Could not find reference sequence name");
+    // Retrieve header if available
+    const auto Header = [&query]() {
+        if (query->cbegin() == query->cend()) {
+            std::cerr << "Empty input" << std::endl;
+            return BAM::BamHeader();
+        }
+        return query->cbegin()->Header().DeepCopy();
+    };
+    BAM::BamHeader h = Header();
 
-    const auto localFromReferenceName = in.Header().Sequences().begin()->Name();
+    if (h.Sequences().empty()) throw std::runtime_error("Could not find reference sequence name");
+
+    const auto localFromReferenceName = h.Sequences().begin()->Name();
     if (localFromReferenceName != fromReferenceName_)
         throw std::runtime_error("Internal error. Reference name mismatches");
 
@@ -99,7 +111,6 @@ void Cleric::Convert(std::string outputFile)
         }
     }
 
-    BAM::BamHeader h = in.Header().DeepCopy();
     h.ClearSequences();
     auto bamRefSequence =
         BAM::SequenceInfo(toReferenceName_, std::to_string(toReferenceGapless_.size()));
@@ -128,10 +139,8 @@ void Cleric::Convert(std::string outputFile)
     }
 
     // Convert and write to BAM
-    std::unique_ptr<BAM::BamWriter> out =
-        std::unique_ptr<BAM::BamWriter>(new BAM::BamWriter(outputFile, h));
-    BAM::BamRecord read;
-    while (in.GetNext(read)) {
+    std::unique_ptr<BAM::BamWriter> out(new BAM::BamWriter(outputFile, h));
+    for (auto read : *query) {
         std::string source_str = fromReferenceSequence_;
         std::string dest_str = toReferenceSequence_;
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Pacific Biosciences of California, Inc.
+// Copyright (c) 2011-2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,24 +35,43 @@
 
 // Author: Armin Töpfer
 
-#pragma once
+#include <pbbam/DataSet.h>
 
-#include <limits>
-#include <string>
-#include <vector>
-
-#include <pbbam/EntireFileQuery.h>
-#include <pbbam/PbiFilterQuery.h>
-
-#include <pacbio/data/ArrayRead.h>
+#include <pacbio/io/BamParser.h>
 
 namespace PacBio {
 namespace IO {
+std::unique_ptr<BAM::internal::IQuery> BamQuery(const std::string& filePath)
+{
+    BAM::DataSet ds(filePath);
+    const auto filter = BAM::PbiFilter::FromDataSet(ds);
+    std::unique_ptr<BAM::internal::IQuery> query(nullptr);
+    if (filter.IsEmpty())
+        query.reset(new BAM::EntireFileQuery(ds));
+    else
+        query.reset(new BAM::PbiFilterQuery(filter, ds));
+    return query;
+}
 
-std::unique_ptr<BAM::internal::IQuery> BamQuery(const std::string& filePath);
+std::vector<Data::ArrayRead> BamToArrayReads(const std::string& filePath, int regionStart,
+                                             int regionEnd)
+{
+    std::vector<Data::ArrayRead> returnList;
+    regionStart = std::max(regionStart - 1, 0);
+    regionEnd = std::max(regionEnd - 1, 0);
 
-/// \brief Wrapper around pbbam to ease BAM parsing and region extraction
-std::vector<Data::ArrayRead> BamToArrayReads(const std::string& filePath, int regionStart = 0,
-                                             int regionEnd = std::numeric_limits<int>::max());
+    auto query = BamQuery(filePath);
+
+    int idx = 0;
+    // Iterate over all records and convert online
+    for (auto& record : *query) {
+        if (record.Impl().IsSupplementaryAlignment()) continue;
+        if (record.ReferenceStart() < regionEnd && record.ReferenceEnd() > regionStart) {
+            record.Clip(BAM::ClipType::CLIP_TO_REFERENCE, regionStart, regionEnd);
+            returnList.emplace_back(Data::BAMArrayRead(record, idx++));
+        }
+    }
+    return returnList;
+}
 }
 }  // ::PacBio::IO

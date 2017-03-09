@@ -2,28 +2,6 @@
 GET_PROPERTY(LOCAL_COMPILE_FLAGS GLOBAL PROPERTY MINORSEQ_COMPILE_FLAGS_GLOBAL)
 GET_PROPERTY(LOCAL_LINK_FLAGS GLOBAL PROPERTY MINORSEQ_LINK_FLAGS_GLOBAL)
 
-# functions
-function(create_exe exeName)
-    add_executable(${exeName} ${MS_SourceDir}/tools/main/${exeName}.cpp)
-
-    set_target_properties(${exeName} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
-    )
-
-    target_link_libraries(${exeName}
-        ${ARGV1}
-        ${CMAKE_THREAD_LIBS_INIT}
-        ${CMAKE_DL_LIBS}
-        minorseq
-    )
-
-    install(TARGETS ${exeName} RUNTIME DESTINATION bin)
-    set_target_properties(${exeName} PROPERTIES COMPILE_FLAGS ${LOCAL_COMPILE_FLAGS})
-    if (LOCAL_LINK_FLAGS)
-        set_target_properties(${exeName} PROPERTIES LINK_FLAGS ${LOCAL_LINK_FLAGS})
-    endif()
-endfunction()
-
 # get all header files for IDE support
 file(GLOB_RECURSE MS_HEADER "${MS_IncludeDir}/*.h")
 file(GLOB_RECURSE MS_HIDDEN_HEADER "*.h")
@@ -41,7 +19,6 @@ add_library(minorseq STATIC
     ${MS_HIDDEN_HEADER}
     ${ssw_INCLUDE_DIRS}/ssw_cpp.cpp
     ${MS_CPP}
-    ${MS_TOOLS_CPP}
 )
 
 target_link_libraries(minorseq
@@ -68,6 +45,39 @@ if (LOCAL_LINK_FLAGS)
     set_target_properties(minorseq PROPERTIES LINK_FLAGS ${LOCAL_LINK_FLAGS})
 endif()
 
-create_exe(juliet)
-create_exe(fuse)
-create_exe(cleric)
+if (MS_build_bin)
+    function(create_exe exeName)
+        add_executable(${exeName} ${MS_SourceDir}/tools/main/${exeName}.cpp)
+
+        set_target_properties(${exeName} PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+        )
+
+        target_link_libraries(${exeName}
+            ${CMAKE_THREAD_LIBS_INIT}
+            ${CMAKE_DL_LIBS}
+            minorseqtools
+        )
+
+        install(TARGETS ${exeName} RUNTIME DESTINATION bin)
+        set_target_properties(${exeName} PROPERTIES COMPILE_FLAGS ${LOCAL_COMPILE_FLAGS})
+        if (LOCAL_LINK_FLAGS)
+            set_target_properties(${exeName} PROPERTIES LINK_FLAGS ${LOCAL_LINK_FLAGS})
+        endif()
+    endfunction()
+
+    add_library(minorseqtools STATIC
+        ${MS_TOOLS_CPP}
+    )
+
+    target_link_libraries(minorseqtools minorseq)
+
+    set_target_properties(minorseqtools PROPERTIES COMPILE_FLAGS ${LOCAL_COMPILE_FLAGS})
+    if (LOCAL_LINK_FLAGS)
+        set_target_properties(minorseqtools PROPERTIES LINK_FLAGS ${LOCAL_LINK_FLAGS})
+    endif()
+
+    create_exe(juliet)
+    create_exe(fuse)
+    create_exe(cleric)
+endif()

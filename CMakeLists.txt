@@ -41,4 +41,6 @@ include(ms-config)
 # Build library
 add_subdirectory(${MS_SourceDir})
 
-add_subdirectory(${MS_TestsDir})
+if (MS_build_tests)
+    add_subdirectory(${MS_TestsDir})
+endif()

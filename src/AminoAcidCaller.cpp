@@ -292,6 +292,7 @@ void AminoAcidCaller::PhaseVariants()
 
         reconstructedHaplotypes_.push_back(*hn);
     }
+    std::cerr << termcolor::reset;
 }
 
 double AminoAcidCaller::Probability(const std::string& a, const std::string& b)
