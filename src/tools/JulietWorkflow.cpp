@@ -127,41 +127,24 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
         outputJson = prefix + ".json";
     }
 
-    DataSet ds(bamInput);
+    auto sharedReads = IO::BamToArrayReads(bamInput, settings.RegionStart, settings.RegionEnd);
 
-    const auto bamfiles = ds.BamFiles();
-    if (bamfiles.size() != 1)
-        throw std::runtime_error("Only one bam file is allowed! Found " +
-                                 std::to_string(bamfiles.size()));
+    if (sharedReads.empty()) {
+        std::cerr << "Empty input." << std::endl;
+        exit(1);
+    }
 
-    const auto header = bamfiles.front().Header();
-    const auto bamfileName = bamfiles.front().Filename();
+    std::string chemistry = sharedReads.front()->SequencingChemistry();
+    for (size_t i = 1; i < sharedReads.size(); ++i)
+        if (chemistry != sharedReads.at(i)->SequencingChemistry())
+            throw std::runtime_error("Mixed chemistries are not allowed");
 
     ErrorEstimates error;
     if (settings.SubstitutionRate != 0.0 && settings.DeletionRate != 0.0) {
         error = ErrorEstimates(settings.SubstitutionRate, settings.DeletionRate);
     } else {
-        std::string chemistry;
-        const auto readGroups = header.ReadGroups();
-        for (const auto& rg : readGroups) {
-            if (chemistry.empty())
-                chemistry = rg.SequencingChemistry();
-            else if (chemistry != rg.SequencingChemistry())
-                throw std::runtime_error("Mixed chemistries are not allowed");
-        }
         error = ErrorEstimates(chemistry);
     }
-
-    // Convert BamRecords to unrolled ArrayReads
-    auto CreateReads = [&bamfileName, &settings]() {
-        std::vector<std::shared_ptr<Data::ArrayRead>> sharedReadsLocal;
-        std::vector<Data::ArrayRead> reads;
-        reads = IO::BamToArrayReads(bamfileName, settings.RegionStart, settings.RegionEnd);
-        for (auto&& r : reads)
-            sharedReadsLocal.emplace_back(std::make_shared<Data::ArrayRead>(std::move(r)));
-        return sharedReadsLocal;
-    };
-    std::vector<std::shared_ptr<Data::ArrayRead>> sharedReads = CreateReads();
 
     // Call variants
     AminoAcidCaller aac(sharedReads, error, settings);
@@ -198,8 +181,7 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
 void JulietWorkflow::Error(const JulietSettings& settings)
 {
     for (const auto& inputFile : settings.InputFiles) {
-        std::vector<Data::ArrayRead> reads;
-        reads = IO::BamToArrayReads(inputFile, settings.RegionStart, settings.RegionEnd);
+        auto reads = IO::BamToArrayReads(inputFile, settings.RegionStart, settings.RegionEnd);
         Data::MSAByColumn msa(reads);
         double sub = 0;
         double del = 0;
