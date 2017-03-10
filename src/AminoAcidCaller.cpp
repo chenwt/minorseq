@@ -503,6 +503,12 @@ void AminoAcidCaller::CallVariants()
                      (truePositives + falsePositives + falseNegative + trueNegative);
         std::cerr << tpr << " " << fpr << " " << numberOfTests << " " << acc << " "
                   << falsePositives << std::endl;
+        std::ofstream outValJson("validation.json");
+        outValJson << "{\"true_positive_rate\":" << tpr << ",";
+        outValJson << "\"false_positive_rate\":" << fpr << ",";
+        outValJson << "\"num_tests\":" << numberOfTests << ",";
+        outValJson << "\"num_false_positives\":" << falsePositives << ",";
+        outValJson << "\"accuracy\":" << acc << "}";
     }
     if (!curVariantGene.relPositionToVariant.empty())
         variantGenes_.emplace_back(std::move(curVariantGene));
