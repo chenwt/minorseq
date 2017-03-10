@@ -110,6 +110,7 @@ public:  // ctors
 public:  // non-mod methods
     int ReferenceStart() const { return referenceStart_; }
     int ReferenceEnd() const { return referenceEnd_; }
+    virtual std::string SequencingChemistry() const;
 
 public:
     friend std::ostream& operator<<(std::ostream& stream, const ArrayRead& r)
@@ -140,6 +141,7 @@ public:  // ctors
     BAMArrayRead(const BAM::BamRecord& record, int idx);
 
     // friend std::ostream& operator<<(std::ostream& stream, const ArrayRead& r);
+    virtual std::string SequencingChemistry() const override;
 
 private:
     const BAM::BamRecord Record;

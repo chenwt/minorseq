@@ -38,6 +38,7 @@
 #pragma once
 
 #include <limits>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -52,7 +53,8 @@ namespace IO {
 std::unique_ptr<BAM::internal::IQuery> BamQuery(const std::string& filePath);
 
 /// \brief Wrapper around pbbam to ease BAM parsing and region extraction
-std::vector<Data::ArrayRead> BamToArrayReads(const std::string& filePath, int regionStart = 0,
-                                             int regionEnd = std::numeric_limits<int>::max());
+std::vector<std::shared_ptr<Data::ArrayRead>> BamToArrayReads(
+    const std::string& filePath, int regionStart = 0,
+    int regionEnd = std::numeric_limits<int>::max());
 }
 }  // ::PacBio::IO

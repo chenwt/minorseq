@@ -101,6 +101,13 @@ BAMArrayRead::BAMArrayRead(const BAM::BamRecord& record, int idx)
             Bases.emplace_back(cigar.at(i), seq.at(i), 0);
 }
 
+std::string ArrayRead::SequencingChemistry() const { return ""; }
+
+std::string BAMArrayRead::SequencingChemistry() const
+{
+    return Record.ReadGroup().SequencingChemistry();
+}
+
 #if __cplusplus < 201402L  // C++11
 char TagToNucleotide(uint8_t t)
 {
