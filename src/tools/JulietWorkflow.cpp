@@ -104,7 +104,7 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
         }
         if (fileExt == "msa") {
             if (!outputMsa.empty()) throw std::runtime_error("Only one msa output file allowed");
-            outputHtml = i;
+            outputMsa = i;
             continue;
         }
         DataSet ds(i);
