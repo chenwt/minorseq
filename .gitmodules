@@ -6,3 +6,6 @@
 	path = third-party/pbbam
 	url = ../pbbam.git
 	branch = master
+[submodule "tests/cram"]
+	path = tests/cram
+	url = ../minorseq-cram
