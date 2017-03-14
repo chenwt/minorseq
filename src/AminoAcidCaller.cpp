@@ -239,7 +239,7 @@ void AminoAcidCaller::PhaseVariants()
                 for (size_t a = 0; a < hw->Codons.size(); ++a) {
                     double p2 = transitions_.Transition(hn->Codons.at(a), hw->Codons.at(a));
                     if (verbose_) std::cerr << std::setw(15) << p2;
-                    p *= p2;
+                    if (p2 > 0) p *= p2;
                 }
                 if (verbose_) std::cerr << " = " << std::setw(15) << p << std::endl;
                 probabilities.push_back(p);
@@ -257,10 +257,13 @@ void AminoAcidCaller::PhaseVariants()
             double sumPW =
                 std::accumulate(probabilityWeight.cbegin(), probabilityWeight.cend(), 0.0);
 
-            for (size_t i = 0; i < generators.size(); ++i)
-                generators[i]->SoftCollapses += 1.0 * hw->Size() * probabilityWeight[i] / sumPW;
+            for (size_t i = 0; i < generators.size(); ++i) {
+                const auto softp = 1.0 * hw->Size() * probabilityWeight[i] / sumPW;
+                if (verbose_) std::cerr << softp << "\t";
+                generators[i]->SoftCollapses += softp;
+            }
 
-            if (verbose_) std::cerr << std::endl;
+            if (verbose_) std::cerr << std::endl << std::endl;
         }
     }
 
