@@ -53,10 +53,10 @@ std::unique_ptr<BAM::internal::IQuery> BamQuery(const std::string& filePath)
     return query;
 }
 
-std::vector<Data::ArrayRead> BamToArrayReads(const std::string& filePath, int regionStart,
-                                             int regionEnd)
+std::vector<std::shared_ptr<Data::ArrayRead>> BamToArrayReads(const std::string& filePath,
+                                                              int regionStart, int regionEnd)
 {
-    std::vector<Data::ArrayRead> returnList;
+    std::vector<std::shared_ptr<Data::ArrayRead>> returnList;
     regionStart = std::max(regionStart - 1, 0);
     regionEnd = std::max(regionEnd - 1, 0);
 
@@ -68,7 +68,8 @@ std::vector<Data::ArrayRead> BamToArrayReads(const std::string& filePath, int re
         if (record.Impl().IsSupplementaryAlignment()) continue;
         if (record.ReferenceStart() < regionEnd && record.ReferenceEnd() > regionStart) {
             record.Clip(BAM::ClipType::CLIP_TO_REFERENCE, regionStart, regionEnd);
-            returnList.emplace_back(Data::BAMArrayRead(record, idx++));
+            returnList.emplace_back(
+                std::make_shared<Data::BAMArrayRead>(Data::BAMArrayRead(record, idx++)));
         }
     }
     return returnList;

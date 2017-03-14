@@ -363,21 +363,27 @@ void AminoAcidCaller::CallVariants()
         };
         double relativeCoverage = 1.0 * codon_counts.second / coverage;
         const bool variableSite = relativeCoverage < 0.8;
+        const bool predictor = Predictor();
         if (variableSite) {
-            if (p < alpha) {
-                if (Predictor())
+            if (predictor) {
+                if (p < alpha)
                     ++truePositives;
                 else
-                    ++falsePositives;
-            } else {
-                if (Predictor())
                     ++falseNegative;
+            } else {
+                if (p < alpha)
+                    ++falsePositives;
                 else
                     ++trueNegative;
             }
+        } else if (predictor) {
+            if (p < alpha)
+                ++truePositives;
+            else
+                ++falseNegative;
         }
 
-        return variableSite;
+        return std::make_pair(variableSite, predictor);
     };
 
     for (const auto& gene : genes) {
@@ -455,11 +461,14 @@ void AminoAcidCaller::CallVariants()
 
                 if (p > 1) p = 1;
 
-                const bool variableSite =
+                bool variableSite;
+                bool predictorSite;
+                std::tie(variableSite, predictorSite) =
                     MeasurePerformance(gene, codon_counts, codonPos, ai, p, coverage);
 
                 if (debug_ ||
-                    (((hasExpectedMinors && variableSite) || !hasExpectedMinors) && p < alpha)) {
+                    (((hasExpectedMinors && variableSite) || !hasExpectedMinors || predictorSite) &&
+                     p < alpha)) {
                     VariantGene::VariantPosition::VariantCodon curVariantCodon;
                     curVariantCodon.codon = codon_counts.first;
                     curVariantCodon.frequency = codon_counts.second / static_cast<double>(coverage);
@@ -503,6 +512,12 @@ void AminoAcidCaller::CallVariants()
                      (truePositives + falsePositives + falseNegative + trueNegative);
         std::cerr << tpr << " " << fpr << " " << numberOfTests << " " << acc << " "
                   << falsePositives << std::endl;
+        std::ofstream outValJson("validation.json");
+        outValJson << "{\"true_positive_rate\":" << tpr << ",";
+        outValJson << "\"false_positive_rate\":" << fpr << ",";
+        outValJson << "\"num_tests\":" << numberOfTests << ",";
+        outValJson << "\"num_false_positives\":" << falsePositives << ",";
+        outValJson << "\"accuracy\":" << acc << "}";
     }
     if (!curVariantGene.relPositionToVariant.empty())
         variantGenes_.emplace_back(std::move(curVariantGene));

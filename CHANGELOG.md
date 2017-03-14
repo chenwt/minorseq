@@ -1,5 +1,12 @@
 # MINORSEQ - CHANGELOG
 
+## [1.1.0]
+
+### Major changes
+ - Remove binary test data and associated cram tests
+ - Cram submodule for testing data
+ - Git history rewrite
+
 ## [1.0.0]
 
 ### Added
