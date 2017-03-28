@@ -139,7 +139,7 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const std::string 
         out << R"(The row-wise variant calls are "transposed" onto the per column haplotypes.<br/>
             For each variant, the haplotype shows a colored box, wild type is represented by plain dark gray.<br/>
             A color gradiant helps to distinguish between columns.<br/>
-            Haplotypes are sorted in ascending order by their relative abundance in percent.<br/>
+            Haplotypes are sorted in descending order by their relative abundance in percent.<br/>
             Haplotypes are assigned a single or combination of letters for documentation purposes.<br/>
             Haplotypes are phased across genes.<br/><br/>)";
     }

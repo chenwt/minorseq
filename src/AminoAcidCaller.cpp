@@ -270,6 +270,12 @@ void AminoAcidCaller::PhaseVariants()
         counts += hn->Size();
     if (verbose_) std::cerr << "#Counts: " << counts << std::endl;
 
+    // Sort generators descending
+    std::stable_sort(generators.begin(), generators.end(),
+                     [](const std::shared_ptr<Haplotype>& a, const std::shared_ptr<Haplotype>& b) {
+                         return a->Size() >= b->Size();
+                     });
+
     static constexpr int alphabetSize = 26;
     bool doubleName = generators.size() > alphabetSize;
     for (size_t genNumber = 0; genNumber < generators.size(); ++genNumber) {
