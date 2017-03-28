@@ -270,10 +270,17 @@ void AminoAcidCaller::PhaseVariants()
         counts += hn->Size();
     if (verbose_) std::cerr << "#Counts: " << counts << std::endl;
 
+    static constexpr int alphabetSize = 26;
+    bool doubleName = generators.size() > alphabetSize;
     for (size_t genNumber = 0; genNumber < generators.size(); ++genNumber) {
         auto& hn = generators.at(genNumber);
         hn->GlobalFrequency = hn->Size() / counts;
-        hn->Name = std::string(1, 'A' + genNumber);
+        if (doubleName) {
+            hn->Name += std::string(1, 'A' + genNumber / alphabetSize) +
+                        std::string(1, 'a' + genNumber % alphabetSize);
+        } else {
+            hn->Name = std::string(1, 'A' + genNumber);
+        }
         if (verbose_) std::cerr << hn->GlobalFrequency << "\t" << hn->Size() << "\t";
         size_t numCodons = hn->Codons.size();
         for (size_t i = 0; i < numCodons; ++i) {
