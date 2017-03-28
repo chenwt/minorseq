@@ -282,8 +282,8 @@ void AminoAcidCaller::PhaseVariants()
         auto& hn = generators.at(genNumber);
         hn->GlobalFrequency = hn->Size() / counts;
         if (doubleName) {
-            hn->Name += std::string(1, 'A' + genNumber / alphabetSize) +
-                        std::string(1, 'a' + genNumber % alphabetSize);
+            hn->Name = std::string(1, 'A' + genNumber / alphabetSize) +
+                       std::string(1, 'a' + genNumber % alphabetSize);
         } else {
             hn->Name = std::string(1, 'A' + genNumber);
         }
