@@ -453,8 +453,6 @@ void AminoAcidCaller::CallVariants()
             }
 
             for (const auto& codon_counts : codons) {
-                if (AAT::FromCodon.at(codon_counts.first) == curVariantPosition->refAminoAcid)
-                    continue;
                 double p =
                     (Statistics::Fisher::fisher_exact_tiss(
                          codon_counts.second, coverage,
