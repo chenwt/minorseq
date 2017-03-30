@@ -1,7 +1,7 @@
 ## How to run your sample 101
 
 --------
-**Step 1:** Install all necessary tools described here: [JULIETFLOW.md](JULIETFLOW.md#dependencies)
+**Step 1:** Install all necessary tools described here: (JULIETFLOW.md#dependencies)
 
 > [INSTALL.md](INSTALL.md) shows the simple commands to clone, cmake,
 >  and make the necessary executables from source.
@@ -16,7 +16,7 @@ ccs --richQVs m54000_170101_050702_3545456.subreadset.xml yourdata.ccs.bam
 ```
 
 --------
-**Step 3:** Filter CCS2 reads as described here: [JULIETFLOW.md](JULIETFLOW.md#filtering)
+**Step 3:** Filter CCS2 reads as described here: (JULIETFLOW.md#filtering)
 
 > To ensure a uniform noise profile, we filter to 99% predicted
 >  accuracy. Barcode demultiplexing might be done.
@@ -28,7 +28,7 @@ ccs --richQVs m54000_170101_050702_3545456.subreadset.xml yourdata.ccs.bam
 >  sequence so they might be easily related to known variants.
 
 --------
-**Step 5:** Create a target-config for your gene as described here: [JULIET.md](JULIET.md#target-configuration)
+**Step 5:** Create a target-config for your gene as described here: (JULIET.md#target-configuration)
 
 > The target-config specifies Open Reading and how specific amino
 >  acids should be labeled in output results (ie Disease Resistant
