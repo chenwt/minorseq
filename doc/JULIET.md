@@ -135,3 +135,10 @@ Use `--region` to specify the begin-end window to subset the target config.
 Without the `--richQVs` information, the number of false-positive calls might
 be higher, as *juliet* is missing information to filter actual heteroduplexes in
 the sample provided.
+
+### Why do some variants have no associated haploypes?
+Scenarios as in the following figure may happen. In this case, all reads
+associated to that variant contain a frame-shift deletion and
+thus won't be reported.
+
+<img src="img/juliet_abl-nohaplotype.png" width="500px">
