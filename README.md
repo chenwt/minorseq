@@ -13,6 +13,7 @@
    - [Reduce Alignment `fuse`](doc/FUSE.md)
    - [Swap Alignment Reference `cleric`](doc/CLERIC.md)
    - [Minor Variant Pipeline `julietflow`](doc/JULIETFLOW.md)
+ - [Running your sample 101](doc/INTRODUCTION.md)
  - [Developer environment](doc/DEVELOPER.md)
  - [PacBio open source license](LICENSE)
 
