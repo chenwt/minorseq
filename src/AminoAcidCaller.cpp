@@ -428,7 +428,7 @@ void AminoAcidCaller::CallVariants()
                 };
 
                 // Read does not cover codon
-                if (bi + 2 > static_cast<int>(row.size()) || bi < 0) continue;
+                if (bi + 2 >= static_cast<int>(row.size()) || bi < 0) continue;
                 if (CodonContains(' ')) continue;
 
                 // Read has a deletion
