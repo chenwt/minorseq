@@ -134,8 +134,16 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const std::string 
             Red colored are nucleotides of the codon and in bold the wild type.<br/>
             <br/>
             Deletions and insertions are being ignored in this version.<br/>
-            <br/>
-            This software is for research only and has not been clinically validated!</p>
+            <br/>)";
+    if (numHaplotypes > 0) {
+        out << R"(The row-wise variant calls are "transposed" onto the per column haplotypes.<br/>
+            For each variant, the haplotype shows a colored box, wild type is represented by plain dark gray.<br/>
+            A color gradiant helps to distinguish between columns.<br/>
+            Haplotypes are sorted in descending order by their relative abundance in percent.<br/>
+            Haplotypes are assigned a single or combination of letters for documentation purposes.<br/>
+            Haplotypes are phased across genes.<br/><br/>)";
+    }
+    out << R"(This software is for research only and has not been clinically validated!</p>
             </details>)"
         << std::endl;
 
@@ -156,9 +164,11 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const std::string 
         }
         out << R"(<tr>
                 <th colspan=")"
-            << (8 + numHaplotypes) << R"(">)" << strip(gene["name"]) << R"(</th>
-                </tr>
-                <tr>
+            << 8 << R"(">)" << strip(gene["name"]) << "</th>";
+        if (numHaplotypes > 0)
+            out << R"(<th colspan=")" << (numHaplotypes) << R"(">Haplotypes %</th>
+                </tr>)";
+        out << R"(<tr>
                 <th colspan="3">)";
         if (referenceName.empty()) out << "unknown";
         if (referenceName.size() > 11)
@@ -166,9 +176,10 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const std::string 
         else
             out << referenceName;
         out << R"(</th>
-                <th colspan="5">Sample</th>)";
-        if (numHaplotypes > 0) {
-            out << R"(<th colspan=")" << numHaplotypes << R"(">Haplotypes %</th>)";
+                <th colspan="5">Sample Variants</th>)";
+        for (int hap = 0; hap < numHaplotypes; ++hap) {
+            out << R"(<th>)" << strip(j["haplotypes"][hap]["name"]);
+            out << "</th>";
         }
         out << R"(
                 </tr>

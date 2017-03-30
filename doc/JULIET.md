@@ -11,20 +11,30 @@ Install the minorseq suite and one of the binaries is called `juliet`.
 
 ## Input data
 *Juliet* operates on aligned CCS records in the BAM format.
-Reads should be created with [CCS2](../PBCCS.md).
+Reads should be created with [CCS2](https://github.com/PacificBiosciences/unanimity/blob/master/doc/PBCCS.md)
+using the `--richQVs` option.
 BAM files have to PacBio-compliant, meaning, cigar `M` is forbidden.
 *Juliet* currently does not demultiplex barcoded data,
 provide one BAM per barcode.
 
 ## Scope
 Current scope of *Juliet* is identification of codon-wise variants in coding
-regions. Phasing of variants is work in progress.
+regions. A first version of variant phasing is available. Insertion and
+deletion variants are currently being ignored; support will be added in a
+future version.
 
 ## Output
-*Juliet* provides a JSON and HTML file. The JSON file contains for each gene
-the variant positions. Each variant position consists of the reference codon,
-reference aminoacid, relative aminoacid position in the gene, the mutated codon
-and aminoacid, the coverage, possible annotated drug resistance mutations, and
+*Juliet* provides a JSON and/or HTML file:
+```
+$ juliet data.align.bam patientZero.html
+$ juliet data.align.bam patientZero.json
+$ juliet data.align.bam patientZero.html patientZero.json
+```
+
+The JSON file contains, for each gene, the variant positions.
+Each variant position consists of the reference codon, reference aminoacid,
+relative aminoacid position in the gene, the mutated codon and aminoacid,
+the coverage, possible annotated drug resistance mutations, and
 counts of the multiple-sequence alignment of the -3 to +3 context positions.
 
 The HTML page is a 1:1 conversion of the JSON file and contains the identical
@@ -33,7 +43,8 @@ information, only human-readable.
 <img src="img/juliet_hiv-context.png" width="500px">
 
 ## Target configuration
-*Juliet* is a multi purpose minor variant caller with preinstalled configurations.
+*Juliet* is a multi-purpose minor variant caller with preinstalled
+configurations to ease batch applications and allow immediate reproducibility.
 A target configuration may contain multiple coding regions and optional drug
 resistance mutation positions.
 
@@ -53,7 +64,8 @@ begin and end, the name of the gene, and a list of drug resistent mutations
 drms. Each DRM consists of its name and the positions it targets. The drms
 field is optional. If provided, the referenceSequence is being used to call
 mutations, otherwise it will be tested against the major codon. All indices are
-with respect to the provided alignment space, 1-based.
+with respect to the provided alignment space, 1-based, begin-inclusive and
+end-exclusive `[)`.
 Save following as hiv.json:
 ```
 {
@@ -118,3 +130,8 @@ reading frames are possible.
 
 ### Can I call a smaller window from a target config?
 Use `--region` to specify the begin-end window to subset the target config.
+
+### What if I don't use --richQVs generating CCS reads?
+Without the `--richQVs` information, the number of false-positive calls might
+be higher, as *juliet* is missing information to filter actual heteroduplexes in
+the sample provided.

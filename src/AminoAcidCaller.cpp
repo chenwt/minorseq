@@ -239,7 +239,7 @@ void AminoAcidCaller::PhaseVariants()
                 for (size_t a = 0; a < hw->Codons.size(); ++a) {
                     double p2 = transitions_.Transition(hn->Codons.at(a), hw->Codons.at(a));
                     if (verbose_) std::cerr << std::setw(15) << p2;
-                    p *= p2;
+                    if (p2 > 0) p *= p2;
                 }
                 if (verbose_) std::cerr << " = " << std::setw(15) << p << std::endl;
                 probabilities.push_back(p);
@@ -257,10 +257,13 @@ void AminoAcidCaller::PhaseVariants()
             double sumPW =
                 std::accumulate(probabilityWeight.cbegin(), probabilityWeight.cend(), 0.0);
 
-            for (size_t i = 0; i < generators.size(); ++i)
-                generators[i]->SoftCollapses += 1.0 * hw->Size() * probabilityWeight[i] / sumPW;
+            for (size_t i = 0; i < generators.size(); ++i) {
+                const auto softp = 1.0 * hw->Size() * probabilityWeight[i] / sumPW;
+                if (verbose_) std::cerr << softp << "\t";
+                generators[i]->SoftCollapses += softp;
+            }
 
-            if (verbose_) std::cerr << std::endl;
+            if (verbose_) std::cerr << std::endl << std::endl;
         }
     }
 
@@ -270,10 +273,23 @@ void AminoAcidCaller::PhaseVariants()
         counts += hn->Size();
     if (verbose_) std::cerr << "#Counts: " << counts << std::endl;
 
+    // Sort generators descending
+    std::stable_sort(generators.begin(), generators.end(),
+                     [](const std::shared_ptr<Haplotype>& a, const std::shared_ptr<Haplotype>& b) {
+                         return a->Size() >= b->Size();
+                     });
+
+    static constexpr int alphabetSize = 26;
+    bool doubleName = generators.size() > alphabetSize;
     for (size_t genNumber = 0; genNumber < generators.size(); ++genNumber) {
         auto& hn = generators.at(genNumber);
         hn->GlobalFrequency = hn->Size() / counts;
-        hn->Name = std::string(1, 'A' + genNumber);
+        if (doubleName) {
+            hn->Name = std::string(1, 'A' + genNumber / alphabetSize) +
+                       std::string(1, 'a' + genNumber % alphabetSize);
+        } else {
+            hn->Name = std::string(1, 'A' + genNumber);
+        }
         if (verbose_) std::cerr << hn->GlobalFrequency << "\t" << hn->Size() << "\t";
         size_t numCodons = hn->Codons.size();
         for (size_t i = 0; i < numCodons; ++i) {
@@ -450,8 +466,6 @@ void AminoAcidCaller::CallVariants()
             }
 
             for (const auto& codon_counts : codons) {
-                if (AAT::FromCodon.at(codon_counts.first) == curVariantPosition->refAminoAcid)
-                    continue;
                 double p =
                     (Statistics::Fisher::fisher_exact_tiss(
                          codon_counts.second, coverage,
