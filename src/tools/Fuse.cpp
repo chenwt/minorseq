@@ -69,6 +69,7 @@ Fuse::Fuse(const std::vector<Data::ArrayRead>& arrayReads)
 
 std::string Fuse::CreateConsensus(const std::vector<Data::ArrayRead>& arrayReads) const
 {
+    if (arrayReads.empty()) throw std::runtime_error("Empty input. Could not find records.");
     Data::MSAByColumn msa(arrayReads);
 
     auto posInsCov = CollectInsertions(msa);
