@@ -62,7 +62,7 @@ static int Runner(const PacBio::CLI::Results& options)
     // Parse options
     FuseSettings settings(options);
 
-    Fuse fuse(settings.InputFile);
+    Fuse fuse(settings.InputFile, settings.MinCoverage);
 
     auto outputFile = settings.OutputFile;
     const bool isXml = Utility::FileExtension(outputFile) == "xml";

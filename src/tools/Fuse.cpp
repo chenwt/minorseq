@@ -57,7 +57,8 @@
 namespace PacBio {
 namespace Fuse {
 
-Fuse::Fuse(const std::string& ccsInput)
+Fuse::Fuse(const std::string& ccsInput, int minCoverage)
+    : minCoverage_(minCoverage), minInsertionCoverage_(minCoverage)
 {
     const auto arrayReads = FetchAlignedReads(ccsInput);
     consensusSequence_ = CreateConsensus(arrayReads);
