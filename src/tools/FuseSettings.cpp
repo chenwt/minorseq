@@ -45,8 +45,20 @@
 
 namespace PacBio {
 namespace Fuse {
+namespace OptionNames {
+using PlainOption = Data::PlainOption;
+// clang-format off
+const PlainOption MinCoverage{
+    "min_coverage",
+    { "min-coverage"},
+    "Minimal Coverage",
+    "Minimal coverage to call a position.",
+    CLI::Option::IntType(50)
+};
+}
 
 FuseSettings::FuseSettings(const PacBio::CLI::Results& options)
+    : MinCoverage(options[OptionNames::MinCoverage])
 {
     const size_t numArgs = options.PositionalArguments().size();
     if (numArgs != 2) throw std::runtime_error("Fuse needs one input and one output argument!");
@@ -90,6 +102,11 @@ PacBio::CLI::Interface FuseSettings::CreateCLI()
     i.AddPositionalArguments({
         {"source", "Source BAM or DataSet XML file.", "FILE"},
         {"output", "Output fasta file.", "FILE"}
+    });
+
+    i.AddOptions(
+    {
+        OptionNames::MinCoverage
     });
 
     const std::string id = "minorseq.tasks.fuse";

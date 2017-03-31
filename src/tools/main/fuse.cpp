@@ -62,15 +62,20 @@ static int Runner(const PacBio::CLI::Results& options)
     // Parse options
     FuseSettings settings(options);
 
-    Fuse fuse(settings.InputFile);
+    Fuse fuse(settings.InputFile, settings.MinCoverage);
 
     auto outputFile = settings.OutputFile;
     const bool isXml = Utility::FileExtension(outputFile) == "xml";
     if (isXml) boost::ireplace_all(outputFile, ".referenceset.xml", ".fasta");
 
     std::ofstream outputFastaStream(outputFile);
+    const auto consensus = fuse.ConsensusSequence();
+    if (consensus.empty()) {
+        std::cerr << "ERROR: Insufficient coverage of < 50x" << std::endl;
+        return EXIT_FAILURE;
+    }
     outputFastaStream << ">CONSENSUS" << std::endl;
-    outputFastaStream << fuse.ConsensusSequence() << std::endl;
+    outputFastaStream << consensus << std::endl;
 
 #if 0
     // Write Dataset

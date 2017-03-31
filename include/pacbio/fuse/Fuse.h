@@ -50,7 +50,7 @@ namespace Fuse {
 class Fuse
 {
 public:
-    Fuse(const std::string& ccsInput);
+    Fuse(const std::string& ccsInput, int minCoverage);
     Fuse(const std::vector<Data::ArrayRead>& arrayReads);
 
 public:
@@ -65,8 +65,8 @@ private:
         std::map<int, std::pair<std::string, int>>* posInsCov, int windowSize = 20) const;
 
 private:
-    static constexpr int minCoverage_ = 50;
-    static constexpr int minInsertionCoverage_ = 50;
+    const int minCoverage_ = 50;
+    const int minInsertionCoverage_ = 50;
 
     std::string consensusSequence_;
 };
