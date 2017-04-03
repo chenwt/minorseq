@@ -35,6 +35,11 @@
 
 `julietflow` automatizes the minor variant pipeline.
 
+## Disclaimer
+
+The GitHub version is an "as-is" develop distribution of minorseq and not the
+official release of the software; a coherent git history cannot be guaranteed.
+
 ## Help
 
 Official support is only provided for official and stable

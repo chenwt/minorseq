@@ -74,6 +74,7 @@ AminoAcidCaller::AminoAcidCaller(const std::vector<std::shared_ptr<Data::ArrayRe
     , verbose_(settings.Verbose)
     , mergeOutliers_(settings.MergeOutliers)
     , debug_(settings.Debug)
+    , drmOnly_(settings.DRMOnly)
 {
 
     CallVariants();
@@ -480,9 +481,7 @@ void AminoAcidCaller::CallVariants()
                 std::tie(variableSite, predictorSite) =
                     MeasurePerformance(gene, codon_counts, codonPos, ai, p, coverage);
 
-                if (debug_ ||
-                    (((hasExpectedMinors && variableSite) || !hasExpectedMinors || predictorSite) &&
-                     p < alpha)) {
+                auto StoreVariant = [&]() {
                     VariantGene::VariantPosition::VariantCodon curVariantCodon;
                     curVariantCodon.codon = codon_counts.first;
                     curVariantCodon.frequency = codon_counts.second / static_cast<double>(coverage);
@@ -491,6 +490,20 @@ void AminoAcidCaller::CallVariants()
 
                     curVariantPosition->aminoAcidToCodons[AAT::FromCodon.at(codon_counts.first)]
                         .push_back(curVariantCodon);
+                };
+                if (debug_) {
+                    StoreVariant();
+                } else if (p < alpha) {
+                    if (drmOnly_) {
+                        if (predictorSite) StoreVariant();
+                    } else {
+                        if (predictorSite)
+                            StoreVariant();
+                        else if (hasExpectedMinors && variableSite)
+                            StoreVariant();
+                        else if (!hasExpectedMinors)
+                            StoreVariant();
+                    }
                 }
             }
             if (!curVariantPosition->aminoAcidToCodons.empty()) {
