@@ -102,6 +102,7 @@ private:
     const bool verbose_;
     const bool mergeOutliers_;
     const bool debug_;
+    const bool drmOnly_;
 };
 }
 }  // ::PacBio::Juliet
