@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Pacific Biosciences of California, Inc.
+// Copyright (c) 2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,36 +35,17 @@
 
 // Author: Armin Töpfer
 
-#pragma once
-
-#include <pbcopper/json/JSON.h>
-#include <fstream>
-
-#include <pacbio/data/ArrayRead.h>
-#include <pacbio/juliet/TargetConfig.h>
+#include <pacbio/Version.h>
 
 namespace PacBio {
-namespace Juliet {
+std::string MinorseqVersion() { return MSVersion; }
 
-class JsonToHtml
+std::string MinorseqGitSha1() { return MSGitSha1; }
+
+std::string MinorseqChangelog()
 {
-public:
-    /// Generate HTML output of variant amino acids
-    static void HTML(std::ostream& out, const JSON::Json& j, const TargetConfig& config,
-                     bool onlyKnownDRMs, std::string filename, std::string parameters);
-
-private:
-    static void DRMView(std::ostream& out, const JSON::Json& j, const TargetConfig& config,
-                        bool onlyKnownDRMs);
-    /// Generate HTML output of variant amino acids
-    static void Discovery(std::ostream& out, const JSON::Json& j, const TargetConfig& config,
-                          bool onlyKnownDRMs, int numHaplotypes);
-    static std::string strip(const std::string& input)
-    {
-        std::string s = input;
-        s.erase(std::remove(s.begin(), s.end(), '\"'), s.end());
-        return s;
-    };
-};
+    std::string changelog(MSChangelog);
+    std::replace(changelog.begin(), changelog.end(), ';', '\n');
+    return changelog;
 }
-}  //::PacBio::Juliet
+}  // ::PacBio

@@ -31,16 +31,32 @@ $ juliet data.align.bam patientZero.json
 $ juliet data.align.bam patientZero.html patientZero.json
 ```
 
-The JSON file contains, for each gene, the variant positions.
+The HTML page is a 1:1 conversion of the JSON file and contains the identical
+information, only human-readable.
+
+The HTML file contains three sections:
+ 1. Input data
+ 2. Variant Discovery
+ 3. Drug Summaries
+
+### Input data
+This section summarizes the data provided, the exact call for *juliet*,
+and version of *juliet* for traceability purposes
+
+### Variant Discovery
+For each gene, there is one overview table.
+Each row represents a variant position.
 Each variant position consists of the reference codon, reference aminoacid,
 relative aminoacid position in the gene, the mutated codon and aminoacid,
 the coverage, possible annotated drug resistance mutations, and
 counts of the multiple-sequence alignment of the -3 to +3 context positions.
 
-The HTML page is a 1:1 conversion of the JSON file and contains the identical
-information, only human-readable.
-
 <img src="img/juliet_hiv-context.png" width="500px">
+
+### Drug Summaries
+Another view of the same results is visualization by annotated drug mutations:
+
+<img src="img/juliet_hiv-drug.png" width="400px">
 
 ## Target configuration
 *Juliet* is a multi-purpose minor variant caller with preinstalled
@@ -75,7 +91,7 @@ Save following as hiv.json:
             "drms": [
                 {
                     "name": "fancy drug",
-                    "positions": [ 41 ]
+                    "positions": [ "M41L" ]
                 }
             ],
             "end": 2700,
@@ -94,6 +110,20 @@ $ juliet -c hiv.json data.align.bam patientZero.html
 
 <img src="img/juliet_hiv-own.png" width="500px">
 
+Valid formats for `drms/positions`
+
+    "103"     <- only the reference position
+    "M130"    <- reference amino acid and ref pos
+    "M103L"   <- ref aa, ref pos, mutated aa
+    "M103LKA" <- ref aa, ref pos, list of possible mutated aas
+    "103L"    <- ref pos and mut aa
+    "103LG"   <- ref pos and list mut aas
+
+Missing amino acids are processed as wildcard `*`
+
+Example
+
+    { "name": "ATV/r", "positions": [ "V32I", "L33", "46IL", "I54VTALM", "V82ATFS", "84" ] }
 
 ### No target config
 If no target config has been specific, it is recommended to at least specify the

@@ -119,13 +119,14 @@ int AminoAcidCaller::CountNumberOfTests(const std::vector<TargetGene>& genes) co
 
 std::string AminoAcidCaller::FindDRMs(const std::string& geneName,
                                       const std::vector<TargetGene>& genes,
-                                      const int position) const
+                                      const DMutation curDRM) const
 {
     std::string drmSummary;
     for (const auto& gene : genes) {
         if (geneName == gene.name) {
             for (const auto& drms : gene.drms) {
-                if (std::find(drms.positions.cbegin(), drms.positions.cend(), position) !=
+
+                if (std::find(drms.positions.cbegin(), drms.positions.cend(), curDRM) !=
                     drms.positions.cend()) {
                     if (!drmSummary.empty()) drmSummary += " + ";
                     drmSummary += drms.name;
@@ -482,14 +483,16 @@ void AminoAcidCaller::CallVariants()
                     MeasurePerformance(gene, codon_counts, codonPos, ai, p, coverage);
 
                 auto StoreVariant = [&]() {
+                    const char curAA = AAT::FromCodon.at(codon_counts.first);
                     VariantGene::VariantPosition::VariantCodon curVariantCodon;
                     curVariantCodon.codon = codon_counts.first;
                     curVariantCodon.frequency = codon_counts.second / static_cast<double>(coverage);
                     curVariantCodon.pValue = p;
-                    curVariantCodon.knownDRM = FindDRMs(geneName, genes, codonPos);
+                    curVariantCodon.knownDRM =
+                        FindDRMs(geneName, genes,
+                                 DMutation(curVariantPosition->refAminoAcid, codonPos, curAA));
 
-                    curVariantPosition->aminoAcidToCodons[AAT::FromCodon.at(codon_counts.first)]
-                        .push_back(curVariantCodon);
+                    curVariantPosition->aminoAcidToCodons[curAA].push_back(curVariantCodon);
                 };
                 if (debug_) {
                     StoreVariant();
