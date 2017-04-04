@@ -66,6 +66,8 @@ MSAByColumn::MSAByColumn(const MSAByRow& msaRows)
                 case '-':
                 case 'N':
                     counts.at(localPos)[c]++;
+                    ++localPos;
+                    break;
                 case ' ':
                     ++localPos;
                     break;
