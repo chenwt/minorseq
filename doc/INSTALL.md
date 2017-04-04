@@ -8,7 +8,7 @@
 
 Building from scratch requires system-wide installed boost (>=1.58.0),
 cmake (3.2), and a c++11 compiler (>=gcc-4.9, clang). `ninja` or
-`make` is used to build ( ninja is faster than make).
+`make` is used to build (ninja is faster than make).
 
 # Build with testing
 
