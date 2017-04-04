@@ -121,22 +121,20 @@ void Cleric::Convert(std::string outputFile)
     if (isXml) boost::replace_last(outputFile, ".consensusalignmentset.xml", ".bam");
 
     // Write Dataset
-    {
-        using BAM::DataSet;
-        const std::string metatype = "PacBio.AlignmentFile.AlignmentBamFile";
-        DataSet clericSet(DataSet::TypeEnum::ALIGNMENT);
-        BAM::ExternalResource resource(metatype, outputFile);
+    using BAM::DataSet;
+    const std::string metatype = "PacBio.AlignmentFile.AlignmentBamFile";
+    DataSet clericSet(DataSet::TypeEnum::ALIGNMENT);
+    BAM::ExternalResource resource(metatype, outputFile);
 
-        BAM::FileIndex pbi("PacBio.Index.PacBioIndex", outputFile + ".pbi");
-        resource.FileIndices().Add(pbi);
+    BAM::FileIndex pbi("PacBio.Index.PacBioIndex", outputFile + ".pbi");
+    resource.FileIndices().Add(pbi);
 
-        clericSet.ExternalResources().Add(resource);
-        clericSet.Name(clericSet.TimeStampedName());
+    clericSet.ExternalResources().Add(resource);
+    clericSet.Name(clericSet.TimeStampedName());
 
-        const auto outputPrefix = outputFile.substr(0, outputFile.size() - 4);
-        std::ofstream clericDSout(outputPrefix + ".consensusalignmentset.xml");
-        clericSet.SaveToStream(clericDSout);
-    }
+    const auto outputPrefix = outputFile.substr(0, outputFile.size() - 4);
+    std::ofstream clericDSout(outputPrefix + ".consensusalignmentset.xml");
+    clericSet.SaveToStream(clericDSout);
 
     // Convert and write to BAM
     std::unique_ptr<BAM::BamWriter> out(new BAM::BamWriter(outputFile, h));
@@ -494,7 +492,7 @@ void Cleric::Convert(std::string outputFile)
                     new_cigar_state.Type(CigarOperationType::SOFT_CLIP);
                 }
 
-                // have to rewrite CIGAR tuples if (a D and I operations are adjacen) {
+                // have to rewrite CIGAR tuples if, a D and I operations are adjacent
                 // D + I
                 if (old_cigar_state.Type() == CigarOperationType::DELETION &&
                     new_cigar_state.Type() == CigarOperationType::INSERTION) {
@@ -622,9 +620,7 @@ void Cleric::Convert(std::string outputFile)
             else if (left_op.Type() == CigarOperationType::HARD_CLIP && right_op.Type() == CigarOperationType::PADDING) {
                 new_cigar_tuple[i] = CigarOperation(CigarOperationType::HARD_CLIP, left_op.Length());
                 new_cigar_tuple.erase(new_cigar_tuple.begin() + i + 1);
-                // H + S:
-                // } else if (left_op.Type() == CigarOperationType::HARD_CLIP && right_op.Type() == CigarOperationType::SOFT_CLIP) {
-                //    ++i;
+            // H + S:
             } else {
                 ++i;
             }
@@ -692,11 +688,6 @@ void Cleric::Convert(std::string outputFile)
                     CigarOperation(CigarOperationType::HARD_CLIP, right_op.Length());
                 new_cigar_tuple.erase(new_cigar_tuple.begin() + i + 1);
             }
-            // S + H:
-            // } else if (left_op.Type() == CigarOperationType::SOFT_CLIP &&
-            // right_op.Type() == CigarOperationType::HARD_CLIP) {
-            //    //cant_stop = True
-            //    pass
             --i;
         }
 

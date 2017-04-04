@@ -59,12 +59,10 @@ private:
     /// Generate HTML output of variant amino acids
     static void Discovery(std::ostream& out, const JSON::Json& j, const TargetConfig& config,
                           bool onlyKnownDRMs, int numHaplotypes);
-    static std::string strip(const std::string& input)
-    {
-        std::string s = input;
-        s.erase(std::remove(s.begin(), s.end(), '\"'), s.end());
-        return s;
-    };
+
+    static std::string Strip(const std::string& input);
+
+    static void Encode(std::string& data);
 };
 }
 }  //::PacBio::Juliet

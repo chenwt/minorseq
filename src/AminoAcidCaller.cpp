@@ -329,6 +329,48 @@ double AminoAcidCaller::Probability(const std::string& a, const std::string& b)
     return p;
 };
 
+std::pair<bool, bool> AminoAcidCaller::MeasurePerformance(
+    const TargetGene& tg, const std::pair<std::string, int>& codon_counts, const int& codonPos,
+    const int& i, const double& p, const int& coverage, const std::string& geneName,
+    double* truePositives, double* falsePositives, double* falseNegative, double* trueNegative)
+{
+    const char aminoacid = AAT::FromCodon.at(codon_counts.first);
+    auto Predictor = [&tg, &codonPos, &aminoacid, &codon_counts]() {
+        if (!tg.minors.empty()) {
+            for (const auto& minor : tg.minors) {
+                if (codonPos == minor.position && aminoacid == minor.aminoacid[0] &&
+                    codon_counts.first == minor.codon) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+    double relativeCoverage = 1.0 * codon_counts.second / coverage;
+    const bool variableSite = relativeCoverage < 0.8;
+    const bool predictor = Predictor();
+    if (variableSite) {
+        if (predictor) {
+            if (p < alpha)
+                ++*truePositives;
+            else
+                ++*falseNegative;
+        } else {
+            if (p < alpha)
+                ++*falsePositives;
+            else
+                ++*trueNegative;
+        }
+    } else if (predictor) {
+        if (p < alpha)
+            ++*truePositives;
+        else
+            ++*falseNegative;
+    }
+
+    return std::make_pair(variableSite, predictor);
+}
+
 void AminoAcidCaller::CallVariants()
 {
     auto genes = targetConfig_.targetGenes;
@@ -363,46 +405,6 @@ void AminoAcidCaller::CallVariants()
     double falsePositives = 0;
     double falseNegative = 0;
     double trueNegative = 0;
-    auto MeasurePerformance = [&truePositives, &falsePositives, &falseNegative, &trueNegative, this,
-                               &geneName](
-        const TargetGene& tg, const std::pair<std::string, int>& codon_counts, const int& codonPos,
-        const int& i, const double& p, const int& coverage) {
-        const char aminoacid = AAT::FromCodon.at(codon_counts.first);
-        auto Predictor = [&tg, &codonPos, &aminoacid, &codon_counts]() {
-            if (!tg.minors.empty()) {
-                for (const auto& minor : tg.minors) {
-                    if (codonPos == minor.position && aminoacid == minor.aminoacid[0] &&
-                        codon_counts.first == minor.codon) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        };
-        double relativeCoverage = 1.0 * codon_counts.second / coverage;
-        const bool variableSite = relativeCoverage < 0.8;
-        const bool predictor = Predictor();
-        if (variableSite) {
-            if (predictor) {
-                if (p < alpha)
-                    ++truePositives;
-                else
-                    ++falseNegative;
-            } else {
-                if (p < alpha)
-                    ++falsePositives;
-                else
-                    ++trueNegative;
-            }
-        } else if (predictor) {
-            if (p < alpha)
-                ++truePositives;
-            else
-                ++falseNegative;
-        }
-
-        return std::make_pair(variableSite, predictor);
-    };
 
     for (const auto& gene : genes) {
         SetNewGene(gene.begin, gene.name);
@@ -479,10 +481,12 @@ void AminoAcidCaller::CallVariants()
 
                 bool variableSite;
                 bool predictorSite;
-                std::tie(variableSite, predictorSite) =
-                    MeasurePerformance(gene, codon_counts, codonPos, ai, p, coverage);
+                std::tie(variableSite, predictorSite) = MeasurePerformance(
+                    gene, codon_counts, codonPos, ai, p, coverage, geneName, &truePositives,
+                    &falsePositives, &falseNegative, &trueNegative);
 
-                auto StoreVariant = [&]() {
+                auto StoreVariant = [this, &codon_counts, &coverage, &p, &geneName, &genes,
+                                     &curVariantPosition, &codonPos]() {
                     const char curAA = AAT::FromCodon.at(codon_counts.first);
                     VariantGene::VariantPosition::VariantCodon curVariantCodon;
                     curVariantCodon.codon = codon_counts.first;

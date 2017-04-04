@@ -52,8 +52,10 @@ MSAByColumn::MSAByColumn(const MSAByRow& msaRows)
     endPos = msaRows.EndPos - 1;
     counts.resize(msaRows.EndPos - msaRows.BeginPos);
     int pos = msaRows.BeginPos;
-    for (auto& c : counts)
-        c.refPos = pos++;
+    for (auto& c : counts) {
+        c.refPos = pos;
+        ++pos;
+    }
 
     for (const auto& row : msaRows.Rows) {
         int localPos = 0;
@@ -66,6 +68,8 @@ MSAByColumn::MSAByColumn(const MSAByRow& msaRows)
                 case '-':
                 case 'N':
                     counts.at(localPos)[c]++;
+                    ++localPos;
+                    break;
                 case ' ':
                     ++localPos;
                     break;

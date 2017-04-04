@@ -164,51 +164,68 @@ void JsonToHtml::DRMView(std::ostream& out, const JSON::Json& j, const TargetCon
     out << "</table>" << std::endl;
 }
 
+void JsonToHtml::Encode(std::string& data)
+{
+    std::string buffer;
+    buffer.reserve(data.size());
+    for (size_t pos = 0; pos != data.size(); ++pos) {
+        switch (data[pos]) {
+            case '&':
+                buffer.append("&amp;");
+                break;
+            case '\"':
+                buffer.append("&quot;");
+                break;
+            case '\'':
+                buffer.append("&apos;");
+                break;
+            case '<':
+                buffer.append("&lt;");
+                break;
+            case '>':
+                buffer.append("&gt;");
+                break;
+            default:
+                buffer.append(&data[pos], 1);
+                break;
+        }
+    }
+    data.swap(buffer);
+}
+
+std::string JsonToHtml::Strip(const std::string& input)
+{
+    std::string s = input;
+    s.erase(std::remove(s.begin(), s.end(), '\"'), s.end());
+    return s;
+};
+
 void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig& config,
                       bool onlyKnownDRMs, std::string filename, std::string parameters)
 {
-    auto encode = [](std::string& data) {
-        std::string buffer;
-        buffer.reserve(data.size());
-        for (size_t pos = 0; pos != data.size(); ++pos) {
-            switch (data[pos]) {
-                case '&':
-                    buffer.append("&amp;");
-                    break;
-                case '\"':
-                    buffer.append("&quot;");
-                    break;
-                case '\'':
-                    buffer.append("&apos;");
-                    break;
-                case '<':
-                    buffer.append("&lt;");
-                    break;
-                case '>':
-                    buffer.append("&gt;");
-                    break;
-                default:
-                    buffer.append(&data[pos], 1);
-                    break;
-            }
-        }
-        data.swap(buffer);
-    };
-    encode(filename);
-    encode(parameters);
+    Encode(filename);
+    Encode(parameters);
 #if 1
     // Count number of haplotypes
-    int numHaplotypes = 0;
-    for (const auto& gene : j["genes"]) {
-        for (auto& variantPosition : gene["variant_positions"]) {
-            for (auto& variant_amino_acid : variantPosition["variant_amino_acids"]) {
-                for (auto& variant_codons : variant_amino_acid["variant_codons"]) {
-                    numHaplotypes = variant_codons["haplotype_hit"].size();
-                    break;
+    auto CountNumHaplotypes = [&j]() {
+        int i = -1;
+        for (const auto& gene : j["genes"]) {
+            for (auto& variantPosition : gene["variant_positions"]) {
+                for (auto& variant_amino_acid : variantPosition["variant_amino_acids"]) {
+                    for (auto& variant_codons : variant_amino_acid["variant_codons"]) {
+                        const int tmp = variant_codons["haplotype_hit"].size();
+                        if (i == -1)
+                            i = tmp;
+                        else if (i != tmp)
+                            throw std::runtime_error("Different number of haplotypes.");
+                    }
                 }
             }
         }
-    }
+        return i;
+    };
+
+    int numHaplotypes = CountNumHaplotypes();
 
     out << "<!-- Juliet Minor Variant Summary by Dr. Armin Toepfer (Pacific Biosciences) -->"
         << std::endl
@@ -537,7 +554,7 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
         }
         out << R"(<tr>
                 <th colspan=")"
-            << 8 << R"(">)" << strip(gene["name"]) << "</th>";
+            << 8 << R"(">)" << Strip(gene["name"]) << "</th>";
         if (numHaplotypes > 0)
             out << R"(<th colspan=")" << (numHaplotypes) << R"(">Haplotypes %</th>
                 </tr>)";
@@ -551,7 +568,7 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
         out << R"(</th>
                 <th colspan="5">Sample Variants</th>)";
         for (int hap = 0; hap < numHaplotypes; ++hap) {
-            out << R"(<th>)" << strip(j["haplotypes"][hap]["name"]);
+            out << R"(<th>)" << Strip(j["haplotypes"][hap]["name"]);
             out << "</th>";
         }
         out << R"(
@@ -574,24 +591,24 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
 
         for (auto& variantPosition : gene["variant_positions"]) {
             std::stringstream line;
-            const std::string refCodon = strip(variantPosition["ref_codon"]);
+            const std::string refCodon = Strip(variantPosition["ref_codon"]);
             line << "<tr class=\"var\">\n"
                  << "<td>" << refCodon[0] << " " << refCodon[1] << " " << refCodon[2] << "</td>\n"
-                 << "<td>" << strip(variantPosition["ref_amino_acid"]) << "</td>\n"
+                 << "<td>" << Strip(variantPosition["ref_amino_acid"]) << "</td>\n"
                  << "<td>" << variantPosition["ref_position"] << "</td>";
             std::string prefix = line.str();
             line.str("");
             bool first = true;
             for (auto& variant_amino_acid : variantPosition["variant_amino_acids"]) {
                 for (auto& variant_codons : variant_amino_acid["variant_codons"]) {
-                    bool mutated[]{refCodon[0] != strip(variant_codons["codon"])[0],
-                                   refCodon[1] != strip(variant_codons["codon"])[1],
-                                   refCodon[2] != strip(variant_codons["codon"])[2]};
-                    line << "<td>" << strip(variant_amino_acid["amino_acid"]) << "</td>";
+                    bool mutated[]{refCodon[0] != Strip(variant_codons["codon"])[0],
+                                   refCodon[1] != Strip(variant_codons["codon"])[1],
+                                   refCodon[2] != Strip(variant_codons["codon"])[2]};
+                    line << "<td>" << Strip(variant_amino_acid["amino_acid"]) << "</td>";
                     line << "<td>";
                     for (int j = 0; j < 3; ++j) {
                         if (mutated[j]) line << "<b style=\"color:#B50A36; font-weight:normal\">";
-                        line << strip(variant_codons["codon"])[j] << " ";
+                        line << Strip(variant_codons["codon"])[j] << " ";
                         if (mutated[j]) line << "</b>";
                     }
 
@@ -612,7 +629,7 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
                         out << "<tr class=\"var\"><td></td><td></td><td></td>" << line.str()
                             << "<td></td>";
                     }
-                    out << "<td>" << strip(variant_codons["known_drm"]) << "</td>";
+                    out << "<td>" << Strip(variant_codons["known_drm"]) << "</td>";
                     static std::vector<std::string> colors = {"#b50937", "#b22450", "#b2385e",
                                                               "#b24f6e", "#b2647c", "#b27487",
                                                               "#b28391", "#b2909b", "#b29ea5"};
@@ -658,10 +675,10 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
                             out << "<td style=\"";
                             if (relPos >= 0 && relPos < 3 &&
                                 j ==
-                                    Data::NucleotideToTag(strip(variant_codons["codon"])[relPos])) {
+                                    Data::NucleotideToTag(Strip(variant_codons["codon"])[relPos])) {
                                 out << "color:#B50A36;";
                             }
-                            if (j == Data::NucleotideToTag(strip(column["wt"])[0]))
+                            if (j == Data::NucleotideToTag(Strip(column["wt"])[0]))
                                 out << "font-weight:bold;";
                             out << "\">" << column[std::string(1, Data::TagToNucleotide(j))]
                                 << "</td>" << std::endl;

@@ -61,6 +61,19 @@ static void ParsePositionalArgs(const std::vector<std::string>& args, std::strin
 {
     using BAM::DataSet;
 
+    auto SetBamInput = [&bamPath, &fromReferenceName](const DataSet& ds) {
+        if (!bamPath->empty()) throw std::runtime_error("Only one BAM input is allowed!");
+
+        const auto bamfiles = ds.BamFiles();
+        if (bamfiles.size() != 1) throw std::runtime_error("Only one bam file is allowed!");
+
+        const auto header = bamfiles.front().Header();
+        *bamPath = bamfiles.front().Filename();
+        if (header.Sequences().empty())
+            throw std::runtime_error("Could not find reference sequence name");
+        *fromReferenceName = header.Sequences().begin()->Name();
+    };
+
     std::vector<std::string> fastaPaths;
     for (const auto& i : args) {
         const bool fileExist = PacBio::Utility::FileExists(i);
@@ -73,22 +86,13 @@ static void ParsePositionalArgs(const std::vector<std::string>& args, std::strin
             continue;
         }
         DataSet ds(i);
+
         switch (ds.Type()) {
             case BAM::DataSet::TypeEnum::SUBREAD:
             case BAM::DataSet::TypeEnum::ALIGNMENT:
-            case BAM::DataSet::TypeEnum::CONSENSUS_ALIGNMENT: {
-                if (!bamPath->empty()) throw std::runtime_error("Only one BAM input is allowed!");
-
-                const auto bamfiles = ds.BamFiles();
-                if (bamfiles.size() != 1) throw std::runtime_error("Only one bam file is allowed!");
-
-                const auto header = bamfiles.front().Header();
-                *bamPath = bamfiles.front().Filename();
-                if (header.Sequences().empty())
-                    throw std::runtime_error("Could not find reference sequence name");
-                *fromReferenceName = header.Sequences().begin()->Name();
+            case BAM::DataSet::TypeEnum::CONSENSUS_ALIGNMENT:
+                SetBamInput(ds);
                 break;
-            }
             case BAM::DataSet::TypeEnum::REFERENCE:
                 fastaPaths.push_back(i);
                 break;
