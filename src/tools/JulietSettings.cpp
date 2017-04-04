@@ -219,7 +219,6 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
         }
     });
 
-    // TODO(atoepfer) This is incorrect, need to find out json, txt, and html output types
     tcTask.OutputFileTypes({
         {
             "html_report",
