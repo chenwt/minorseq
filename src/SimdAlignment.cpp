@@ -71,9 +71,10 @@ PariwiseAlignmentFasta SimdNeedleWunschAlignment(const std::string& target,
         for (size_t i = 0; i < c.Length(); ++i) {
             transcript += c.Char();
 
+            if (c.Char() == '=') assert(target.at(tgtPos) == query.at(qryPos));
+
             switch (c.Char()) {
                 case '=':
-                    assert(target.at(tgtPos) == query.at(qryPos));
                 case 'M':
                 case 'X':
                     refAlign += target.at(tgtPos++);
