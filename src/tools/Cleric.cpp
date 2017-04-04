@@ -121,22 +121,20 @@ void Cleric::Convert(std::string outputFile)
     if (isXml) boost::replace_last(outputFile, ".consensusalignmentset.xml", ".bam");
 
     // Write Dataset
-    {
-        using BAM::DataSet;
-        const std::string metatype = "PacBio.AlignmentFile.AlignmentBamFile";
-        DataSet clericSet(DataSet::TypeEnum::ALIGNMENT);
-        BAM::ExternalResource resource(metatype, outputFile);
+    using BAM::DataSet;
+    const std::string metatype = "PacBio.AlignmentFile.AlignmentBamFile";
+    DataSet clericSet(DataSet::TypeEnum::ALIGNMENT);
+    BAM::ExternalResource resource(metatype, outputFile);
 
-        BAM::FileIndex pbi("PacBio.Index.PacBioIndex", outputFile + ".pbi");
-        resource.FileIndices().Add(pbi);
+    BAM::FileIndex pbi("PacBio.Index.PacBioIndex", outputFile + ".pbi");
+    resource.FileIndices().Add(pbi);
 
-        clericSet.ExternalResources().Add(resource);
-        clericSet.Name(clericSet.TimeStampedName());
+    clericSet.ExternalResources().Add(resource);
+    clericSet.Name(clericSet.TimeStampedName());
 
-        const auto outputPrefix = outputFile.substr(0, outputFile.size() - 4);
-        std::ofstream clericDSout(outputPrefix + ".consensusalignmentset.xml");
-        clericSet.SaveToStream(clericDSout);
-    }
+    const auto outputPrefix = outputFile.substr(0, outputFile.size() - 4);
+    std::ofstream clericDSout(outputPrefix + ".consensusalignmentset.xml");
+    clericSet.SaveToStream(clericDSout);
 
     // Convert and write to BAM
     std::unique_ptr<BAM::BamWriter> out(new BAM::BamWriter(outputFile, h));
