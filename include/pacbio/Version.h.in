@@ -50,17 +50,10 @@ constexpr size_t MSVersionMinor = @MINORSEQ_VERSION_MINOR@;
 constexpr size_t MSVersionPatch = @MINORSEQ_VERSION_PATCH@;
 }
 
-std::string MinorseqVersion()
-{ return MSVersion; }
+std::string MinorseqVersion();
 
-std::string MinorseqGitSha1()
-{ return MSGitSha1; }
+std::string MinorseqGitSha1();
 
-std::string MinorseqChangelog()
-{
-    std::string changelog(MSChangelog);
-    std::replace(changelog.begin(), changelog.end(), ';', '\n');
-    return changelog;
-}
+std::string MinorseqChangelog();
 
 } // ::PacBio

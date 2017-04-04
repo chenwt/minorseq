@@ -3,7 +3,7 @@
 ##############################################
 
 cmake_policy(SET CMP0048 NEW)
-project(MINORSEQ VERSION 1.1.1 LANGUAGES CXX C)
+project(MINORSEQ VERSION 1.2.0 LANGUAGES CXX C)
 cmake_minimum_required(VERSION 3.2)
 
 set(ROOT_PROJECT_NAME ${PROJECT_NAME} CACHE STRING "root project name")

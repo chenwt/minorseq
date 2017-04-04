@@ -116,7 +116,8 @@ const PlainOption Debug{
 }  // namespace OptionNames
 
 JulietSettings::JulietSettings(const PacBio::CLI::Results& options)
-    : InputFiles(options.PositionalArguments())
+    : CLI(options.InputCommandLine())
+    , InputFiles(options.PositionalArguments())
     , TargetConfigUser(std::forward<std::string>(options[OptionNames::TargetConfig]))
     , DRMOnly(options[OptionNames::DRMOnly])
     , MergeOutliers(options[OptionNames::MergeOutliers])

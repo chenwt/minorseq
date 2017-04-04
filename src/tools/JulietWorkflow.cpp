@@ -159,8 +159,8 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
 
     if (!outputHtml.empty()) {
         std::ofstream htmlStream(outputHtml);
-        JsonToHtml::HTML(htmlStream, json, settings.TargetConfigUser.referenceName,
-                         settings.DRMOnly, settings.Details);
+        JsonToHtml::HTML(htmlStream, json, settings.TargetConfigUser, settings.DRMOnly, bamInput,
+                         settings.CLI);
     }
 
     // Store msa + p-values
