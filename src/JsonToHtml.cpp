@@ -198,13 +198,22 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
     encode(parameters);
 #if 1
     // Count number of haplotypes
-    auto CountNumHaplotypes = [&j]() -> int {
-        for (const auto& gene : j["genes"])
-            for (auto& variantPosition : gene["variant_positions"])
-                for (auto& variant_amino_acid : variantPosition["variant_amino_acids"])
-                    for (auto& variant_codons : variant_amino_acid["variant_codons"])
-                        return variant_codons["haplotype_hit"].size();
-        return 0;
+    auto CountNumHaplotypes = [&j]() {
+        int i = -1;
+        for (const auto& gene : j["genes"]) {
+            for (auto& variantPosition : gene["variant_positions"]) {
+                for (auto& variant_amino_acid : variantPosition["variant_amino_acids"]) {
+                    for (auto& variant_codons : variant_amino_acid["variant_codons"]) {
+                        const int tmp = variant_codons["haplotype_hit"].size();
+                        if (i == -1)
+                            i = tmp;
+                        else if (i != tmp)
+                            throw std::runtime_error("Different number of haplotypes.");
+                    }
+                }
+            }
+        }
+        return i;
     };
 
     int numHaplotypes = CountNumHaplotypes();
