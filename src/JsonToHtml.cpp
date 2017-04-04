@@ -198,17 +198,16 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
     encode(parameters);
 #if 1
     // Count number of haplotypes
-    int numHaplotypes = 0;
-    for (const auto& gene : j["genes"]) {
-        for (auto& variantPosition : gene["variant_positions"]) {
-            for (auto& variant_amino_acid : variantPosition["variant_amino_acids"]) {
-                for (auto& variant_codons : variant_amino_acid["variant_codons"]) {
-                    numHaplotypes = variant_codons["haplotype_hit"].size();
-                    break;
-                }
-            }
-        }
-    }
+    auto CountNumHaplotypes = [&j]() -> int {
+        for (const auto& gene : j["genes"])
+            for (auto& variantPosition : gene["variant_positions"])
+                for (auto& variant_amino_acid : variantPosition["variant_amino_acids"])
+                    for (auto& variant_codons : variant_amino_acid["variant_codons"])
+                        return variant_codons["haplotype_hit"].size();
+        return 0;
+    };
+
+    int numHaplotypes = CountNumHaplotypes();
 
     out << "<!-- Juliet Minor Variant Summary by Dr. Armin Toepfer (Pacific Biosciences) -->"
         << std::endl
