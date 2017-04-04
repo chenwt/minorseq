@@ -482,7 +482,8 @@ void AminoAcidCaller::CallVariants()
                 std::tie(variableSite, predictorSite) =
                     MeasurePerformance(gene, codon_counts, codonPos, ai, p, coverage);
 
-                auto StoreVariant = [&]() {
+                auto StoreVariant = [this, &codon_counts, &coverage, &p, &geneName, &genes,
+                                     &curVariantPosition, &codonPos]() {
                     const char curAA = AAT::FromCodon.at(codon_counts.first);
                     VariantGene::VariantPosition::VariantCodon curVariantCodon;
                     curVariantCodon.codon = codon_counts.first;
