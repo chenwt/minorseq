@@ -116,12 +116,6 @@ PariwiseAlignmentFasta SimdNeedleWunschAlignment(const std::string& target,
 
     assert(refAlign.size() == qryAlign.size());
 
-    // std::ofstream out("out.msa");
-    // out << ">ref" << std::endl
-    //     << refAlign << std::endl
-    //     << ">target" << std::endl
-    //     << qryAlign << std::endl;
-    // out.flush();
     return result;
 }
 }

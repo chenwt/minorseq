@@ -492,7 +492,7 @@ void Cleric::Convert(std::string outputFile)
                     new_cigar_state.Type(CigarOperationType::SOFT_CLIP);
                 }
 
-                // have to rewrite CIGAR tuples if (a D and I operations are adjacen) {
+                // have to rewrite CIGAR tuples if, a D and I operations are adjacent
                 // D + I
                 if (old_cigar_state.Type() == CigarOperationType::DELETION &&
                     new_cigar_state.Type() == CigarOperationType::INSERTION) {
@@ -620,9 +620,7 @@ void Cleric::Convert(std::string outputFile)
             else if (left_op.Type() == CigarOperationType::HARD_CLIP && right_op.Type() == CigarOperationType::PADDING) {
                 new_cigar_tuple[i] = CigarOperation(CigarOperationType::HARD_CLIP, left_op.Length());
                 new_cigar_tuple.erase(new_cigar_tuple.begin() + i + 1);
-                // H + S:
-                // } else if (left_op.Type() == CigarOperationType::HARD_CLIP && right_op.Type() == CigarOperationType::SOFT_CLIP) {
-                //    ++i;
+            // H + S:
             } else {
                 ++i;
             }
@@ -690,11 +688,6 @@ void Cleric::Convert(std::string outputFile)
                     CigarOperation(CigarOperationType::HARD_CLIP, right_op.Length());
                 new_cigar_tuple.erase(new_cigar_tuple.begin() + i + 1);
             }
-            // S + H:
-            // } else if (left_op.Type() == CigarOperationType::SOFT_CLIP &&
-            // right_op.Type() == CigarOperationType::HARD_CLIP) {
-            //    //cant_stop = True
-            //    pass
             --i;
         }
 
