@@ -21,6 +21,9 @@ class TestFuse(pbcommand.testkit.PbTestApp):
     INPUT_FILES = [
         "/pbi/dept/secondary/siv/testdata/minorseq-test/mix_hxb2.consensusalignmentset.xml"
     ]
+    TASK_OPTIONS = {
+        "juliet.task_options.target_config": "HIV"
+    }
 
 
 @skip_if_no_testdata
@@ -32,6 +35,9 @@ class TestCleric(pbcommand.testkit.PbTestApp):
         "/pbi/dept/secondary/siv/testdata/minorseq-test/consensus.referenceset.xml",
         "/pbi/dept/secondary/siv/testdata/minorseq-test/hxb2.referenceset.xml"
     ]
+    TASK_OPTIONS = {
+        "juliet.task_options.target_config": "HIV"
+    }
 
 
 @skip_if_no_testdata
@@ -41,3 +47,6 @@ class TestJuliet(pbcommand.testkit.PbTestApp):
     INPUT_FILES = [
         "/pbi/dept/secondary/siv/testdata/minorseq-test/cleric.consensusalignmentset.xml"
     ]
+    TASK_OPTIONS = {
+        "juliet.task_options.target_config": "HIV"
+    }

@@ -50,18 +50,21 @@ struct PlainOption
     std::string name;
     std::string description;
     JSON::Json defaultValue;
+    JSON::Json choices = JSON::Json(nullptr);
 
-    PlainOption(std::string id, std::vector<std::string> cliOptions, std::string name,
-                std::string description, JSON::Json defaultValue)
+    PlainOption(const std::string& id, const std::vector<std::string>& cliOptions,
+                const std::string& name, const std::string& description,
+                const JSON::Json& defaultValue, const JSON::Json& choices = JSON::Json(nullptr))
         : id(id)
         , cliOptions(cliOptions)
         , name(name)
         , description(description)
         , defaultValue(defaultValue)
+        , choices(choices)
     {
     }
 
-    operator CLI::Option() const { return {id, cliOptions, description, defaultValue}; }
+    operator CLI::Option() const { return {id, cliOptions, description, defaultValue, choices}; }
     operator std::pair<std::string, std::string>() const { return std::make_pair(id, name); }
     operator std::string() const { return id; }
 };
