@@ -18,7 +18,7 @@ function echoHelp() {
 
   -i [arg]  BAM CCS file to process. Required.
   -r [arg]  Reference FASTA file. Required.
-  -c [arg]  Juliet target config. Default='<HIV>'
+  -c [arg]  Juliet target config. Default=none
   -m [arg]  Execution mode. Default='amino'
   -j [arg]  Number of CPU cores. Default=1
   -e [arg]  Maximal number of re-align iterations. Default=1
@@ -29,7 +29,7 @@ function echoHelp() {
 }
 
 # Option parsing
-config='<HIV>'
+config='{}'
 cores=1
 max=1
 mode='amino'
