@@ -141,8 +141,12 @@ for i in $(seq 1 ${max}); do
 done
 
 # Re-map last alignment against original reference
-cleric ${run_prefix}_${max}.align.bam ${run_prefix}_${max}_ref.fasta $target ${run_prefix}_cleric.bam
-juliet ${run_prefix}_cleric.bam -c ${config} -m ${mode} ${run_prefix}.html ${run_prefix}.json
+if [ $max -gt 1 ]; then
+  cleric ${run_prefix}_${max}.align.bam ${run_prefix}_${max}_ref.fasta $target ${run_prefix}_cleric.bam
+  juliet ${run_prefix}_cleric.bam -c ${config} -m ${mode} ${run_prefix}.html ${run_prefix}.json
+else
+  juliet ${run_prefix}_0.align.bam -c ${config} -m ${mode} ${run_prefix}.html ${run_prefix}.json
+fi
 cp ${run_prefix}.html ${run_prefix}.json ${wdir}/
 
 if [[ "${keep}" = "1" ]]; then
