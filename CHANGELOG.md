@@ -5,6 +5,8 @@
  - New drug resistance mutation focused view
  - Allow complex drm annotations in target config and
    enhance internal HIV target config
+ - Enable shorter read alignments with julietflow
+ - Permissive mode for unsupported chemistries
 
 ## [1.1.1]
 ### Changed
