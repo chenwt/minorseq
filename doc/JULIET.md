@@ -6,22 +6,48 @@
   <img src="img/juliet.png" alt="Logo of Juliet" width="400px"/>
 </p>
 
-## Install
-Install the minorseq suite and one of the binaries is called `juliet`.
-
-## Input data
-*Juliet* operates on aligned CCS records in the BAM format.
-Reads should be created with [CCS2](https://github.com/PacificBiosciences/unanimity/blob/master/doc/PBCCS.md)
-using the `--richQVs` option.
-BAM files have to PacBio-compliant, meaning, cigar `M` is forbidden.
-*Juliet* currently does not demultiplex barcoded data,
-provide one BAM per barcode.
+## TOC
+* [Scope](#scope)
+* [Performance](#performance)
+* [Install](#install)
+* [Input data](#input-data)
+* [Output](#output)
+* [Target configuration](#target-configuration)
+* [Phasing](#phasing)
+* [FAQ](#faq)
 
 ## Scope
 Current scope of *Juliet* is identification of codon-wise variants in coding
-regions. A first version of variant phasing is available. Insertion and
-deletion variants are currently being ignored; support will be added in a
-future version.
+regions. *Juliet* performs a reference-guided, de-novo variant discovery
+and annotates known drug-resistance mutations. There is no technical
+limitation with respect to the target organism or gene.
+A first version of variant phasing is available.
+Insertion and deletion variants are currently being ignored;
+support will be added in a future version.
+
+## Performance
+
+Both, theoretical and empirical, performance estimates agree with the following
+statement:
+
+At a coverage of 6000 CCS reads with a predicted accuracy (RQ) of >=0.99,
+the false-positive and false-negative rates are below 1% and
+0.001% (10<sup>-5</sup>), respectively.
+
+## Install
+
+Install the minorseq suite using simple cmake:
+[INSTALL.md](INSTALL.md). One of those binary executables is called `juliet`.
+
+## Input data
+*Juliet* operates on CCS records in the BAM format.
+Reads should be created with [CCS2](https://github.com/PacificBiosciences/unanimity/blob/master/doc/PBCCS.md)
+using the `--richQVs` option.
+BAM files have to PacBio-compliant, meaning, cigar `M` is forbidden.
+*Juliet* currently does not demultiplex barcoded data;
+provide one BAM per barcode.
+Input CCS reads should have a minimal predicted accuracy of 0.99,
+filtering instruction [available here](JULIETFLOW.md#filtering).
 
 ## Output
 *Juliet* provides a JSON and/or HTML file:
@@ -31,25 +57,48 @@ $ juliet data.align.bam patientZero.json
 $ juliet data.align.bam patientZero.html patientZero.json
 ```
 
-The JSON file contains, for each gene, the variant positions.
-Each variant position consists of the reference codon, reference aminoacid,
-relative aminoacid position in the gene, the mutated codon and aminoacid,
-the coverage, possible annotated drug resistance mutations, and
-counts of the multiple-sequence alignment of the -3 to +3 context positions.
-
 The HTML page is a 1:1 conversion of the JSON file and contains the identical
-information, only human-readable.
+information, but more human-readable.
+
+The HTML file contains three sections:
+
+ <img src="img/juliet_overview.png" width="200px">
+
+### Section 1. Input data
+
+This section of the HTML output summarizes the data provided, the
+exact call for *juliet*, and version of *juliet* for traceability
+purposes
+
+### Section 2. Variant Discovery
+
+For each gene open reading frame, there is one overview table.
+Each row represents a variant position.
+Each variant position consists of the reference codon, reference amino acid,
+relative amino acid position in the gene, the mutated codon, the mutated amino
+acid, the coverage, and possible annotated drug resistance mutations.
+Clicking the row will show counts of the multiple-sequence alignment counts of
+the -3 to +3 context positions.
 
 <img src="img/juliet_hiv-context.png" width="500px">
 
+### Section 3. Drug Summaries
+This view summarizes the variants grouped by annotated drug mutations:
+
+<img src="img/juliet_hiv-drug.png" width="400px">
+
 ## Target configuration
-*Juliet* is a multi-purpose minor variant caller with preinstalled
+
+*Juliet* is a multi-purpose minor variant caller that uses simple
+target configuration files to define different genes of interest such
+as HIV open reading frames to BCR-ABL kinase regions. There are preinstalled
 configurations to ease batch applications and allow immediate reproducibility.
-A target configuration may contain multiple coding regions and optional drug
+A target configuration may contain multiple coding regions within a gene
+sequence and optional drug
 resistance mutation positions.
 
 ### Predefined target config
-Running on predefined organism:
+Running on predefined genome such as HIV:
 ```
 $ juliet -c "<HIV>" data.align.bam patientZero.html
 ```
@@ -58,15 +107,16 @@ $ juliet -c "<HIV>" data.align.bam patientZero.html
 
 Currently available configs are: `<HIV>`
 
-### Own target config
-Create a JSON file. The root child genes contains a list of coding regions, with
+### Customized target configuration
+To define your own target configuration, create a JSON file. The root child
+genes contains a list of coding regions, with
 begin and end, the name of the gene, and a list of drug resistent mutations
-drms. Each DRM consists of its name and the positions it targets. The drms
+drms. Each DRM consists of its name and the positions it targets. The "drms"
 field is optional. If provided, the referenceSequence is being used to call
 mutations, otherwise it will be tested against the major codon. All indices are
 with respect to the provided alignment space, 1-based, begin-inclusive and
 end-exclusive `[)`.
-Save following as hiv.json:
+Here is a "hiv.json" target configuration file:
 ```
 {
     "genes": [
@@ -75,7 +125,7 @@ Save following as hiv.json:
             "drms": [
                 {
                     "name": "fancy drug",
-                    "positions": [ 41 ]
+                    "positions": [ "M41L" ]
                 }
             ],
             "end": 2700,
@@ -87,18 +137,32 @@ Save following as hiv.json:
 }
 ```
 
-Run with own target config:
+Run with customized target config using the `-c` option:
 ```
 $ juliet -c hiv.json data.align.bam patientZero.html
 ```
 
 <img src="img/juliet_hiv-own.png" width="500px">
 
+Valid formats for `drms/positions`
+
+    "103"     <- only the reference position
+    "M130"    <- reference amino acid and ref pos
+    "M103L"   <- ref aa, ref pos, mutated aa
+    "M103LKA" <- ref aa, ref pos, list of possible mutated aas
+    "103L"    <- ref pos and mut aa
+    "103LG"   <- ref pos and list mut aas
+
+Missing amino acids are processed as wildcard `*`
+
+Example
+
+    { "name": "ATV/r", "positions": [ "V32I", "L33", "46IL", "I54VTALM", "V82ATFS", "84" ] }
 
 ### No target config
 If no target config has been specific, it is recommended to at least specify the
-region of interest to mark the correct reading frame. The output will be labeled
-with unknown as gene name:
+region of interest to mark the correct reading frame so amino acids are correctly
+translated. The output will be labeled with `unknown` as gene name:
 ```
 $ juliet data.align.bam patientZero.html
 ```
@@ -107,10 +171,10 @@ $ juliet data.align.bam patientZero.html
 
 ## Phasing
 
-*Juliet* default mode is amino-acid / codon calling. Using `--mode phasing`,
-variant calls from identical haplotype being clustered and visualized in the
-HTML output. The row-wise variant calls are "transposed" onto the per column
-haplotypes. For each variant, the haplotype shows a colored box, wild type is
+*Juliet* default mode is to call amino-acid / codon variants independently. Using `--mode phasing`,
+variant calls from distinct haplotypes are clustered and visualized in the
+HTML output. The row-wise variant calls are "transposed" onto per column
+haplotypes. For each variant, the haplotype shows a colored box indicating the variants that co-occur, wild type is
 represented by plain dark gray. A color gradiant helps to distinguish between
 columns.
 
@@ -126,7 +190,7 @@ the order of all `haplotype_hit` arrays.
 
 ### Can I use overlapping regions?
 Yes! Each gene is treated separately. Overlapping region, even with different
-reading frames are possible.
+reading frames are possible. This is important for densely encoded genomes like HIV.
 
 ### Can I call a smaller window from a target config?
 Use `--region` to specify the begin-end window to subset the target config.
@@ -142,3 +206,43 @@ associated to that variant contain a frame-shift deletion and
 thus won't be reported.
 
 <img src="img/juliet_abl-nohaplotype.png" width="500px">
+
+### What about hyper-variable regions like HIV envelope?
+We currently do not support hyper-variable regions and the above mentioned
+performance characterics do not hold. Feel free to test it on your own.
+
+### Can you give a target config example other than HIV?
+For BCR-ABL, using the ABL1 gene with the
+[following reference NM_005157.5](https://www.ncbi.nlm.nih.gov/nuccore/NM_005157.5),
+a typical target config could look like this:
+```
+{
+    "genes": [
+        {
+            "name": "ABL1",
+            "begin": 193,
+            "end": 3585,
+            "drms": [
+                {
+                    "name": "imatinib",
+                    "positions": [ "T315AI","Y253H","E255KV","V299L","F317AICLV","F359CIV" ]
+                },
+                {
+                    "name": "dasatinib",
+                    "positions": [ "T315AI","V299L","F317AICLV" ]
+                },
+                {
+                    "name": "nilotinib",
+                    "positions": [ "T315AI","Y253H","E255KV","F359CIV" ]
+                },
+                {
+                    "name": "bosutinib",
+                    "positions": [ "T315AI" ]
+                }
+            ]
+        }
+    ],
+    "referenceName": "NM_005157.5",
+    "referenceSequence": "TTAACAGGCGCGTCCC..."
+}
+```

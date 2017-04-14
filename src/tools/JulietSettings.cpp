@@ -84,7 +84,15 @@ const PlainOption DeletionRate{
     "Deletion Rate, specify to override the learned rate",
     CLI::Option::FloatType(0)
 };
-const PlainOption TargetConfig{
+const PlainOption TargetConfigRTC{
+    "target_config",
+    { "config", "c" },
+    "Target config",
+    "Predefined config tags",
+    CLI::Option::StringType(""),
+    {"HIV", "ABL1"}
+};
+const PlainOption TargetConfigCLI{
     "target_config",
     { "config", "c" },
     "Target config",
@@ -116,8 +124,8 @@ const PlainOption Debug{
 }  // namespace OptionNames
 
 JulietSettings::JulietSettings(const PacBio::CLI::Results& options)
-    : InputFiles(options.PositionalArguments())
-    , TargetConfigUser(std::forward<std::string>(options[OptionNames::TargetConfig]))
+    : CLI(options.InputCommandLine())
+    , InputFiles(options.PositionalArguments())
     , DRMOnly(options[OptionNames::DRMOnly])
     , MergeOutliers(options[OptionNames::MergeOutliers])
     , Verbose(options[OptionNames::Verbose])
@@ -126,6 +134,14 @@ JulietSettings::JulietSettings(const PacBio::CLI::Results& options)
     , SubstitutionRate(options[OptionNames::SubstitutionRate])
     , DeletionRate(options[OptionNames::DeletionRate])
 {
+    if (options.IsFromRTC()) {
+        std::string tag = "<";
+        tag += options[OptionNames::TargetConfigRTC];
+        tag += ">";
+        TargetConfigUser = tag;
+    } else {
+        TargetConfigUser = options[OptionNames::TargetConfigCLI];
+    }
     SplitRegion(options[OptionNames::Region], &RegionStart, &RegionEnd);
 }
 
@@ -190,7 +206,7 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
         OptionNames::Mode,
         OptionNames::Region,
         OptionNames::DRMOnly,
-        OptionNames::TargetConfig,
+        OptionNames::TargetConfigCLI,
         OptionNames::MergeOutliers,
         OptionNames::SubstitutionRate,
         OptionNames::DeletionRate,
@@ -203,7 +219,7 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
     tcTask.AddOption(OptionNames::Mode);
     tcTask.AddOption(OptionNames::Region);
     tcTask.AddOption(OptionNames::DRMOnly);
-    tcTask.AddOption(OptionNames::TargetConfig);
+    tcTask.AddOption(OptionNames::TargetConfigRTC);
     tcTask.AddOption(OptionNames::MergeOutliers);
     tcTask.AddOption(OptionNames::SubstitutionRate);
     tcTask.AddOption(OptionNames::DeletionRate);
@@ -218,7 +234,6 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
         }
     });
 
-    // TODO(atoepfer) This is incorrect, need to find out json, txt, and html output types
     tcTask.OutputFileTypes({
         {
             "html_report",

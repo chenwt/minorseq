@@ -63,7 +63,8 @@ PariwiseAlignmentFasta SimdNeedleWunschAlignment(const std::string& target,
     std::string transcript;
 
     for (int i = 0; i < alignment.ref_begin; ++i) {
-        refAlign += target.at(tgtPos++);
+        refAlign += target.at(tgtPos);
+        ++tgtPos;
         qryAlign += "-";
         transcript += "P";
     }
@@ -71,22 +72,27 @@ PariwiseAlignmentFasta SimdNeedleWunschAlignment(const std::string& target,
         for (size_t i = 0; i < c.Length(); ++i) {
             transcript += c.Char();
 
+            if (c.Char() == '=') assert(target.at(tgtPos) == query.at(qryPos));
+
             switch (c.Char()) {
                 case '=':
-                    assert(target.at(tgtPos) == query.at(qryPos));
                 case 'M':
                 case 'X':
-                    refAlign += target.at(tgtPos++);
-                    qryAlign += query.at(qryPos++);
+                    refAlign += target.at(tgtPos);
+                    ++tgtPos;
+                    qryAlign += query.at(qryPos);
+                    ++qryPos;
                     break;
                 case 'D':
-                    refAlign += target.at(tgtPos++);
+                    refAlign += target.at(tgtPos);
+                    ++tgtPos;
                     qryAlign += "-";
                     break;
                 case 'I':
                 case 'S':
                     refAlign += "-";
-                    qryAlign += query.at(qryPos++);
+                    qryAlign += query.at(qryPos);
+                    ++qryPos;
                     break;
                 case 'H':
                     throw std::runtime_error("H");
@@ -97,7 +103,8 @@ PariwiseAlignmentFasta SimdNeedleWunschAlignment(const std::string& target,
     }
 
     while (tgtPos < target.size()) {
-        refAlign += target.at(tgtPos++);
+        refAlign += target.at(tgtPos);
+        ++tgtPos;
         qryAlign += "-";
         transcript += "P";
     }
@@ -109,12 +116,6 @@ PariwiseAlignmentFasta SimdNeedleWunschAlignment(const std::string& target,
 
     assert(refAlign.size() == qryAlign.size());
 
-    // std::ofstream out("out.msa");
-    // out << ">ref" << std::endl
-    //     << refAlign << std::endl
-    //     << ">target" << std::endl
-    //     << qryAlign << std::endl;
-    // out.flush();
     return result;
 }
 }

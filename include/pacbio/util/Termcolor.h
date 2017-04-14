@@ -409,8 +409,4 @@ inline void win_change_attributes(std::ostream& stream, int foreground, int back
 
 }  // namespace termcolor
 
-#undef TERMCOLOR_OS_WINDOWS
-#undef TERMCOLOR_OS_MACOS
-#undef TERMCOLOR_OS_LINUX
-
 #endif  // TERMCOLOR_HPP_

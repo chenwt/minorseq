@@ -84,8 +84,14 @@ private:
     void CallVariants();
     int CountNumberOfTests(const std::vector<TargetGene>& genes) const;
     std::string FindDRMs(const std::string& geneName, const std::vector<TargetGene>& genes,
-                         const int position) const;
+                         const DMutation curDRM) const;
     double Probability(const std::string& a, const std::string& b);
+    std::pair<bool, bool> MeasurePerformance(const TargetGene& tg,
+                                             const std::pair<std::string, int>& codon_counts,
+                                             const int& codonPos, const int& i, const double& p,
+                                             const int& coverage, const std::string& geneName,
+                                             double* truePositives, double* falsePositives,
+                                             double* falseNegative, double* trueNegative);
 
 private:
     Data::MSAByRow msaByRow_;
@@ -102,6 +108,7 @@ private:
     const bool verbose_;
     const bool mergeOutliers_;
     const bool debug_;
+    const bool drmOnly_;
 };
 }
 }  // ::PacBio::Juliet

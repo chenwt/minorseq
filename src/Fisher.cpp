@@ -11,8 +11,6 @@ namespace PacBio {
 namespace Statistics {
 double Fisher::fisher_exact_tiss(int chi11, int chi12, int chi21, int chi22)
 {
-    // int sign = 1;
-
     int co_occ = chi11;
 
     const int gene_a = chi11 + chi12;
@@ -24,24 +22,19 @@ double Fisher::fisher_exact_tiss(int chi11, int chi12, int chi21, int chi22)
     // exceeds the number of libraries (say by N), they must overlap
     // at least N times.
     int min_co_occ = 0;
-    if (gene_a + gene_b > total_libs) {
-        min_co_occ = gene_a + gene_b - total_libs;
-    }
+    if (gene_a + gene_b > total_libs) min_co_occ = gene_a + gene_b - total_libs;
 
     // Maximum number of co-occurrences is at most the number of times
     // the rarer gene occurs in the library :
     int max_co_occ;
-    if (gene_a < gene_b) {
+    if (gene_a < gene_b)
         max_co_occ = gene_a;
-    } else {
+    else
         max_co_occ = gene_b;
-    }
 
     // Calculate the first hypergeometric value
 
     double base_p = calc_hypergeom(chi11, chi12, chi21, chi22);
-
-    // printf("base_p=%e\n",base_p);
 
     // If co-occurrences at max possible, then this is our p-value,
     // Also if co-occurrences at min possible, this is our p-value.
@@ -55,7 +48,6 @@ double Fisher::fisher_exact_tiss(int chi11, int chi12, int chi21, int chi22)
         double curr_p = base_p;
 
         if (factor_inc < factor_dec) {
-            // sign = 1;
             // Loop up over co-occurrences
             do {
                 // Determine P-value for chi^2 matrix from recurrence factor
@@ -103,7 +95,9 @@ double Fisher::gammln(double xx)
 {
     static double cof[6] = {76.18009172947146,  -86.50532032941677,    24.01409824083091,
                             -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5};
-    double x, tmp, ser;
+    double x;
+    double tmp;
+    double ser;
     int j;
 
     x = xx - 1.0;
@@ -122,10 +116,7 @@ double Fisher::factln(int n)
 {
     static double a[101];
 
-    if (n < 0) {
-        // nrerror("Negative factorial in routine FACTLN");
-        return 0.0;
-    }
+    if (n < 0) return 0.0;
     if (n <= 1) return 0.0;
     if (n <= 100)
         return a[n] ? a[n] : (a[n] = lgamma((double)(n + 1.0)));

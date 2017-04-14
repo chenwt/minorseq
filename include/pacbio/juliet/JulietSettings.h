@@ -51,12 +51,12 @@ namespace Juliet {
 /// Contains user provided CLI configuration for Juliet
 struct JulietSettings
 {
+    std::string CLI;
     std::vector<std::string> InputFiles;
     std::string OutputPrefix;
     TargetConfig TargetConfigUser;
     int RegionStart = 0;
     int RegionEnd = std::numeric_limits<int>::max();
-    bool Details;
     bool DRMOnly;
     bool SaveMSA;
     bool MergeOutliers;

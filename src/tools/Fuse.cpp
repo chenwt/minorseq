@@ -57,7 +57,8 @@
 namespace PacBio {
 namespace Fuse {
 
-Fuse::Fuse(const std::string& ccsInput)
+Fuse::Fuse(const std::string& ccsInput, int minCoverage)
+    : minCoverage_(minCoverage), minInsertionCoverage_(minCoverage)
 {
     const auto arrayReads = FetchAlignedReads(ccsInput);
     consensusSequence_ = CreateConsensus(arrayReads);
@@ -69,6 +70,7 @@ Fuse::Fuse(const std::vector<Data::ArrayRead>& arrayReads)
 
 std::string Fuse::CreateConsensus(const std::vector<Data::ArrayRead>& arrayReads) const
 {
+    if (arrayReads.empty()) throw std::runtime_error("Empty input. Could not find records.");
     Data::MSAByColumn msa(arrayReads);
 
     auto posInsCov = CollectInsertions(msa);

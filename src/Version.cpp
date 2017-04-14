@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2016, Pacific Biosciences of California, Inc.
+// Copyright (c) 2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,52 +35,17 @@
 
 // Author: Armin Töpfer
 
-#include <numeric>
-#include <vector>
-
-#include <pacbio/data/ArrayRead.h>
-#include <pacbio/data/MSAColumn.h>
-#include <pacbio/data/QvThresholds.h>
-
-#include <pacbio/data/MSAByColumn.h>
+#include <pacbio/Version.h>
 
 namespace PacBio {
-namespace Data {
-MSAByColumn::MSAByColumn(const MSAByRow& msaRows)
-{
-    beginPos = msaRows.BeginPos - 1;
-    endPos = msaRows.EndPos - 1;
-    counts.resize(msaRows.EndPos - msaRows.BeginPos);
-    int pos = msaRows.BeginPos;
-    for (auto& c : counts) {
-        c.refPos = pos;
-        ++pos;
-    }
+std::string MinorseqVersion() { return MSVersion; }
 
-    for (const auto& row : msaRows.Rows) {
-        int localPos = 0;
-        for (const auto& c : row.Bases) {
-            switch (c) {
-                case 'A':
-                case 'C':
-                case 'G':
-                case 'T':
-                case '-':
-                case 'N':
-                    counts.at(localPos)[c]++;
-                    ++localPos;
-                    break;
-                case ' ':
-                    ++localPos;
-                    break;
-                default:
-                    throw std::runtime_error("Unexpected base " + std::string(1, c));
-            }
-        }
-        for (const auto& ins : row.Insertions) {
-            counts[ins.first].insertions[ins.second]++;
-        }
-    }
+std::string MinorseqGitSha1() { return MSGitSha1; }
+
+std::string MinorseqChangelog()
+{
+    std::string changelog(MSChangelog);
+    std::replace(changelog.begin(), changelog.end(), ';', '\n');
+    return changelog;
 }
-}  // namespace Data
-}  // namespace PacBio
+}  // ::PacBio

@@ -51,6 +51,7 @@ struct FuseSettings
 {
     std::string InputFile;
     std::string OutputFile;
+    int MinCoverage = 0;
     int RegionStart = 0;
     int RegionEnd = std::numeric_limits<int>::max();
 
