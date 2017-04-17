@@ -29,7 +29,7 @@ function echoHelp() {
 }
 
 # Option parsing
-config='{}'
+config=""
 cores=1
 max=1
 mode='amino'
@@ -100,8 +100,16 @@ if [[ -z "${target:-}" ]]; then
   target=$reference
 fi
 
-if [[ ! "$config" =~ ^"<".* ]] && [[ ! "${config}" == /* ]]; then
-  config=$(pwd)/${config}
+if  [[ -z "${config}" ]]; then
+  config=""
+elif [[ -f "${config}" ]]; then
+  if [[ ! "${config}" == /*  ]]; then
+    config="--config-file $(pwd)/${config}"
+  else
+    config="--config-file ${config}"
+  fi
+else
+  config="--config ${config}"
 fi
 
 # Get directory of the input file, file prefix and suffix
@@ -143,9 +151,9 @@ done
 # Re-map last alignment against original reference
 if [ $max -gt 1 ]; then
   cleric ${run_prefix}_${max}.align.bam ${run_prefix}_${max}_ref.fasta $target ${run_prefix}_cleric.bam
-  juliet ${run_prefix}_cleric.bam -c ${config} -m ${mode} ${run_prefix}.html ${run_prefix}.json
+  juliet ${run_prefix}_cleric.bam ${config} -m ${mode} ${run_prefix}.html ${run_prefix}.json
 else
-  juliet ${run_prefix}_0.align.bam -c ${config} -m ${mode} ${run_prefix}.html ${run_prefix}.json
+  juliet ${run_prefix}_0.align.bam ${config} -m ${mode} ${run_prefix}.html ${run_prefix}.json
 fi
 cp ${run_prefix}.html ${run_prefix}.json ${wdir}/
 
