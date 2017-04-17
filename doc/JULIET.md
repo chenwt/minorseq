@@ -100,12 +100,12 @@ resistance mutation positions.
 ### Predefined target config
 Running on predefined genome such as HIV:
 ```
-$ juliet -c "<HIV>" data.align.bam patientZero.html
+$ juliet --config "HIV" data.align.bam patientZero.html
 ```
 
 <img src="img/juliet_hiv-hiv.png" width="500px">
 
-Currently available configs are: `<HIV>`
+Currently available configs are: `HIV`, `ABL1`
 
 ### Customized target configuration
 To define your own target configuration, create a JSON file. The root child
@@ -139,7 +139,7 @@ Here is a "hiv.json" target configuration file:
 
 Run with customized target config using the `-c` option:
 ```
-$ juliet -c hiv.json data.align.bam patientZero.html
+$ juliet --config-file hiv.json data.align.bam patientZero.html
 ```
 
 <img src="img/juliet_hiv-own.png" width="500px">

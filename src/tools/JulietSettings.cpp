@@ -84,19 +84,26 @@ const PlainOption DeletionRate{
     "Deletion Rate, specify to override the learned rate",
     CLI::Option::FloatType(0)
 };
-const PlainOption TargetConfigRTC{
+const PlainOption TargetConfig{
     "target_config",
     { "config", "c" },
     "Target config",
-    "Predefined config tags",
-    CLI::Option::StringType(""),
-    {"HIV", "ABL1"}
+    "Predefined target config tag: [\"\", \"HIV\", \"ABL1\"]",
+    CLI::Option::StringType("none"),
+    {"none", "HIV", "HIV-PB", "ABL1"}
 };
-const PlainOption TargetConfigCLI{
-    "target_config",
-    { "config", "c" },
+const PlainOption TargetConfigFile{
+    "target_config_file",
+    { "config-file"},
+    "Target config file",
+    "Path to the target config JSON file",
+    CLI::Option::StringType("")
+};
+const PlainOption TargetConfigJSON{
+    "target_config_json",
+    { "config-json"},
     "Target config",
-    "Path to the JSON target config, containing regions of interest, the JSON string itself, or a predefined config tag like <HIV>",
+    "Target config JSON string",
     CLI::Option::StringType("")
 };
 const PlainOption Verbose{
@@ -134,14 +141,30 @@ JulietSettings::JulietSettings(const PacBio::CLI::Results& options)
     , SubstitutionRate(options[OptionNames::SubstitutionRate])
     , DeletionRate(options[OptionNames::DeletionRate])
 {
-    if (options.IsFromRTC()) {
-        std::string tag = "<";
-        tag += options[OptionNames::TargetConfigRTC];
-        tag += ">";
-        TargetConfigUser = tag;
-    } else {
-        TargetConfigUser = options[OptionNames::TargetConfigCLI];
+    std::string targetConfigTag = options[OptionNames::TargetConfig];
+    std::string targetConfigJSON = options[OptionNames::TargetConfigJSON];
+    std::string targetConfigFile = options[OptionNames::TargetConfigFile];
+
+    int targetCounter =
+        !targetConfigTag.empty() + !targetConfigJSON.empty() + !targetConfigFile.empty();
+
+    if (targetCounter > 1) {
+        throw std::runtime_error("Target config options are mutually exclusive!");
     }
+    if (targetCounter == 0 || targetConfigTag == "none") {
+        TargetConfigUser = TargetConfig("{}");
+    } else if (!targetConfigTag.empty()) {
+        if (targetConfigTag.size() >= 3) {
+            if (targetConfigTag.at(0) != '<') targetConfigTag = '<' + targetConfigTag;
+            if (targetConfigTag.at(targetConfigTag.size() - 1) != '>') targetConfigTag += '>';
+        }
+        TargetConfigUser = targetConfigTag;
+    } else if (!targetConfigJSON.empty()) {
+        TargetConfigUser = targetConfigJSON;
+    } else if (!targetConfigFile.empty()) {
+        TargetConfigUser = targetConfigFile;
+    }
+
     SplitRegion(options[OptionNames::Region], &RegionStart, &RegionEnd);
 }
 
@@ -206,7 +229,6 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
         OptionNames::Mode,
         OptionNames::Region,
         OptionNames::DRMOnly,
-        OptionNames::TargetConfigCLI,
         OptionNames::MergeOutliers,
         OptionNames::SubstitutionRate,
         OptionNames::DeletionRate,
@@ -214,12 +236,21 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
         OptionNames::Debug
     });
 
+    i.AddGroup("Target Configuration (mutually exclusive)",
+    {
+        OptionNames::TargetConfig,
+        OptionNames::TargetConfigJSON,
+        OptionNames::TargetConfigFile
+    });
+
     const std::string id = "minorseq.tasks.juliet";
     Task tcTask(id);
     tcTask.AddOption(OptionNames::Mode);
     tcTask.AddOption(OptionNames::Region);
     tcTask.AddOption(OptionNames::DRMOnly);
-    tcTask.AddOption(OptionNames::TargetConfigRTC);
+    tcTask.AddOption(OptionNames::TargetConfig);
+    tcTask.AddOption(OptionNames::TargetConfigJSON);
+    tcTask.AddOption(OptionNames::TargetConfigFile);
     tcTask.AddOption(OptionNames::MergeOutliers);
     tcTask.AddOption(OptionNames::SubstitutionRate);
     tcTask.AddOption(OptionNames::DeletionRate);
