@@ -19,11 +19,11 @@ function echoHelp() {
   -i [arg]  BAM CCS file to process. Required.
   -r [arg]  Reference FASTA file. Required.
   -c [arg]  Juliet target config. Default=none
-  -m [arg]  Execution mode. Default='amino'
   -j [arg]  Number of CPU cores. Default=1
   -e [arg]  Maximal number of re-align iterations. Default=1
   -t [arg]  Target reference FASTA, per default using --ref.
-  -k        Keep temporary files
+  -p        Phase variants.
+  -k        Keep temporary files.
   -h --help This help page"
   exit 0
 }
@@ -32,7 +32,7 @@ function echoHelp() {
 config=""
 cores=1
 max=1
-mode='amino'
+mode=''
 keep="0"
 helpRequested="0"
 
@@ -41,7 +41,7 @@ if [[ $# -eq 0 ]]; then
 fi
 
 PROGNAME=${0##*/}
-SHORTOPTS="hi:r:c:j:t:m:e:k"
+SHORTOPTS="hi:r:c:j:t:e:pk"
 LONGOPTS="help"
 
 ARGS=$(getopt -s bash --options $SHORTOPTS  \
@@ -69,9 +69,8 @@ while [[ $# -gt 0 ]] ; do
     -e)
       shift
       max=$1;;
-    -m)
-      shift
-      mode=$1;;
+    -p)
+      mode="--mode-phasing";;
     -k)
       keep="1";;
     -h | --help)
@@ -151,9 +150,9 @@ done
 # Re-map last alignment against original reference
 if [ $max -gt 1 ]; then
   cleric ${run_prefix}_${max}.align.bam ${run_prefix}_${max}_ref.fasta $target ${run_prefix}_cleric.bam
-  juliet ${run_prefix}_cleric.bam ${config} -m ${mode} ${run_prefix}.html ${run_prefix}.json
+  juliet ${run_prefix}_cleric.bam ${config} ${mode} ${run_prefix}.html ${run_prefix}.json
 else
-  juliet ${run_prefix}_0.align.bam ${config} -m ${mode} ${run_prefix}.html ${run_prefix}.json
+  juliet ${run_prefix}_0.align.bam ${config} ${mode} ${run_prefix}.html ${run_prefix}.json
 fi
 cp ${run_prefix}.html ${run_prefix}.json ${wdir}/
 

@@ -79,7 +79,7 @@ struct JulietSettings
     /// Splits region into ReconstructionStart and ReconstructionEnd.
     static void SplitRegion(const std::string& region, int* start, int* end);
 
-    static AnalysisMode AnalysisModeFromString(const std::string& input);
+    static AnalysisMode AnalysisModeFromOptions(const PacBio::CLI::Results& options);
 };
 }
 }  // ::PacBio::Juliet
