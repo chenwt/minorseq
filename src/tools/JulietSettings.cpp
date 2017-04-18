@@ -88,7 +88,7 @@ const PlainOption TargetConfig{
     "target_config",
     { "config", "c" },
     "Target config",
-    "Predefined target config tag: [\"\", \"HIV\", \"ABL1\"]",
+    "Predefined target config tag: [none, HIV, ABL1]",
     CLI::Option::StringType("none"),
     {"none", "HIV", "HIV-PB", "ABL1"}
 };
