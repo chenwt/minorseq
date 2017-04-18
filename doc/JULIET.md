@@ -171,7 +171,7 @@ $ juliet data.align.bam patientZero.html
 
 ## Phasing
 
-*Juliet* default mode is to call amino-acid / codon variants independently. Using `--mode phasing`,
+*Juliet* default mode is to call amino-acid / codon variants independently. Using `--mode-phasing`,
 variant calls from distinct haplotypes are clustered and visualized in the
 HTML output. The row-wise variant calls are "transposed" onto per column
 haplotypes. For each variant, the haplotype shows a colored box indicating the variants that co-occur, wild type is

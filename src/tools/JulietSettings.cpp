@@ -63,47 +63,54 @@ const PlainOption DRMOnly{
     "Only report known DRM positions.",
     CLI::Option::BoolType()
 };
-const PlainOption Mode{
-    "execution_mode",
-    { "mode", "m" },
-    "Execution mode",
-    "Execution mode: amino, phasing, or error",
-    CLI::Option::StringType("amino")
+const PlainOption Phasing{
+    "mode_phasing",
+    { "mode-phasing", "p" },
+    "Phase Variants",
+    "Phase variants and cluster haplotypes.",
+    CLI::Option::BoolType()
+};
+const PlainOption Error{
+    "mode_error",
+    { "mode-error" },
+    "Alignment Error Rates",
+    "Compute alignment error rates.",
+    CLI::Option::BoolType()
 };
 const PlainOption SubstitutionRate{
     "substitution_rate",
     { "sub", "s" },
     "Substitution Rate",
-    "Substitution Rate, specify to override the learned rate",
+    "Substitution Rate, specify to override the learned rate.",
     CLI::Option::FloatType(0)
 };
 const PlainOption DeletionRate{
     "deletion_rate",
     { "del", "d" },
-    "DeletionRate",
-    "Deletion Rate, specify to override the learned rate",
+    "Deletion Rate",
+    "Deletion Rate, specify to override the learned rate.",
     CLI::Option::FloatType(0)
 };
 const PlainOption TargetConfig{
     "target_config",
     { "config", "c" },
-    "Target config",
-    "Predefined target config tag: [none, HIV, ABL1]",
+    "Target Config",
+    "Predefined target config tag, one of \"none\", \"HIV\", or \"ABL1\".",
     CLI::Option::StringType("none"),
     {"none", "HIV", "HIV-PB", "ABL1"}
 };
 const PlainOption TargetConfigFile{
     "target_config_file",
     { "config-file"},
-    "Target config file",
-    "Path to the target config JSON file",
+    "Target Config file",
+    "Path to the target config JSON file.",
     CLI::Option::StringType("")
 };
 const PlainOption TargetConfigJSON{
     "target_config_json",
     { "config-json"},
-    "Target config",
-    "Target config JSON string",
+    "Target Config",
+    "Target config JSON string.",
     CLI::Option::StringType("")
 };
 const PlainOption Verbose{
@@ -117,7 +124,7 @@ const PlainOption MergeOutliers{
     "merge_outliers",
     { "merge-outliers" },
     "Merge Outliers",
-    "Merge outliers haplotypes.",
+    "Merge outlier haplotypes.",
     CLI::Option::BoolType()
 };
 const PlainOption Debug{
@@ -137,7 +144,7 @@ JulietSettings::JulietSettings(const PacBio::CLI::Results& options)
     , MergeOutliers(options[OptionNames::MergeOutliers])
     , Verbose(options[OptionNames::Verbose])
     , Debug(options[OptionNames::Debug])
-    , Mode(AnalysisModeFromString(options[OptionNames::Mode]))
+    , Mode(AnalysisModeFromOptions(options))
     , SubstitutionRate(options[OptionNames::SubstitutionRate])
     , DeletionRate(options[OptionNames::DeletionRate])
 {
@@ -146,12 +153,17 @@ JulietSettings::JulietSettings(const PacBio::CLI::Results& options)
     std::string targetConfigFile = options[OptionNames::TargetConfigFile];
 
     int targetCounter =
-        !targetConfigTag.empty() + !targetConfigJSON.empty() + !targetConfigFile.empty();
+        (targetConfigTag != "none") + !targetConfigJSON.empty() + !targetConfigFile.empty();
 
     if (targetCounter > 1) {
         throw std::runtime_error("Target config options are mutually exclusive!");
     }
-    if (targetCounter == 0 || targetConfigTag == "none") {
+
+    if (!targetConfigJSON.empty()) {
+        TargetConfigUser = targetConfigJSON;
+    } else if (!targetConfigFile.empty()) {
+        TargetConfigUser = targetConfigFile;
+    } else if (targetCounter == 0 || targetConfigTag == "none") {
         TargetConfigUser = TargetConfig("{}");
     } else if (!targetConfigTag.empty()) {
         if (targetConfigTag.size() >= 3) {
@@ -159,10 +171,6 @@ JulietSettings::JulietSettings(const PacBio::CLI::Results& options)
             if (targetConfigTag.at(targetConfigTag.size() - 1) != '>') targetConfigTag += '>';
         }
         TargetConfigUser = targetConfigTag;
-    } else if (!targetConfigJSON.empty()) {
-        TargetConfigUser = targetConfigJSON;
-    } else if (!targetConfigFile.empty()) {
-        TargetConfigUser = targetConfigFile;
     }
 
     SplitRegion(options[OptionNames::Region], &RegionStart, &RegionEnd);
@@ -188,20 +196,21 @@ void JulietSettings::SplitRegion(const std::string& region, int* start, int* end
     }
 }
 
-AnalysisMode JulietSettings::AnalysisModeFromString(const std::string& input)
+AnalysisMode JulietSettings::AnalysisModeFromOptions(const PacBio::CLI::Results& options)
 {
-    std::string s = input;
-    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
-    if (s.find("amino") != std::string::npos || s.find("acid") != std::string::npos)
+    bool phasing = options[OptionNames::Phasing];
+    bool error = options[OptionNames::Error];
+    int counter = phasing + error;
+    if (counter > 1) throw std::runtime_error("Overriding mode is mutually exclusive!");
+
+    if (!phasing && !error)
         return AnalysisMode::AMINO;
-    else if (s.find("base") != std::string::npos || s.find("nuc") != std::string::npos)
-        return AnalysisMode::BASE;
-    else if (s.find("phas") != std::string::npos || s.find("hap") != std::string::npos)
+    else if (phasing)
         return AnalysisMode::PHASING;
-    else if (s.find("error") != std::string::npos)
+    else if (error)
         return AnalysisMode::ERROR;
     else
-        throw std::runtime_error("Unknown mode " + s);
+        throw std::runtime_error("Cannot execute mode, undefined behaviour!");
 }
 
 PacBio::CLI::Interface JulietSettings::CreateCLI()
@@ -226,14 +235,19 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
 
     i.AddOptions(
     {
-        OptionNames::Mode,
-        OptionNames::Region,
-        OptionNames::DRMOnly,
-        OptionNames::MergeOutliers,
-        OptionNames::SubstitutionRate,
-        OptionNames::DeletionRate,
         OptionNames::Verbose,
         OptionNames::Debug
+    });
+
+    i.AddGroup("Override amino acid calling mode (mutually exclusive)",
+    {
+        OptionNames::Phasing,
+        OptionNames::Error
+    });
+
+    i.AddGroup("Additional phasing options",
+    {
+        OptionNames::MergeOutliers
     });
 
     i.AddGroup("Target Configuration (mutually exclusive)",
@@ -243,9 +257,21 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
         OptionNames::TargetConfigFile
     });
 
+    i.AddGroup("Chemistry override (specify both)",
+    {
+        OptionNames::SubstitutionRate,
+        OptionNames::DeletionRate
+    });
+
+    i.AddGroup("Restrictions",
+    {
+        OptionNames::Region,
+        OptionNames::DRMOnly,
+    });
+
     const std::string id = "minorseq.tasks.juliet";
     Task tcTask(id);
-    tcTask.AddOption(OptionNames::Mode);
+    tcTask.AddOption(OptionNames::Phasing);
     tcTask.AddOption(OptionNames::Region);
     tcTask.AddOption(OptionNames::DRMOnly);
     tcTask.AddOption(OptionNames::TargetConfig);
@@ -256,7 +282,7 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
     tcTask.AddOption(OptionNames::DeletionRate);
     tcTask.AddOption(OptionNames::Debug);
 
-        tcTask.InputFileTypes({
+    tcTask.InputFileTypes({
         {
             "alignment_set",
             "AlignmentSet",

@@ -1,5 +1,12 @@
 # MINORSEQ - CHANGELOG
 
+## [1.3.0]
+### Changed
+ - Command-line interface and tool contracts changed:
+   - Explicit overrides for calling mode
+   - Three options to provide the target config
+   - Grouping of options
+
 ## [1.2.0]
 ### Added
  - New drug resistance mutation focused view
