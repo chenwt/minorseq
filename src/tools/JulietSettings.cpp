@@ -94,7 +94,7 @@ const PlainOption DeletionRate{
 const PlainOption TargetConfig{
     "target_config",
     { "config", "c" },
-    "Target Config",
+    "Target",
     "Predefined target config tag, one of \"none\", \"HIV\", or \"ABL1\".",
     CLI::Option::StringType("none"),
     {"none", "HIV", "HIV-PB", "ABL1"}
