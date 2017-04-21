@@ -171,12 +171,15 @@ $ juliet data.align.bam patientZero.html
 
 ## Phasing
 
-*Juliet* default mode is to call amino-acid / codon variants independently. Using `--mode-phasing`,
-variant calls from distinct haplotypes are clustered and visualized in the
-HTML output. The row-wise variant calls are "transposed" onto per column
-haplotypes. For each variant, the haplotype shows a colored box indicating the variants that co-occur, wild type is
-represented by plain dark gray. A color gradiant helps to distinguish between
-columns.
+*Juliet's* default mode is to call amino-acid / codon variants independently.
+Using `--mode-phasing`, variant calls from distinct haplotypes are clustered
+and visualized in the HTML output.
+The row-wise variant calls are "transposed" onto per column haplotypes.
+Each haplotype has an ID: `[A-Z]{1}[a-z]?`.
+For each variant, colored boxes in this row mark haplotypes that contain this variant.
+Colored boxes per haplotype / column indicate variants that co-occur.
+Wild type, no variant, is represented by plain dark gray.
+A color palette helps to distinguish between columns.
 
 <img src="img/juliet_hiv-phasing.png" width="700px">
 
