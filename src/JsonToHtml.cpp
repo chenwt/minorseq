@@ -278,8 +278,8 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
         })";
 
     out << R"(
-        table.discovery tr:nth-child(3):not(.msa) th:nth-child(8) {
-            border-right: 1px dashed black;
+        table.discovery tr:nth-child(3):not(.msa) th:nth-child(9) {
+            border-left: 1px dashed black;
         }
 
         table.discovery tr.var td {
