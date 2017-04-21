@@ -188,6 +188,10 @@ the order of all `haplotype_hit` arrays.
 
 # FAQ
 
+### My coverage is much lower than 6000x
+For a coverage at 1000x, 5% minor variants can be called reliably. For 1% minors,
+6000x is needed.
+
 ### Can I use overlapping regions?
 Yes! Each gene is treated separately. Overlapping region, even with different
 reading frames are possible. This is important for densely encoded genomes like HIV.
@@ -210,6 +214,18 @@ thus won't be reported.
 ### What about hyper-variable regions like HIV envelope?
 We currently do not support hyper-variable regions and the above mentioned
 performance characterics do not hold. Feel free to test it on your own.
+
+### What database did you use for the HIV drug-resistance mutations?
+We copied the major variants from [hivdb.stanford.edu](https://hivdb.stanford.edu).
+
+### Are you going to maintain the drug-resistance mutations in the target configs?
+No. Juliet is a general purpose minor variant caller.
+The integrated target configs are meant for a quick start.
+It is the user responsibility to ensure that the used target configs are correct
+and up-to-date.
+
+### I need a config for my target organism / gene.
+Please read [Customized Target Configuration](JULIET.md#customized-target-configuration).
 
 ### Can you give a target config example other than HIV?
 For BCR-ABL, using the ABL1 gene with the
