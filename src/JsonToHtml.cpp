@@ -504,6 +504,8 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
 void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetConfig& config,
                            bool onlyKnownDRMs, int numHaplotypes)
 {
+    static std::vector<std::string> colors = {"#ea3c1c", "#f48e00", "#ebff0a", "#56e400",
+                                              "#51c6ff", "#4a80ff", "#ae37ff", "#db005f"};
     const std::string referenceName = config.referenceName;
     out << R"(
             <details style="margin-bottom: 20px">
@@ -555,9 +557,12 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
         out << R"(<tr>
                 <th colspan=")"
             << 8 << R"(">)" << Strip(gene["name"]) << "</th>";
-        if (numHaplotypes > 0)
-            out << R"(<th colspan=")" << (numHaplotypes) << R"(">Haplotypes %</th>
-                </tr>)";
+        for (int hap = 0; hap < numHaplotypes; ++hap) {
+            out << "<th style=\"color:" << colors.at(hap % colors.size()) << "\">"
+                << Strip(j["haplotypes"][hap]["name"]);
+            out << "</th>";
+        }
+
         out << R"(<tr>
                 <th colspan="3">)";
         if (referenceName.empty()) out << "unknown";
@@ -567,10 +572,9 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
             out << referenceName;
         out << R"(</th>
                 <th colspan="5">Sample Variants</th>)";
-        for (int hap = 0; hap < numHaplotypes; ++hap) {
-            out << R"(<th>)" << Strip(j["haplotypes"][hap]["name"]);
-            out << "</th>";
-        }
+        if (numHaplotypes > 0)
+            out << R"(<th colspan=")" << (numHaplotypes) << R"(">Haplotypes %</th>
+                </tr>)";
         out << R"(
                 </tr>
                 <tr>
@@ -630,9 +634,6 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
                             << "<td></td>";
                     }
                     out << "<td>" << Strip(variant_codons["known_drm"]) << "</td>";
-                    static std::vector<std::string> colors = {"#b50937", "#b22450", "#b2385e",
-                                                              "#b24f6e", "#b2647c", "#b27487",
-                                                              "#b28391", "#b2909b", "#b29ea5"};
                     int col = 0;
                     for (auto& hit : variant_codons["haplotype_hit"]) {
                         if (hit)
