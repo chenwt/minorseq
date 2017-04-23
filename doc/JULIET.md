@@ -171,12 +171,15 @@ $ juliet data.align.bam patientZero.html
 
 ## Phasing
 
-*Juliet* default mode is to call amino-acid / codon variants independently. Using `--mode-phasing`,
-variant calls from distinct haplotypes are clustered and visualized in the
-HTML output. The row-wise variant calls are "transposed" onto per column
-haplotypes. For each variant, the haplotype shows a colored box indicating the variants that co-occur, wild type is
-represented by plain dark gray. A color gradiant helps to distinguish between
-columns.
+*Juliet's* default mode is to call amino-acid / codon variants independently.
+Using `--mode-phasing`, variant calls from distinct haplotypes are clustered
+and visualized in the HTML output.
+The row-wise variant calls are "transposed" onto per column haplotypes.
+Each haplotype has an ID: `[A-Z]{1}[a-z]?`.
+For each variant, colored boxes in this row mark haplotypes that contain this variant.
+Colored boxes per haplotype / column indicate variants that co-occur.
+Wild type, no variant, is represented by plain dark gray.
+A color palette helps to distinguish between columns.
 
 <img src="img/juliet_hiv-phasing.png" width="700px">
 
@@ -187,6 +190,10 @@ JSON file contains counts and read names. The order of those haplotypes matches
 the order of all `haplotype_hit` arrays.
 
 # FAQ
+
+### My coverage is much lower than 6000x
+For a coverage at 1000x, 5% minor variants can be called reliably. For 1% minors,
+6000x is needed.
 
 ### Can I use overlapping regions?
 Yes! Each gene is treated separately. Overlapping region, even with different
@@ -210,6 +217,18 @@ thus won't be reported.
 ### What about hyper-variable regions like HIV envelope?
 We currently do not support hyper-variable regions and the above mentioned
 performance characterics do not hold. Feel free to test it on your own.
+
+### What database did you use for the HIV drug-resistance mutations?
+We copied the major variants from [hivdb.stanford.edu](https://hivdb.stanford.edu).
+
+### Are you going to maintain the drug-resistance mutations in the target configs?
+No. Juliet is a general purpose minor variant caller.
+The integrated target configs are meant for a quick start.
+It is the user responsibility to ensure that the used target configs are correct
+and up-to-date.
+
+### I need a config for my target organism / gene.
+Please read [Customized Target Configuration](JULIET.md#customized-target-configuration).
 
 ### Can you give a target config example other than HIV?
 For BCR-ABL, using the ABL1 gene with the
