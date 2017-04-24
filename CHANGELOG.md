@@ -3,6 +3,7 @@
 ## [1.3.1]
 ### Changed
  - Added re-align workflow back to julietflow, typo -gt instead of -ge
+ - Fixed `-k` again
 
 ## [1.3.0]
 ### Changed
