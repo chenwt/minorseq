@@ -489,7 +489,7 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
         << PacBio::MinorseqVersion() << " (commit " << PacBio::MinorseqGitSha1() << ")"
         << "</code><br>"
         << R"(</div></details>
-            <details style="margin-bottom: 20px">
+            <details open style="margin-bottom: 20px">
             <summary>Variant Discovery</summary>
             <div style="margin-left:20px; padding-top:10px">)";
     Discovery(out, j, config, onlyKnownDRMs, numHaplotypes);
