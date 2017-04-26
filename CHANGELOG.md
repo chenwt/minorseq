@@ -1,6 +1,9 @@
 # MINORSEQ - CHANGELOG
 
 ## [1.4.0]
+### Added
+ - Add '--min-perc -m' to threshold on variant percentage
+
 ### Changed
  - Separate target config inputs for TC and CLI
  - Reduce TC Target to 'none' and 'HIV'

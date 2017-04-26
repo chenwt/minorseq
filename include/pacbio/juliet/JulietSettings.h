@@ -66,6 +66,7 @@ struct JulietSettings
     AnalysisMode Mode;
     double SubstitutionRate;
     double DeletionRate;
+    double MinimalPerc;
 
     /// Parses the provided CLI::Results and retrieves a defined set of options.
     JulietSettings(const PacBio::CLI::Results& options);

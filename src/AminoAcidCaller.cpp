@@ -75,6 +75,7 @@ AminoAcidCaller::AminoAcidCaller(const std::vector<std::shared_ptr<Data::ArrayRe
     , mergeOutliers_(settings.MergeOutliers)
     , debug_(settings.Debug)
     , drmOnly_(settings.DRMOnly)
+    , minimalPerc_(settings.MinimalPerc)
 {
 
     CallVariants();
@@ -487,16 +488,19 @@ void AminoAcidCaller::CallVariants()
 
                 auto StoreVariant = [this, &codon_counts, &coverage, &p, &geneName, &genes,
                                      &curVariantPosition, &codonPos]() {
-                    const char curAA = AAT::FromCodon.at(codon_counts.first);
-                    VariantGene::VariantPosition::VariantCodon curVariantCodon;
-                    curVariantCodon.codon = codon_counts.first;
-                    curVariantCodon.frequency = codon_counts.second / static_cast<double>(coverage);
-                    curVariantCodon.pValue = p;
-                    curVariantCodon.knownDRM =
-                        FindDRMs(geneName, genes,
-                                 DMutation(curVariantPosition->refAminoAcid, codonPos, curAA));
+                    const double freq = codon_counts.second / static_cast<double>(coverage);
+                    if (debug_ || freq * 100 >= minimalPerc_) {
+                        const char curAA = AAT::FromCodon.at(codon_counts.first);
+                        VariantGene::VariantPosition::VariantCodon curVariantCodon;
+                        curVariantCodon.codon = codon_counts.first;
+                        curVariantCodon.frequency = freq;
+                        curVariantCodon.pValue = p;
+                        curVariantCodon.knownDRM =
+                            FindDRMs(geneName, genes,
+                                     DMutation(curVariantPosition->refAminoAcid, codonPos, curAA));
 
-                    curVariantPosition->aminoAcidToCodons[curAA].push_back(curVariantCodon);
+                        curVariantPosition->aminoAcidToCodons[curAA].push_back(curVariantCodon);
+                    }
                 };
                 if (debug_) {
                     StoreVariant();

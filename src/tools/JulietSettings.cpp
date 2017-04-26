@@ -93,6 +93,13 @@ const PlainOption DeletionRate{
     "Deletion Rate, specify to override the learned rate.",
     CLI::Option::FloatType(0)
 };
+const PlainOption MinimalPerc{
+    "minimal_percentage",
+    { "min-perc", "m" },
+    "Minimal Variant Percentage.",
+    "Minimal variant percentage to report.",
+    CLI::Option::FloatType(0)
+};
 const PlainOption TargetConfigTC{
     "target_config",
     { "target-config-tc" },
@@ -145,6 +152,7 @@ JulietSettings::JulietSettings(const PacBio::CLI::Results& options)
     , Mode(AnalysisModeFromOptions(options))
     , SubstitutionRate(options[OptionNames::SubstitutionRate])
     , DeletionRate(options[OptionNames::DeletionRate])
+    , MinimalPerc(options[OptionNames::MinimalPerc])
 {
     const std::string targetConfigTC = options[OptionNames::TargetConfigTC];
     const std::string targetConfigCLI = options[OptionNames::TargetConfigCLI];
@@ -220,7 +228,8 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
         OptionNames::Debug,
         OptionNames::MergeOutliers,
         OptionNames::TargetConfigTC,
-        OptionNames::Error
+        OptionNames::Error,
+        OptionNames::MinimalPerc
     });
 
     i.AddGroup("Configuration",
