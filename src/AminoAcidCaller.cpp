@@ -502,7 +502,11 @@ void AminoAcidCaller::CallVariants()
                     StoreVariant();
                 } else if (p < alpha) {
                     if (drmOnly_) {
-                        if (predictorSite) StoreVariant();
+                        if (!FindDRMs(geneName, genes,
+                                      DMutation(curVariantPosition->refAminoAcid, codonPos,
+                                                AAT::FromCodon.at(codon_counts.first)))
+                                 .empty())
+                            StoreVariant();
                     } else {
                         if (predictorSite)
                             StoreVariant();
