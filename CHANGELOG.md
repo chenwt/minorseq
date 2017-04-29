@@ -1,5 +1,9 @@
 # MINORSEQ - CHANGELOG
 
+## [1.3.2]
+### Changed
+ - Fixed minimal insertion threshold in fuse to 50% of the coverage
+
 ## [1.3.1]
 ### Changed
  - Added re-align workflow back to julietflow, typo -gt instead of -ge

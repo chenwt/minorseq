@@ -66,7 +66,7 @@ private:
 
 private:
     const int minCoverage_ = 50;
-    const int minInsertionCoverage_ = 50;
+    const double minInsertionCoverageFreq_ = 0.5;
 
     std::string consensusSequence_;
 };
