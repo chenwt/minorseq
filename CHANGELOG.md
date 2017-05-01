@@ -1,5 +1,11 @@
 # MINORSEQ - CHANGELOG
 
+## [1.4.0]
+### Changed
+ - Separate target config inputs for TC and CLI
+ - Reduce TC Target to 'none' and 'HIV'
+ - Hide `--mode-error` and `--merge-outliers`
+
 ## [1.3.2]
 ### Changed
  - Fixed minimal insertion threshold in fuse to 50% of the coverage
