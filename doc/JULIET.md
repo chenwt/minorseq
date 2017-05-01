@@ -137,9 +137,9 @@ Here is a "hiv.json" target configuration file:
 }
 ```
 
-Run with customized target config using the `-c` option:
+Run with customized target config using the `--config` option:
 ```
-$ juliet --config-file hiv.json data.align.bam patientZero.html
+$ juliet --config hiv.json data.align.bam patientZero.html
 ```
 
 <img src="img/juliet_hiv-own.png" width="500px">
