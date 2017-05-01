@@ -101,12 +101,8 @@ fi
 
 if  [[ -z "${config}" ]]; then
   config=""
-elif [[ -f "${config}" ]]; then
-  if [[ ! "${config}" == /*  ]]; then
-    config="--config-file $(pwd)/${config}"
-  else
-    config="--config-file ${config}"
-  fi
+elif [[ -f "${config}" ]] && [[ ! "${config}" == /*  ]]; then
+    config="--config $(pwd)/${config}"
 else
   config="--config ${config}"
 fi
