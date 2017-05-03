@@ -163,13 +163,19 @@ void AminoAcidCaller::PhaseVariants()
 
         // Get all codons for this row
         std::vector<std::string> codons;
+        bool skip = false;
         for (const auto& pos_var : variantPositions) {
             std::string codon;
             int local = pos_var.first - msaByRow_.BeginPos - 3;
             for (int i = 0; i < 3; ++i)
                 codon += row.Bases.at(local + i);
+            if (!pos_var.second->IsHit(codon)) {
+                skip = true;
+                break;
+            }
             codons.emplace_back(std::move(codon));
         }
+        if (skip) continue;
 
         // There are already haplotypes to compare against
         int miss = true;

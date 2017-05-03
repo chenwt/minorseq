@@ -69,6 +69,16 @@ struct VariantGene
         std::map<char, std::vector<VariantCodon>> aminoAcidToCodons;
 
         bool IsVariant() const { return !aminoAcidToCodons.empty(); }
+        bool IsHit(const std::string& codon)
+        {
+            if (codon == refCodon) return true;
+            for (const auto amino_varCodon : aminoAcidToCodons) {
+                for (const auto variant_codon : amino_varCodon.second) {
+                    if (codon == variant_codon.codon) return true;
+                }
+            }
+            return false;
+        }
     };
 
     std::map<int, std::shared_ptr<VariantPosition>> relPositionToVariant;
