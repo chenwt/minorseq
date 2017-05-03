@@ -1,5 +1,10 @@
 # MINORSEQ - CHANGELOG
 
+## [1.5.0]
+### Changed
+ - Fix FTE
+ - ONly show haplotypes with variant hits
+
 ## [1.4.0]
 ### Added
  - Add '--min-perc -m' to threshold on variant percentage
