@@ -477,11 +477,12 @@ void AminoAcidCaller::CallVariants()
             }
 
             for (const auto& codon_counts : codons) {
+                auto expected =
+                    coverage * Probability(curVariantPosition->refCodon, codon_counts.first);
                 double p =
                     (Statistics::Fisher::fisher_exact_tiss(
-                         codon_counts.second, coverage,
-                         coverage * Probability(curVariantPosition->refCodon, codon_counts.first),
-                         coverage) *
+                         std::ceil(codon_counts.second), std::ceil(coverage - codon_counts.second),
+                         std::ceil(expected), std::ceil(coverage - expected)) *
                      numberOfTests);
 
                 if (p > 1) p = 1;
