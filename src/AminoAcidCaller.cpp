@@ -477,6 +477,7 @@ void AminoAcidCaller::CallVariants()
             }
 
             for (const auto& codon_counts : codons) {
+                if (curVariantPosition->refCodon == codon_counts.first) continue;
                 auto expected =
                     coverage * Probability(curVariantPosition->refCodon, codon_counts.first);
                 double p =
