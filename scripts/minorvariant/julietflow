@@ -24,7 +24,8 @@ function echoHelp() {
   -t [arg]  Target reference FASTA, per default using --ref.
   -m [arg]  Minimal variant frequency. Default=0.
   -p        Phase variants.
-  -k        Keep temporary files.
+  -k        Only report known DRM positions.
+  -t        Keep temporary files.
   -h --help This help page"
   exit 0
 }
@@ -35,6 +36,7 @@ cores=1
 max=1
 mode=''
 keep="0"
+drm=""
 helpRequested="0"
 minperc=0
 
@@ -43,7 +45,7 @@ if [[ $# -eq 0 ]]; then
 fi
 
 PROGNAME=${0##*/}
-SHORTOPTS="hi:r:c:j:t:e:m:pk"
+SHORTOPTS="hi:r:c:j:t:e:m:pkt"
 LONGOPTS="help"
 
 ARGS=$(getopt -s bash --options $SHORTOPTS  \
@@ -76,8 +78,10 @@ while [[ $# -gt 0 ]] ; do
       minperc=$1;;
     -p)
       mode="--mode-phasing";;
-    -k)
+    -t)
       keep="1";;
+    -k)
+      drm="--drm-only";;
     -h | --help)
       helpRequested="1";;
     \?)
@@ -151,15 +155,15 @@ done
 # Re-map last alignment against original reference
 if [ $max -ge 1 ]; then
   cleric ${run_prefix}_${max}.align.bam ${run_prefix}_${max}_ref.fasta $target ${run_prefix}_cleric.bam
-  juliet ${run_prefix}_cleric.bam ${config} ${mode} -m ${minperc} ${run_prefix}.html ${run_prefix}.json
+  juliet ${run_prefix}_cleric.bam ${config} ${mode} ${drm} -m ${minperc} ${run_prefix}.html ${run_prefix}.json
 else
-  juliet ${run_prefix}_0.align.bam ${config} ${mode} -m ${minperc} ${run_prefix}.html ${run_prefix}.json
+  juliet ${run_prefix}_0.align.bam ${config} ${mode} ${drm} -m ${minperc} ${run_prefix}.html ${run_prefix}.json
 fi
 cp ${run_prefix}.html ${run_prefix}.json ${wdir}/
 
 if [[ "${keep}" = "1" ]]; then
-  mkdir ${wdir}/tmp
-  cp -R * ${wdir}/tmp/
+  mkdir ${wdir}/${run_prefix}.tmp
+  cp -R * ${wdir}/${run_prefix}.tmp/
 fi
 
 # switch back to original root
