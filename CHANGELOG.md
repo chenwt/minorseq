@@ -1,11 +1,17 @@
 # MINORSEQ - CHANGELOG
 
 ## [1.5.0]
+### Added
+ - Add drm only mode `-k` to julietflow
+
 ### Changed
  - Fix FTE
  - Only show haplotypes with variant hits
  - Skip reference codon in calling step
  - Do not overcorrect
+ - julietflow keep tmp dir option:
+   - renamed from `-k` to `-t`
+   - prepends input prefix to tmp directory
 
 ## [1.4.0]
 ### Added
