@@ -112,7 +112,7 @@ int AminoAcidCaller::CountNumberOfTests(const std::vector<TargetGene>& genes) co
 
                 codons[codon]++;
             }
-            numberOfTests += codons.size();
+            numberOfTests += codons.size() - 1;
         }
     }
     return numberOfTests;
