@@ -3,7 +3,9 @@
 ## [1.5.0]
 ### Changed
  - Fix FTE
- - ONly show haplotypes with variant hits
+ - Only show haplotypes with variant hits
+ - Skip reference codon in calling step
+ - Do not overcorrect
 
 ## [1.4.0]
 ### Added

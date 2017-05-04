@@ -112,7 +112,7 @@ int AminoAcidCaller::CountNumberOfTests(const std::vector<TargetGene>& genes) co
 
                 codons[codon]++;
             }
-            numberOfTests += codons.size();
+            numberOfTests += codons.size() - 1;
         }
     }
     return numberOfTests;
@@ -477,6 +477,7 @@ void AminoAcidCaller::CallVariants()
             }
 
             for (const auto& codon_counts : codons) {
+                if (curVariantPosition->refCodon == codon_counts.first) continue;
                 auto expected =
                     coverage * Probability(curVariantPosition->refCodon, codon_counts.first);
                 double p =
