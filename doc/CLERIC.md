@@ -35,3 +35,9 @@ Or:
 cat reference.fasta new_ref.fasta > combined.fasta
 cleric m530526.align.bam combined.fasta cleric_output.bam
 ```
+
+## FAQ
+### Cleric does not finish.
+Runtime is linear in the number of reads provided. The alignment step runs a
+Needleman-Wunsch; with NxM runtime. Please do not provide references with
+lengths of human chromosomes, but concentrate on your actual amplicon target.
