@@ -104,9 +104,9 @@ const PlainOption TargetConfigTC{
     "target_config",
     { "target-config-tc" },
     "Target",
-    "Predefined target config tag, one of \"none\" or \"HIV\".",
+    "Predefined target config tag, one of \"none\" or \"HIV_HXB2\".",
     CLI::Option::StringType("none"),
-    {"none", "HIV"},
+    {"none", "HIV_HXB2"},
     CLI::OptionFlags::HIDE_FROM_HELP
 };
 const PlainOption TargetConfigCLI{
