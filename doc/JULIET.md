@@ -140,7 +140,8 @@ Here is a "hiv.json" target configuration file:
         }
     ],
     "referenceName": "my seq",
-    "referenceSequence": "TGGAAGGGCT..."
+    "referenceSequence": "TGGAAGGGCT...",
+    "version": "Free text to version your config files"
 }
 ```
 
