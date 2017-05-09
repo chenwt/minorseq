@@ -3,6 +3,7 @@
 ## [1.5.0]
 ### Added
  - Add drm only mode `-k` to julietflow
+ - Add target config version
 
 ### Changed
  - Fix FTE

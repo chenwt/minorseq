@@ -487,8 +487,11 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
         << "</code><br>"
         << R"(<span style="text-style: bold">Juliet version:</span> <code>)"
         << PacBio::MinorseqVersion() << " (commit " << PacBio::MinorseqGitSha1() << ")"
-        << "</code><br>"
-        << R"(</div></details>
+        << "</code><br>";
+    if (!config.version.empty())
+        out << R"(<span style="text-style: bold">Target config version:</span> <code>)"
+            << config.version << "</code><br>";
+    out << R"(</div></details>
             <details open style="margin-bottom: 20px">
             <summary>Variant Discovery</summary>
             <div style="margin-left:20px; padding-top:10px">)";
