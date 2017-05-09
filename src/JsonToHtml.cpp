@@ -43,6 +43,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/replace.hpp>
 
+#include <pbbam/DataSet.h>
+
 #include <pacbio/Version.h>
 #include <pacbio/juliet/JsonToHtml.h>
 
@@ -205,7 +207,6 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
 {
     Encode(filename);
     Encode(parameters);
-#if 1
     // Count number of haplotypes
     auto CountNumHaplotypes = [&j]() {
         int i = -1;
@@ -243,9 +244,31 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
         << std::endl
         << "<style>" << std::endl
         << R"(
-            body { font-family: helvetica-light }
-            body {
-            font-family: helvetica-light
+        *,
+        *:before,
+        *:after {
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 100%;
+            background: #fff;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        details {
+            border-radius: 5px;
+            border-left: 2px solid black;
+        }
+
+        summary {
+            border-radius: 3px;
+            padding: 5px 10px;
+            outline: none;
+            font-weight: bold;
         }
 
         table.discovery {
@@ -380,7 +403,7 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
             display: none;
         })";
     out << R"(
-            table.drmview {
+        table.drmview {
             border-collapse: collapse;
             margin-bottom: 20px;
             min-width: 200px;
@@ -400,7 +423,7 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
             font-weight: bold;
         }
 
-        table.drmview td.drug {
+        table.drmview td.drug, table.drmview td.drugFirst {
             border-top: 1px dashed white;
             background-color: #2d2d2d;
             color:white;
@@ -409,90 +432,117 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
 
         table.drmview td.drugFirst {
             border-top: 3px solid white;
-            background-color: #2d2d2d;
-            color:white;
-            vertical-align:top;
         }
 
-        table.drmview td.refaa {
+        table.drmview td.refaa, table.drmview td.refaaFirstDrug, table.drmview td.refaaFirstGene {
             background-color: #bbb;
             border-right: 1px solid #ddd;
         }
         table.drmview td.refaaFirstDrug {
             border-top: 3px solid white;
-            background-color: #bbb;
-            border-right: 1px solid #ddd;
         }
         table.drmview td.refaaFirstGene {
             border-top: 1px dashed white;
-            background-color: #bbb;
-            border-right: 1px solid #ddd;
         }
 
-        table.drmview td.refpos {
+        table.drmview td.refpos, table.drmview td.refposFirstDrug, table.drmview td.refposFirstGene {
             background-color: #ccc;
             border-right: 1px solid #ddd;
         }
         table.drmview td.refposFirstDrug {
             border-top: 3px solid white;
-            background-color: #ccc;
-            border-right: 1px solid #ddd;
         }
         table.drmview td.refposFirstGene {
             border-top: 1px dashed white;
-            background-color: #ccc;
-            border-right: 1px solid #ddd;
         }
 
-        table.drmview td.curaa {
-            // color: #b50937;
+        table.drmview td.curaa, table.drmview td.curaaFirstDrug, table.drmview td.curaaFirstGene {
             background-color: #ddd;
             border-right: 1px dashed #ccc;
         }
         table.drmview td.curaaFirstDrug {
-            // color: #b50937;
             border-top: 3px solid white;
-            background-color: #ddd;
-            border-right: 1px dashed #ccc;
         }
         table.drmview td.curaaFirstGene {
-            // color: #b50937;
             border-top: 1px dashed white;
-            background-color: #ddd;
-            border-right: 1px dashed #ccc;
         }
 
-        table.drmview td.freq {
+        table.drmview td.freq, table.drmview td.freqFirstDrug, table.drmview td.freqFirstGene {
             background-color: #eee;
         }
         table.drmview td.freqFirstDrug {
             border-top: 3px solid white;
-            background-color: #eee;
         }
         table.drmview td.freqFirstGene {
             border-top: 1px dashed white;
-            background-color: #eee;
         })"
         << std::endl
         << "</style>" << std::endl
         << "</head>" << std::endl
         << R"(<body>
-            <h1 style="text-size:20pt">Juliet summary</h1>
+            <h1 style="margin-top:5px">Minor Variants Summary (Juliet)</h1>
             <details style="margin-bottom: 20px">
             <summary>Input data</summary>
-            <div style="margin-left:20px; padding-top: 10px">
-            <span style="text-style: bold">Input file:</span> <code>)"
-        << filename << "</code><br>"
-        << R"(<span style="text-style: bold">Command line call:</span> <code>)" << parameters
-        << "</code><br>"
-        << R"(<span style="text-style: bold">Juliet version:</span> <code>)"
-        << PacBio::MinorseqVersion() << " (commit " << PacBio::MinorseqGitSha1() << ")"
-        << "</code><br>";
-    if (!config.version.empty())
-        out << R"(<span style="text-style: bold">Target config version:</span> <code>)"
-            << config.version << "</code><br>";
-    out << R"(</div></details>
-            <details open style="margin-bottom: 20px">
+            <div style="margin-left:20px; padding-top: 10px">)";
+    out << "<table>";
+    out << "<tr><td>Timestamp:</td><td><code>" << BAM::ToIso8601(std::chrono::system_clock::now())
+        << "</code></td></tr>";
+    out << "<tr><td>Input File:</td><td><code>" << filename << "</td></tr>";
+    out << R"(<tr><td>Command Line Call:</td><td><code>)";
+    if (parameters.empty())
+        out << "Invoked from SMRTLink, please check SMRTLink logs for parameters";
+    else
+        out << parameters;
+    out << "</td></tr>"
+        << R"(<tr><td>Juliet Version:</td><td><code>)" << PacBio::MinorseqVersion() << " (commit "
+        << PacBio::MinorseqGitSha1() << ")"
+        << "</td></tr>";
+    out << "</table>";
+    out << "</div></details>" << std::endl;
+
+    out << R"(
+            <details style="margin-bottom: 20px;margin-top:10px">
+            <summary>Target config</summary>
+            <div style="padding-left:20px;padding-top:10px">)";
+    out << "<table>";
+    const std::string version = config.version.empty() ? "NA" : config.version;
+    const std::string referenceName = config.referenceName.empty() ? "NA" : config.referenceName;
+    const std::string referenceSequenceLength =
+        config.referenceSequence.empty() ? "NA" : std::to_string(config.referenceSequence.size());
+    out << "<tr><td>Config Version:</td><td><code>" << version << "</code></td></tr>";
+    out << "<tr><td>Reference Name:</td><td><code>" << referenceName << "</code></td></tr>";
+    out << "<tr><td>Reference Length:</td><td><code>" << referenceSequenceLength
+        << "</code></td></tr>";
+    if (config.targetGenes.empty()) out << "<tr><td>Genes:</td><td><code>NA</code></td></tr>";
+    out << "</table>";
+    if (!config.targetGenes.empty()) {
+        out << "<span style=\"padding-left:3px\">Genes:</span><ul style=\"margin-top:0px\">"
+            << std::endl;
+        for (const auto& gene : config.targetGenes) {
+            out << "<li style=\"margin-top:5px;\">"
+                << "<b>" << gene.name << "</b>"
+                << " (" << gene.begin << "-" << gene.end << ")";
+            if (!gene.drms.empty()) {
+                out << "<ul>";
+                for (const auto& drm : gene.drms) {
+                    out << "<li>"
+                        << "<code>" << drm.name << ":";
+
+                    for (const auto& pos : drm.positions) {
+                        out << " " << std::string(pos);
+                    }
+                    out << "</code>"
+                        << "</li>";
+                }
+                out << "</ul>" << std::endl;
+            }
+            out << "</li>" << std::endl;
+        }
+        out << "</ul>" << std::endl;
+    }
+    out << "</div></details>" << std::endl;
+
+    out << R"(<details open style="margin-bottom: 20px">
             <summary>Variant Discovery</summary>
             <div style="margin-left:20px; padding-top:10px">)";
     Discovery(out, j, config, onlyKnownDRMs, numHaplotypes);
@@ -507,40 +557,11 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
 void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetConfig& config,
                            bool onlyKnownDRMs, int numHaplotypes)
 {
+    bool hasConf = !config.referenceName.empty() && !config.referenceSequence.empty();
+
     static std::vector<std::string> colors = {"#ea3c1c", "#f48e00", "#ebff0a", "#56e400",
                                               "#51c6ff", "#4a80ff", "#ae37ff", "#db005f"};
     const std::string referenceName = config.referenceName;
-    out << R"(
-            <details style="margin-bottom: 20px">
-            <summary>Legend</summary>
-            <div style="padding-left:20px">
-            <p>Every table represents a gene.<br/>
-            Each row stands for a mutated amino acid. Positions are relative to the current gene.<br/>
-            Positions without significant mutations are omitted.<br/>
-            All coordinates are in reference space.<br/>
-            The mutated nucleotide is highlighted in the codon.<br/>
-            Percentage is per codon.<br/>
-            Coverage includes deletions.<br/>
-            Known drug-resistance mutations positions are annotated in the DRM column.<br/>
-            <br/>
-            Clicking on a row unfolds the counts of the multiple sequence alignment of the<br/>
-            codon position and up to ±3 surrounding positions.<br/>
-            Nucleotides of this codon are in red and wild type in bold.<br/>
-            <br/>
-            Deletions and insertions are being ignored in this version.<br/>
-            <br/>)";
-    if (numHaplotypes > 0) {
-        out << R"(The row-wise variant calls are "transposed" onto the per column haplotypes.<br/>
-            For each variant, the haplotype shows a colored box, wild type is represented by plain dark gray.<br/>
-            A color gradiant helps to distinguish between columns. Colors are purely for the visualization.<br/>
-            Haplotypes are sorted in descending order by their relative abundance in percent.<br/>
-            Haplotypes are assigned a single or combination of letters for documentation purposes.<br/>
-            Haplotypes are phased across genes.<br/><br/>)";
-    }
-    out << R"(This software is for research only and has not been clinically validated!</p>
-            </div>
-            </details>)"
-        << std::endl;
 
     if (j.find("genes") == j.cend() || j["genes"].is_null()) return;
     for (const auto& gene : j["genes"]) {
@@ -568,7 +589,7 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
 
         out << R"(<tr>
                 <th colspan="3">)";
-        if (referenceName.empty()) out << "unknown";
+        if (referenceName.empty()) out << "Majority Call";
         if (referenceName.size() > 11)
             out << referenceName.substr(0, 11) << "...";
         else
@@ -614,7 +635,7 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
                     line << "<td>" << Strip(variant_amino_acid["amino_acid"]) << "</td>";
                     line << "<td>";
                     for (int j = 0; j < 3; ++j) {
-                        if (mutated[j]) line << "<b style=\"color:#B50A36; font-weight:normal\">";
+                        if (mutated[j]) line << "<b style=\"color:#E90032; font-weight:normal\">";
                         line << Strip(variant_codons["codon"])[j] << " ";
                         if (mutated[j]) line << "</b>";
                     }
@@ -695,7 +716,69 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
         }
     }
     out << "</table>" << std::endl;
-#endif
+
+    out << R"(
+            <details style="margin-bottom: 20px">
+            <summary>Legend</summary>
+            <div style="padding-left:20px">)";
+
+    out << "<p>General:<br/><ul>" << std::endl;
+    if (hasConf) {
+        out << "<li>Every table represents a gene.</li>" << std::endl;
+        out << "<li>Positions are relative to the current gene.</li>" << std::endl;
+    } else {
+        out << "<li>There is at maximum one table with an \"Unnamed ORF\"</li>" << std::endl;
+        out << "<li>Reading frame starts at the first position of the reference used for "
+               "alignment.</li>"
+            << std::endl;
+        out << "<li>The left side of the table shows major codons / AAs observed in this "
+               "sample.</li>"
+            << std::endl;
+    }
+    out << "<li>Each row stands for a mutated amino acid.</li>" << std::endl;
+    out << "<li>Positions without significant mutations are omitted.</li>" << std::endl;
+    out << "<li>All coordinates are in reference space.</li>" << std::endl;
+    out << "<li>The mutated nucleotide is highlighted in the codon.</li>" << std::endl;
+    out << "<li>Percentage is per codon.</li>" << std::endl;
+    out << "<li>Coverage includes deletions.</li>" << std::endl;
+    out << "<li>Known drug-resistance mutations positions are annotated in the DRM column.</li>"
+        << std::endl;
+    out << "</ul>" << std::endl;
+    out << "<p>Alignment Details:</p>" << std::endl;
+    out << "<ul>" << std::endl;
+    out << "<li>Clicking on a row unfolds the counts of the multiple sequence alignment of the "
+           "codon position and up to ±3 surrounding positions.</li>"
+        << std::endl;
+    out << "<li>Nucleotides of this codon are in red and wild type in bold.</li>" << std::endl;
+    out << "</ul>" << std::endl;
+    out << "<p>Limitations:</p>" << std::endl;
+    out << "<ul>" << std::endl;
+    out << "<li>Deletions and insertions are being ignored in this version.</li>" << std::endl;
+    out << "</ul>" << std::endl;
+    if (numHaplotypes > 0) {
+        out << "<p>Haplotypes:</p>" << std::endl;
+        out << "<ul>" << std::endl;
+        out << "<li>The row-wise variant calls are \"transposed\" onto the per column "
+               "haplotypes.</li>"
+            << std::endl;
+        out << "<li>For each variant, the haplotype shows a colored box, wild type is represented "
+               "by plain dark gray.</li>"
+            << std::endl;
+        out << "<li>A color gradiant helps to distinguish between columns. Colors are purely for "
+               "the visualization.</li>"
+            << std::endl;
+        out << "<li>Haplotypes are sorted in descending order by their relative abundance in "
+               "percent.</li>"
+            << std::endl;
+        out << "<li>Haplotypes are assigned a single or combination of letters for documentation "
+               "purposes.</li>"
+            << std::endl;
+        if (hasConf) out << "<li>Haplotypes are phased across genes.</li>" << std::endl;
+        out << "</ul>" << std::endl;
+    }
+    out << "<p>This software is for research only and has not been clinically "
+           "validated!</p></div></details>"
+        << std::endl;
 }
 }
 }  //::PacBio::Juliet

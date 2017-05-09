@@ -25,7 +25,7 @@ function echoHelp() {
   -m [arg]  Minimal variant frequency. Default=0.
   -p        Phase variants.
   -k        Only report known DRM positions.
-  -t        Keep temporary files.
+  -z        Keep temporary files.
   -h --help This help page"
   exit 0
 }
@@ -45,7 +45,7 @@ if [[ $# -eq 0 ]]; then
 fi
 
 PROGNAME=${0##*/}
-SHORTOPTS="hi:r:c:j:t:e:m:pkt"
+SHORTOPTS="hi:r:c:j:t:e:m:pkz"
 LONGOPTS="help"
 
 ARGS=$(getopt -s bash --options $SHORTOPTS  \
@@ -78,7 +78,7 @@ while [[ $# -gt 0 ]] ; do
       minperc=$1;;
     -p)
       mode="--mode-phasing";;
-    -t)
+    -z)
       keep="1";;
     -k)
       drm="--drm-only";;
