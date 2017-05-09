@@ -228,8 +228,7 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
         OptionNames::Debug,
         OptionNames::MergeOutliers,
         OptionNames::TargetConfigTC,
-        OptionNames::Error,
-        OptionNames::MinimalPerc
+        OptionNames::Error
     });
 
     i.AddGroup("Configuration",
@@ -242,6 +241,7 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
     {
         OptionNames::Region,
         OptionNames::DRMOnly,
+        OptionNames::MinimalPerc
     });
 
     i.AddGroup("Chemistry override (specify both)",
