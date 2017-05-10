@@ -33,6 +33,8 @@ python /mnt/software/v/virtualenv/13.0.1/virtualenv.py venv_tmp
 set +u
 source venv_tmp/bin/activate
 set -u
+pip install -U pip
+pip install setuptools==33.1.1
 pip install nose
 (cd pbcommand && python setup.py install)
 nosetests --verbose --with-xunit tests/python/test_tool_contracts.py
