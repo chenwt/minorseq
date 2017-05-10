@@ -80,7 +80,7 @@ while [[ $# -gt 0 ]] ; do
       minperc=$1;;
     -g)
       shift
-      region="-r $1";;
+      region="--region $1";;
     -p)
       mode="--mode-phasing";;
     -z)
@@ -160,9 +160,9 @@ done
 # Re-map last alignment against original reference
 if [ $max -ge 1 ]; then
   cleric ${run_prefix}_${max}.align.bam ${run_prefix}_${max}_ref.fasta $target ${run_prefix}_cleric.bam
-  juliet ${run_prefix}_cleric.bam ${region} ${config} ${mode} ${drm} -m ${minperc} ${run_prefix}.html ${run_prefix}.json
+  juliet ${run_prefix}_cleric.bam ${region} ${config} ${mode} ${drm} --min-perc ${minperc} ${run_prefix}.html ${run_prefix}.json
 else
-  juliet ${run_prefix}_0.align.bam ${region} ${config} ${mode} ${drm} -m ${minperc} ${run_prefix}.html ${run_prefix}.json
+  juliet ${run_prefix}_0.align.bam ${region} ${config} ${mode} ${drm} --min-perc ${minperc} ${run_prefix}.html ${run_prefix}.json
 fi
 cp ${run_prefix}.html ${run_prefix}.json ${wdir}/
 
