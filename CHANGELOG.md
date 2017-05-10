@@ -3,6 +3,7 @@
 ## [1.6.0]
 ### Added
  - All HIV genes
+ - Add `-g` to julietflow to clip to a certain region
 
 ### Changed
  - Julietflow keep tmp dir renamed to `-z`, as `-t` is for target sequence
