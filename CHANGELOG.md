@@ -9,6 +9,7 @@
  - Julietflow keep tmp dir renamed to `-z`, as `-t` is for target sequence
  - New HTML look and feel
  - Reverse overcorrection fix, not prime time ready yet
+ - Fix offset when config is missing
 
 ## [1.5.0]
 ### Added
