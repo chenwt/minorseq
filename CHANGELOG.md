@@ -1,5 +1,14 @@
 # MINORSEQ - CHANGELOG
 
+## [1.6.0]
+### Added
+ - All HIV genes
+
+### Changed
+ - Julietflow keep tmp dir renamed to `-z`, as `-t` is for target sequence
+ - New HTML look and feel
+ - Reverse overcorrection fix, not prime time ready yet
+
 ## [1.5.0]
 ### Added
  - Add drm only mode `-k` to julietflow

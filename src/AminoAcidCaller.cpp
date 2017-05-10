@@ -112,7 +112,7 @@ int AminoAcidCaller::CountNumberOfTests(const std::vector<TargetGene>& genes) co
 
                 codons[codon]++;
             }
-            numberOfTests += codons.size() - 1;
+            numberOfTests += codons.size();
         }
     }
     return numberOfTests;
@@ -387,7 +387,7 @@ void AminoAcidCaller::CallVariants()
     const bool hasReference = !targetConfig_.referenceSequence.empty();
     // If no user config has been provided, use complete input region
     if (genes.empty()) {
-        TargetGene tg(msaByRow_.BeginPos, msaByRow_.EndPos, "unknown", {});
+        TargetGene tg(msaByRow_.BeginPos, msaByRow_.EndPos, "Unnamed ORF", {});
         genes.emplace_back(tg);
     }
 

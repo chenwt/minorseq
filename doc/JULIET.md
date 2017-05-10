@@ -200,6 +200,12 @@ the order of all `haplotype_hit` arrays.
 
 # FAQ
 
+### Why PacBio CCS for minor variants?
+PacBio systems have shown to have no systematic errors and allow for
+generation of high-quality CCS reads. *Juliet* can reliably call minor variants
+and phase co-occurring mutation patterns without employing complex and unreliable
+computational models.
+
 ### Why is my chemistry not supported?
 Official support is for Sequel chemistries. If you use Sequel and your chemistry
 is not supported, your *juliet* installation might be outdated.
@@ -260,6 +266,11 @@ associated to that variant contain a frame-shift deletion and
 thus won't be reported.
 
 <img src="img/juliet_abl-nohaplotype.png" width="500px">
+
+## Why are there no haplotype columns, even though I activated phasing?
+In this case, each and every read has at least one deletion in one of the
+identified variant codon positions; thus reads cannot be assigned naïvely.
+An upcoming version might fix this.
 
 ### What about hyper-variable regions like HIV envelope?
 We currently do not support hyper-variable regions and the above mentioned
