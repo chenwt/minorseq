@@ -267,7 +267,7 @@ thus won't be reported.
 
 <img src="img/juliet_abl-nohaplotype.png" width="500px">
 
-## Why are there no haplotype columns, even though I activated phasing?
+### Why are there no haplotype columns, even though I activated phasing?
 In this case, each and every read has at least one deletion in one of the
 identified variant codon positions; thus reads cannot be assigned naïvely.
 An upcoming version might fix this.

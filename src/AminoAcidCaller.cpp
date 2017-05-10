@@ -386,8 +386,10 @@ void AminoAcidCaller::CallVariants()
 
     const bool hasReference = !targetConfig_.referenceSequence.empty();
     // If no user config has been provided, use complete input region
+    int msaOffset = 0;
     if (genes.empty()) {
-        TargetGene tg(msaByRow_.BeginPos, msaByRow_.EndPos, "Unnamed ORF", {});
+        msaOffset = msaByRow_.BeginPos;
+        TargetGene tg(msaOffset, msaByRow_.EndPos, "Unnamed ORF", {});
         genes.emplace_back(tg);
     }
 
@@ -425,7 +427,7 @@ void AminoAcidCaller::CallVariants()
             // Relative to window begin
             const int bi = i - msaByRow_.BeginPos;
 
-            const int codonPos = 1 + (ri / 3);
+            const int codonPos = 1 + (msaOffset + ri) / 3;
             curVariantGene.relPositionToVariant.emplace(
                 codonPos, std::make_shared<VariantGene::VariantPosition>());
             auto& curVariantPosition = curVariantGene.relPositionToVariant.at(codonPos);
