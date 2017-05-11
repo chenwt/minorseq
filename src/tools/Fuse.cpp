@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Pacific Biosciences of California, Inc.
+// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -57,8 +57,7 @@
 namespace PacBio {
 namespace Fuse {
 
-Fuse::Fuse(const std::string& ccsInput, int minCoverage)
-    : minCoverage_(minCoverage), minInsertionCoverage_(minCoverage)
+Fuse::Fuse(const std::string& ccsInput, int minCoverage) : minCoverage_(minCoverage)
 {
     const auto arrayReads = FetchAlignedReads(ccsInput);
     consensusSequence_ = CreateConsensus(arrayReads);
@@ -97,9 +96,10 @@ std::map<int, std::pair<std::string, int>> Fuse::CollectInsertions(
         if (!c.insertions.empty()) {
             int argmax = -1;
             std::string max;
+            double minInsertionCoverage = c.Coverage() * minInsertionCoverageFreq_;
             for (const auto& ins_count : c.insertions) {
                 if (ins_count.first.size() % 3 != 0) continue;
-                if (ins_count.second > argmax && ins_count.second > minInsertionCoverage_) {
+                if (ins_count.second > argmax && ins_count.second > minInsertionCoverage) {
                     argmax = ins_count.second;
                     max = ins_count.first;
                 }

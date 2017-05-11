@@ -1,5 +1,32 @@
 # MINORSEQ - CHANGELOG
 
+## [1.5.0]
+### Added
+ - Add drm only mode `-k` to julietflow
+ - Add target config version
+
+### Changed
+ - Fix FTE
+ - Only show haplotypes with variant hits
+ - Skip reference codon in calling step
+ - Do not overcorrect
+ - julietflow keep tmp dir option:
+   - renamed from `-k` to `-t`
+   - prepends input prefix to tmp directory
+
+## [1.4.0]
+### Added
+ - Add '--min-perc -m' to threshold on variant percentage
+
+### Changed
+ - Separate target config inputs for TC and CLI
+ - Reduce TC Target to 'none' and 'HIV'
+ - Hide `--mode-error` and `--merge-outliers`
+
+## [1.3.2]
+### Changed
+ - Fixed minimal insertion threshold in fuse to 50% of the coverage
+
 ## [1.3.1]
 ### Changed
  - Added re-align workflow back to julietflow, typo -gt instead of -ge

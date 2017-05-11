@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Pacific Biosciences of California, Inc.
+// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -75,6 +75,7 @@ AminoAcidCaller::AminoAcidCaller(const std::vector<std::shared_ptr<Data::ArrayRe
     , mergeOutliers_(settings.MergeOutliers)
     , debug_(settings.Debug)
     , drmOnly_(settings.DRMOnly)
+    , minimalPerc_(settings.MinimalPerc)
 {
 
     CallVariants();
@@ -111,7 +112,7 @@ int AminoAcidCaller::CountNumberOfTests(const std::vector<TargetGene>& genes) co
 
                 codons[codon]++;
             }
-            numberOfTests += codons.size();
+            numberOfTests += codons.size() - 1;
         }
     }
     return numberOfTests;
@@ -162,13 +163,19 @@ void AminoAcidCaller::PhaseVariants()
 
         // Get all codons for this row
         std::vector<std::string> codons;
+        bool skip = false;
         for (const auto& pos_var : variantPositions) {
             std::string codon;
             int local = pos_var.first - msaByRow_.BeginPos - 3;
             for (int i = 0; i < 3; ++i)
                 codon += row.Bases.at(local + i);
+            if (!pos_var.second->IsHit(codon)) {
+                skip = true;
+                break;
+            }
             codons.emplace_back(std::move(codon));
         }
+        if (skip) continue;
 
         // There are already haplotypes to compare against
         int miss = true;
@@ -470,11 +477,13 @@ void AminoAcidCaller::CallVariants()
             }
 
             for (const auto& codon_counts : codons) {
+                if (curVariantPosition->refCodon == codon_counts.first) continue;
+                auto expected =
+                    coverage * Probability(curVariantPosition->refCodon, codon_counts.first);
                 double p =
                     (Statistics::Fisher::fisher_exact_tiss(
-                         codon_counts.second, coverage,
-                         coverage * Probability(curVariantPosition->refCodon, codon_counts.first),
-                         coverage) *
+                         std::ceil(codon_counts.second), std::ceil(coverage - codon_counts.second),
+                         std::ceil(expected), std::ceil(coverage - expected)) *
                      numberOfTests);
 
                 if (p > 1) p = 1;
@@ -487,16 +496,19 @@ void AminoAcidCaller::CallVariants()
 
                 auto StoreVariant = [this, &codon_counts, &coverage, &p, &geneName, &genes,
                                      &curVariantPosition, &codonPos]() {
-                    const char curAA = AAT::FromCodon.at(codon_counts.first);
-                    VariantGene::VariantPosition::VariantCodon curVariantCodon;
-                    curVariantCodon.codon = codon_counts.first;
-                    curVariantCodon.frequency = codon_counts.second / static_cast<double>(coverage);
-                    curVariantCodon.pValue = p;
-                    curVariantCodon.knownDRM =
-                        FindDRMs(geneName, genes,
-                                 DMutation(curVariantPosition->refAminoAcid, codonPos, curAA));
+                    const double freq = codon_counts.second / static_cast<double>(coverage);
+                    if (debug_ || freq * 100 >= minimalPerc_) {
+                        const char curAA = AAT::FromCodon.at(codon_counts.first);
+                        VariantGene::VariantPosition::VariantCodon curVariantCodon;
+                        curVariantCodon.codon = codon_counts.first;
+                        curVariantCodon.frequency = freq;
+                        curVariantCodon.pValue = p;
+                        curVariantCodon.knownDRM =
+                            FindDRMs(geneName, genes,
+                                     DMutation(curVariantPosition->refAminoAcid, codonPos, curAA));
 
-                    curVariantPosition->aminoAcidToCodons[curAA].push_back(curVariantCodon);
+                        curVariantPosition->aminoAcidToCodons[curAA].push_back(curVariantCodon);
+                    }
                 };
                 if (debug_) {
                     StoreVariant();

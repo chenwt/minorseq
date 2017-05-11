@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Pacific Biosciences of California, Inc.
+// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -109,6 +109,7 @@ private:
     const bool mergeOutliers_;
     const bool debug_;
     const bool drmOnly_;
+    const double minimalPerc_;
 };
 }
 }  // ::PacBio::Juliet

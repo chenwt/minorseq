@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Pacific Biosciences of California, Inc.
+// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -66,7 +66,7 @@ private:
 
 private:
     const int minCoverage_ = 50;
-    const int minInsertionCoverage_ = 50;
+    const double minInsertionCoverageFreq_ = 0.5;
 
     std::string consensusSequence_;
 };

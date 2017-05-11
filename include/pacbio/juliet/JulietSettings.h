@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Pacific Biosciences of California, Inc.
+// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -66,6 +66,7 @@ struct JulietSettings
     AnalysisMode Mode;
     double SubstitutionRate;
     double DeletionRate;
+    double MinimalPerc;
 
     /// Parses the provided CLI::Results and retrieves a defined set of options.
     JulietSettings(const PacBio::CLI::Results& options);

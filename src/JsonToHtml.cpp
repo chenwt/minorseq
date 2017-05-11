@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Pacific Biosciences of California, Inc.
+// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -487,8 +487,11 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
         << "</code><br>"
         << R"(<span style="text-style: bold">Juliet version:</span> <code>)"
         << PacBio::MinorseqVersion() << " (commit " << PacBio::MinorseqGitSha1() << ")"
-        << "</code><br>"
-        << R"(</div></details>
+        << "</code><br>";
+    if (!config.version.empty())
+        out << R"(<span style="text-style: bold">Target config version:</span> <code>)"
+            << config.version << "</code><br>";
+    out << R"(</div></details>
             <details open style="margin-bottom: 20px">
             <summary>Variant Discovery</summary>
             <div style="margin-left:20px; padding-top:10px">)";
@@ -513,7 +516,7 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
             <div style="padding-left:20px">
             <p>Every table represents a gene.<br/>
             Each row stands for a mutated amino acid. Positions are relative to the current gene.<br/>
-            Positions with no or synonymous mutation are not being shown.<br/>
+            Positions without significant mutations are omitted.<br/>
             All coordinates are in reference space.<br/>
             The mutated nucleotide is highlighted in the codon.<br/>
             Percentage is per codon.<br/>
@@ -521,15 +524,15 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
             Known drug-resistance mutations positions are annotated in the DRM column.<br/>
             <br/>
             Clicking on a row unfolds the counts of the multiple sequence alignment of the<br/>
-            codon position and up to +-3 surrounding positions.<br/>
-            Red colored are nucleotides of the codon and in bold the wild type.<br/>
+            codon position and up to ±3 surrounding positions.<br/>
+            Nucleotides of this codon are in red and wild type in bold.<br/>
             <br/>
             Deletions and insertions are being ignored in this version.<br/>
             <br/>)";
     if (numHaplotypes > 0) {
         out << R"(The row-wise variant calls are "transposed" onto the per column haplotypes.<br/>
             For each variant, the haplotype shows a colored box, wild type is represented by plain dark gray.<br/>
-            A color gradiant helps to distinguish between columns.<br/>
+            A color gradiant helps to distinguish between columns. Colors are purely for the visualization.<br/>
             Haplotypes are sorted in descending order by their relative abundance in percent.<br/>
             Haplotypes are assigned a single or combination of letters for documentation purposes.<br/>
             Haplotypes are phased across genes.<br/><br/>)";

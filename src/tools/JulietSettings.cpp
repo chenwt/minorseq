@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015, Pacific Biosciences of California, Inc.
+// Copyright (c) 2014-2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -75,7 +75,9 @@ const PlainOption Error{
     { "mode-error" },
     "Alignment Error Rates",
     "Compute alignment error rates.",
-    CLI::Option::BoolType()
+    CLI::Option::BoolType(),
+    JSON::Json(nullptr),
+    CLI::OptionFlags::HIDE_FROM_HELP
 };
 const PlainOption SubstitutionRate{
     "substitution_rate",
@@ -91,27 +93,28 @@ const PlainOption DeletionRate{
     "Deletion Rate, specify to override the learned rate.",
     CLI::Option::FloatType(0)
 };
-const PlainOption TargetConfig{
+const PlainOption MinimalPerc{
+    "minimal_percentage",
+    { "min-perc", "m" },
+    "Minimal Variant Percentage.",
+    "Minimal variant percentage to report.",
+    CLI::Option::FloatType(0)
+};
+const PlainOption TargetConfigTC{
     "target_config",
-    { "config", "c" },
+    { "target-config-tc" },
     "Target",
-    "Predefined target config tag, one of \"none\", \"HIV\", or \"ABL1\".",
+    "Predefined target config tag, one of \"none\" or \"HIV_HXB2\".",
     CLI::Option::StringType("none"),
-    {"none", "HIV", "HIV-PB", "ABL1"}
+    {"none", "HIV_HXB2"},
+    CLI::OptionFlags::HIDE_FROM_HELP
 };
-const PlainOption TargetConfigFile{
-    "target_config_file",
-    { "config-file"},
-    "Target Config file",
-    "Path to the target config JSON file.",
-    CLI::Option::StringType("")
-};
-const PlainOption TargetConfigJSON{
-    "target_config_json",
-    { "config-json"},
+const PlainOption TargetConfigCLI{
+    "target_config_universal",
+    { "config", "c" },
     "Target Config",
-    "Target config JSON string.",
-    CLI::Option::StringType("")
+    "Path to the target config JSON file, predefined target config tag, or the JSON string.",
+    CLI::Option::StringType(""),
 };
 const PlainOption Verbose{
     "verbose",
@@ -125,7 +128,9 @@ const PlainOption MergeOutliers{
     { "merge-outliers" },
     "Merge Outliers",
     "Merge outlier haplotypes.",
-    CLI::Option::BoolType()
+    CLI::Option::BoolType(),
+    JSON::Json(nullptr),
+    CLI::OptionFlags::HIDE_FROM_HELP
 };
 const PlainOption Debug{
     "debug",
@@ -147,31 +152,15 @@ JulietSettings::JulietSettings(const PacBio::CLI::Results& options)
     , Mode(AnalysisModeFromOptions(options))
     , SubstitutionRate(options[OptionNames::SubstitutionRate])
     , DeletionRate(options[OptionNames::DeletionRate])
+    , MinimalPerc(options[OptionNames::MinimalPerc])
 {
-    std::string targetConfigTag = options[OptionNames::TargetConfig];
-    std::string targetConfigJSON = options[OptionNames::TargetConfigJSON];
-    std::string targetConfigFile = options[OptionNames::TargetConfigFile];
+    const std::string targetConfigTC = options[OptionNames::TargetConfigTC];
+    const std::string targetConfigCLI = options[OptionNames::TargetConfigCLI];
 
-    int targetCounter =
-        (targetConfigTag != "none") + !targetConfigJSON.empty() + !targetConfigFile.empty();
-
-    if (targetCounter > 1) {
-        throw std::runtime_error("Target config options are mutually exclusive!");
-    }
-
-    if (!targetConfigJSON.empty()) {
-        TargetConfigUser = targetConfigJSON;
-    } else if (!targetConfigFile.empty()) {
-        TargetConfigUser = targetConfigFile;
-    } else if (targetCounter == 0 || targetConfigTag == "none") {
-        TargetConfigUser = TargetConfig("{}");
-    } else if (!targetConfigTag.empty()) {
-        if (targetConfigTag.size() >= 3) {
-            if (targetConfigTag.at(0) != '<') targetConfigTag = '<' + targetConfigTag;
-            if (targetConfigTag.at(targetConfigTag.size() - 1) != '>') targetConfigTag += '>';
-        }
-        TargetConfigUser = targetConfigTag;
-    }
+    if (targetConfigTC != "none")
+        TargetConfigUser = targetConfigTC;
+    else
+        TargetConfigUser = targetConfigCLI;
 
     SplitRegion(options[OptionNames::Region], &RegionStart, &RegionEnd);
 }
@@ -236,25 +225,23 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
     i.AddOptions(
     {
         OptionNames::Verbose,
-        OptionNames::Debug
-    });
-
-    i.AddGroup("Override amino acid calling mode (mutually exclusive)",
-    {
-        OptionNames::Phasing,
+        OptionNames::Debug,
+        OptionNames::MergeOutliers,
+        OptionNames::TargetConfigTC,
         OptionNames::Error
     });
 
-    i.AddGroup("Additional phasing options",
+    i.AddGroup("Configuration",
     {
-        OptionNames::MergeOutliers
+        OptionNames::TargetConfigCLI,
+        OptionNames::Phasing
     });
 
-    i.AddGroup("Target Configuration (mutually exclusive)",
+    i.AddGroup("Restrictions",
     {
-        OptionNames::TargetConfig,
-        OptionNames::TargetConfigJSON,
-        OptionNames::TargetConfigFile
+        OptionNames::Region,
+        OptionNames::DRMOnly,
+        OptionNames::MinimalPerc
     });
 
     i.AddGroup("Chemistry override (specify both)",
@@ -263,20 +250,13 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
         OptionNames::DeletionRate
     });
 
-    i.AddGroup("Restrictions",
-    {
-        OptionNames::Region,
-        OptionNames::DRMOnly,
-    });
-
     const std::string id = "minorseq.tasks.juliet";
     Task tcTask(id);
     tcTask.AddOption(OptionNames::Phasing);
     tcTask.AddOption(OptionNames::Region);
     tcTask.AddOption(OptionNames::DRMOnly);
-    tcTask.AddOption(OptionNames::TargetConfig);
-    tcTask.AddOption(OptionNames::TargetConfigJSON);
-    tcTask.AddOption(OptionNames::TargetConfigFile);
+    tcTask.AddOption(OptionNames::TargetConfigTC);
+    tcTask.AddOption(OptionNames::TargetConfigCLI);
     tcTask.AddOption(OptionNames::MergeOutliers);
     tcTask.AddOption(OptionNames::SubstitutionRate);
     tcTask.AddOption(OptionNames::DeletionRate);

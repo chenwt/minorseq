@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Pacific Biosciences of California, Inc.
+// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -132,13 +132,13 @@ public:
     std::vector<TargetGene> targetGenes;
     std::string referenceName;
     std::string referenceSequence;
+    std::string version;
     bool HasExpectedMinors() const;
     size_t NumExpectedMinors() const;
 
 private:
-    static std::string DetermineConfigInput(const std::string& input);
-    static std::string ReferenceNameFromJson(const JSON::Json& root);
-    static std::string ReferenceSequenceFromJson(const JSON::Json& root);
+    static std::string DetermineConfigInput(std::string input);
+    static std::string RootTagFromJson(const JSON::Json& root, const std::string& tag);
     static std::vector<TargetGene> TargetGenesFromJson(const JSON::Json& root);
 
 private:

@@ -16,7 +16,8 @@ Testing files are ~50 MByte.
 
   ```sh
   git clone https://github.com/PacificBiosciences/minorseq && cd minorseq
-  git submodule update --init --remote --depth 1
+  git submodule update --init
+  git submodule foreach git pull origin develop
   mkdir build && cd build
   cmake -GNinja -DCMAKE_INSTALL_PREFIX=~/bin .. && ninja
   ninja check
@@ -27,7 +28,8 @@ Testing files are ~50 MByte.
 
   ```sh
   git clone https://github.com/PacificBiosciences/minorseq && cd minorseq
-  git submodule update --init --remote third-party/pbbam third-party/pbcopper
+  git submodule update --init third-party/pbbam third-party/pbcopper
+  git submodule foreach git pull origin develop
   mkdir build && cd build
   cmake -GNinja -DCMAKE_INSTALL_PREFIX=~/bin .. && ninja install
   ```

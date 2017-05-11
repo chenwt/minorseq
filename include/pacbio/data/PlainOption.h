@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015, Pacific Biosciences of California, Inc.
+// Copyright (c) 2014-2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -51,20 +51,26 @@ struct PlainOption
     std::string description;
     JSON::Json defaultValue;
     JSON::Json choices = JSON::Json(nullptr);
+    CLI::OptionFlags flags;
 
     PlainOption(const std::string& id, const std::vector<std::string>& cliOptions,
                 const std::string& name, const std::string& description,
-                const JSON::Json& defaultValue, const JSON::Json& choices = JSON::Json(nullptr))
+                const JSON::Json& defaultValue, const JSON::Json& choices = JSON::Json(nullptr),
+                const CLI::OptionFlags& flags = CLI::OptionFlags::DEFAULT)
         : id(id)
         , cliOptions(cliOptions)
         , name(name)
         , description(description)
         , defaultValue(defaultValue)
         , choices(choices)
+        , flags(flags)
     {
     }
 
-    operator CLI::Option() const { return {id, cliOptions, description, defaultValue, choices}; }
+    operator CLI::Option() const
+    {
+        return {id, cliOptions, description, defaultValue, choices, flags};
+    }
     operator std::pair<std::string, std::string>() const { return std::make_pair(id, name); }
     operator std::string() const { return id; }
 };
