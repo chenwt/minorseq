@@ -8,11 +8,12 @@
 ## Documentation
 
  - [Getting Started](doc/INSTALL.md)
- - Projects
+ - Tools
    - [Minor Variant Calling `juliet`](doc/JULIET.md)
    - [Reduce Alignment `fuse`](doc/FUSE.md)
    - [Swap Alignment Reference `cleric`](doc/CLERIC.md)
    - [Minor Variant Pipeline `julietflow`](doc/JULIETFLOW.md)
+   - [Mix Data _In-Silico_ `mixdata`](doc/MIXDATA.md)
  - [Running your sample 101](doc/INTRODUCTION.md)
  - [Developer environment](doc/DEVELOPER.md)
  - [PacBio open source license](LICENSE)
@@ -34,6 +35,10 @@
 ### [Minor variant pipeline](doc/JULIETFLOW.md)
 
 `julietflow` automatizes the minor variant pipeline.
+
+### [Mix Data _In-Silico_](doc/MIXDATA.md)
+
+`mixdata` helps to mix clonal strains _in-silico_ for benchmarking studies.
 
 ## Disclaimer
 
