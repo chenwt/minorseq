@@ -23,6 +23,7 @@ function echoHelp() {
   -e [arg]  Maximal number of re-align iterations. Default=1
   -t [arg]  Target reference FASTA, per default using --ref.
   -m [arg]  Minimal variant frequency. Default=0.
+  -n [arg]  Maximal variant frequency. Default=100.
   -g [arg]  Genomic region of interest, reads will be clipped to that region, empty means all reads.
   -p        Phase variants.
   -k        Only report known DRM positions.
@@ -40,6 +41,7 @@ keep="0"
 drm=""
 helpRequested="0"
 minperc=0
+maxperc=100
 region=""
 
 if [[ $# -eq 0 ]]; then
@@ -47,7 +49,7 @@ if [[ $# -eq 0 ]]; then
 fi
 
 PROGNAME=${0##*/}
-SHORTOPTS="hi:r:c:j:t:e:m:pkzg:"
+SHORTOPTS="hi:r:c:j:t:e:m:pkzn:g:"
 LONGOPTS="help"
 
 ARGS=$(getopt -s bash --options $SHORTOPTS  \
@@ -78,6 +80,9 @@ while [[ $# -gt 0 ]] ; do
     -m)
       shift
       minperc=$1;;
+    -n)
+      shift
+      maxperc=$1;;
     -g)
       shift
       region="--region $1";;
@@ -130,8 +135,8 @@ run_prefix=${run_name%.*}
 # Main script
 wdir=$(pwd)
 if [[ "${keep}" = "1" ]]; then
-  if [[ -d ${wdir}/tmp ]]; then
-    echo "Directory ${wdir}/tmp already exists, please remove to use option -k"
+  if [[ -d ${wdir}/${run_prefix}.tmp ]]; then
+    echo "Directory ${wdir}/${run_prefix}.tmp already exists, please remove to use option -k"
     exit 1
   fi
 fi
@@ -160,9 +165,9 @@ done
 # Re-map last alignment against original reference
 if [ $max -ge 1 ]; then
   cleric ${run_prefix}_${max}.align.bam ${run_prefix}_${max}_ref.fasta $target ${run_prefix}_cleric.bam
-  juliet ${run_prefix}_cleric.bam ${region} ${config} ${mode} ${drm} --min-perc ${minperc} ${run_prefix}.html ${run_prefix}.json
+  juliet ${run_prefix}_cleric.bam ${region} ${config} ${mode} ${drm} --min-perc ${minperc} --max-perc ${maxperc} ${run_prefix}.html ${run_prefix}.json
 else
-  juliet ${run_prefix}_0.align.bam ${region} ${config} ${mode} ${drm} --min-perc ${minperc} ${run_prefix}.html ${run_prefix}.json
+  juliet ${run_prefix}_0.align.bam ${region} ${config} ${mode} ${drm} --min-perc ${minperc} --max-perc ${maxperc} ${run_prefix}.html ${run_prefix}.json
 fi
 cp ${run_prefix}.html ${run_prefix}.json ${wdir}/
 

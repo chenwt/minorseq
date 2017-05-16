@@ -103,6 +103,7 @@ public:
 private:
     std::vector<VariantGene> variantGenes_;
     std::vector<Haplotype> reconstructedHaplotypes_;
+    int noConfOffset = 0;
     const ErrorEstimates error_;
     const TargetConfig targetConfig_;
     const bool verbose_;
@@ -110,6 +111,7 @@ private:
     const bool debug_;
     const bool drmOnly_;
     const double minimalPerc_;
+    const double maximalPerc_;
 };
 }
 }  // ::PacBio::Juliet

@@ -1,5 +1,15 @@
 # MINORSEQ - CHANGELOG
 
+## [1.7.0]
+### Added
+ - Database Version field to target config
+ - Option `--max-perc -n` to juliet and julietflow
+ - New pictures to JULIET.md
+ - Add tooltip to haplotype percentage, showing actual number of reads
+
+### Changed
+ - Option names
+
 ## [1.6.0]
 ### Added
  - All HIV genes

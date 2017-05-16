@@ -271,9 +271,40 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
             font-weight: bold;
         }
 
+        /* Tooltip container */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Tooltip text */
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 50px;
+            border: 1px dotted #2d2d2d;
+            color: black;
+            text-align: center;
+            padding: 5px 0;
+            border-radius: 6px;
+            background-color: white;
+
+            bottom: 100%;
+            left: 50%;
+            margin-left: -25px;
+
+            /* Position the tooltip text - see examples below! */
+            position: absolute;
+            z-index: 1;
+        }
+
+        /* Show the tooltip text when you mouse over the tooltip container */
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+        }
+
         table.discovery {
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
         }
 
         table.discovery tr:nth-child(1):not(.msa) {
@@ -609,11 +640,15 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
                 <th>Codon</th>
                 <th>%</th>
                 <th>Coverage</th>
-                <th>DRM</th>)";
+                <th>Drug Resistance)";
+        if (!config.dbVersion.empty()) out << "<sup>*</sup>";
+        out << "</th>";
         for (int hap = 0; hap < numHaplotypes; ++hap) {
-            out << R"(<th>)"
+            out << R"(<th><div class="tooltip">)"
                 << std::round(1000 * static_cast<double>(j["haplotypes"][hap]["frequency"])) / 10.0;
-            out << "</th>";
+            out << "<span class=\"tooltiptext\">" << j["haplotypes"][hap]["reads_hard"]
+                << "</span>";
+            out << "</div></th>";
         }
         out << R"(</tr>)" << std::endl;
 
@@ -717,8 +752,9 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
     }
     out << "</table>" << std::endl;
 
+    if (!config.dbVersion.empty()) out << "<b><sup>*</sup>" << config.dbVersion << "</b>";
     out << R"(
-            <details style="margin-bottom: 20px">
+            <details style="margin-bottom: 20px;margin-top:15px">
             <summary>Legend</summary>
             <div style="padding-left:20px">)";
 
