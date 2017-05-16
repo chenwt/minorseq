@@ -132,6 +132,13 @@ const PlainOption MergeOutliers{
     JSON::Json(nullptr),
     CLI::OptionFlags::HIDE_FROM_HELP
 };
+const PlainOption MaximalPerc{
+    "maximal_percentage",
+    { "max-perc", "n" },
+    "Maximal Variant Percentage",
+    "Maximal variant percentage to report.",
+    CLI::Option::FloatType(100)
+};
 const PlainOption Debug{
     "debug",
     { "debug" },
@@ -153,6 +160,7 @@ JulietSettings::JulietSettings(const PacBio::CLI::Results& options)
     , SubstitutionRate(options[OptionNames::SubstitutionRate])
     , DeletionRate(options[OptionNames::DeletionRate])
     , MinimalPerc(options[OptionNames::MinimalPerc])
+    , MaximalPerc(options[OptionNames::MaximalPerc])
 {
     const std::string targetConfigTC = options[OptionNames::TargetConfigTC];
     const std::string targetConfigCLI = options[OptionNames::TargetConfigCLI];
@@ -241,7 +249,8 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
     {
         OptionNames::Region,
         OptionNames::DRMOnly,
-        OptionNames::MinimalPerc
+        OptionNames::MinimalPerc,
+        OptionNames::MaximalPerc
     });
 
     i.AddGroup("Chemistry override (specify both)",

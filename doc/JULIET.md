@@ -67,9 +67,9 @@ $ juliet data.align.bam patientZero.html patientZero.json
 The HTML page is a 1:1 conversion of the JSON file and contains the identical
 information, but more human-readable.
 
-The HTML file contains three sections:
+The HTML file contains four sections:
 
- <img src="img/juliet_overview.png" width="200px">
+ <img src="img/juliet_overview.png" width="400px">
 
 ### Section 1. Input data
 
@@ -77,7 +77,18 @@ This section of the HTML output summarizes the data provided, the
 exact call for *juliet*, and version of *juliet* for traceability
 purposes
 
-### Section 2. Variant Discovery
+ <img src="img/juliet_input.png" width="700px">
+
+### Section 2. Target Config
+
+Details of the provided target config are summarized for traceability.
+The config version, reference name and length, and annotated genes.
+Each gene with its name in bold, followed by the reference start, end positions,
+and possibly known drug resistance mutations.
+
+ <img src="img/juliet_target.png" width="800px">
+
+### Section 3. Variant Discovery
 
 For each gene open reading frame, there is one overview table.
 Each row represents a variant position.
@@ -89,7 +100,7 @@ the -3 to +3 context positions.
 
 <img src="img/juliet_hiv-context.png" width="500px">
 
-### Section 3. Drug Summaries
+### Section 4. Drug Summaries
 This view summarizes the variants grouped by annotated drug mutations:
 
 <img src="img/juliet_hiv-drug.png" width="400px">
@@ -101,8 +112,7 @@ target configuration files to define different genes of interest such
 as HIV open reading frames to BCR-ABL kinase regions. There are preinstalled
 configurations to ease batch applications and allow immediate reproducibility.
 A target configuration may contain multiple coding regions within a gene
-sequence and optional drug
-resistance mutation positions.
+sequence and optional drug resistance mutation positions.
 
 ### Predefined target config
 Running on predefined genome such as HIV:
@@ -141,7 +151,8 @@ Here is a "hiv.json" target configuration file:
     ],
     "referenceName": "my seq",
     "referenceSequence": "TGGAAGGGCT...",
-    "version": "Free text to version your config files"
+    "version": "Free text to version your config files",
+    "databaseVersion": "DrugDB version x.y.z (last updated YYYY-MM-DD)"
 }
 ```
 
@@ -150,7 +161,7 @@ Run with customized target config using the `--config` option:
 $ juliet --config hiv.json data.align.bam patientZero.html
 ```
 
-<img src="img/juliet_hiv-own.png" width="500px">
+<img src="img/juliet_hiv-own.png" width="600px">
 
 Valid formats for `drms/positions`
 
@@ -237,6 +248,9 @@ rounds and use high-fidelity enzymes.
 If that does not help, sample your coverage down to the advised reliable
 coverage. We tested clean samples, amplified in plasmids, and at 25000x there
 is not a single false positive call.
+
+### Is the a minimum threshold for reported haplotypes?
+Yes, we need to see at least 10 reads from the same haplotype to report it.
 
 ### Why are there N bases in the overview?
 We filter bases based on the individual QV tracks to remove possible
@@ -327,6 +341,16 @@ a typical target config could look like this:
 ### Can I filter for a minimal percentage?
 Yes, with `--min-perc`. For example, `--min-perc 1` will only show variant calls
 with an observed abundance of more than 1%.
+
+### Can I skip major variant calls, while using a target config?
+Maybe your output looks like a rainbow with most of the calls being the major
+call above 90%:
+
+<img src="img/juliet_rainbow.png" width="500px">
+
+The option `--max-perc` skips variants above a given threshold.
+For example, `--max-perc 90` will only show variant calls with an observed
+abundance of less than 90%. This might also help to phase minor variants.
 
 ### Can I filter for drug-resistance mutations?
 Yes, with `--drm-only` only known variants from the target config are being called.

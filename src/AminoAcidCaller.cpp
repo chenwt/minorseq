@@ -76,6 +76,7 @@ AminoAcidCaller::AminoAcidCaller(const std::vector<std::shared_ptr<Data::ArrayRe
     , debug_(settings.Debug)
     , drmOnly_(settings.DRMOnly)
     , minimalPerc_(settings.MinimalPerc)
+    , maximalPerc_(settings.MaximalPerc)
 {
 
     CallVariants();
@@ -168,7 +169,7 @@ void AminoAcidCaller::PhaseVariants()
             std::string codon;
             int local = pos_var.first - msaByRow_.BeginPos - 3;
             for (int i = 0; i < 3; ++i)
-                codon += row.Bases.at(local + i);
+                codon += row.Bases.at(local + i - noConfOffset);
             if (!pos_var.second->IsHit(codon)) {
                 skip = true;
                 break;
@@ -386,10 +387,9 @@ void AminoAcidCaller::CallVariants()
 
     const bool hasReference = !targetConfig_.referenceSequence.empty();
     // If no user config has been provided, use complete input region
-    int msaOffset = 0;
     if (genes.empty()) {
-        msaOffset = msaByRow_.BeginPos;
-        TargetGene tg(msaOffset, msaByRow_.EndPos, "Unnamed ORF", {});
+        noConfOffset = msaByRow_.BeginPos;
+        TargetGene tg(noConfOffset, msaByRow_.EndPos, "Unnamed ORF", {});
         genes.emplace_back(tg);
     }
 
@@ -427,7 +427,7 @@ void AminoAcidCaller::CallVariants()
             // Relative to window begin
             const int bi = i - msaByRow_.BeginPos;
 
-            const int codonPos = 1 + (msaOffset + ri) / 3;
+            const int codonPos = 1 + (noConfOffset + ri) / 3;
             curVariantGene.relPositionToVariant.emplace(
                 codonPos, std::make_shared<VariantGene::VariantPosition>());
             auto& curVariantPosition = curVariantGene.relPositionToVariant.at(codonPos);
@@ -456,30 +456,49 @@ void AminoAcidCaller::CallVariants()
                 codons[codon]++;
             }
 
+            auto FindMajorityCall = [&codons]() {
+                int max = -1;
+                std::string majorCodon;
+                for (const auto& codon_counts : codons) {
+                    if (codon_counts.second > max) {
+                        max = codon_counts.second;
+                        majorCodon = codon_counts.first;
+                    }
+                }
+                if (AAT::FromCodon.find(majorCodon) == AAT::FromCodon.cend()) {
+                    return std::make_tuple(0, std::string(""), ' ');
+                }
+                char majorAminoAcid = AAT::FromCodon.at(majorCodon);
+                return std::make_tuple(max, majorCodon, majorAminoAcid);
+            };
+
             if (hasReference) {
                 curVariantPosition->refCodon = targetConfig_.referenceSequence.substr(ai, 3);
                 if (AAT::FromCodon.find(curVariantPosition->refCodon) == AAT::FromCodon.cend()) {
                     continue;
                 }
                 curVariantPosition->refAminoAcid = AAT::FromCodon.at(curVariantPosition->refCodon);
+                int majorCoverage;
+                std::string altRefCodon;
+                char altRefAminoAcid;
+                std::tie(majorCoverage, altRefCodon, altRefAminoAcid) = FindMajorityCall();
+                if (majorCoverage == 0) continue;
+                if (majorCoverage * 100.0 / coverage > maximalPerc_) {
+                    curVariantPosition->altRefCodon = altRefCodon;
+                    curVariantPosition->altRefAminoAcid = altRefAminoAcid;
+                }
             } else {
-                int max = -1;
-                std::string argmax;
-                for (const auto& codon_counts : codons) {
-                    if (codon_counts.second > max) {
-                        max = codon_counts.second;
-                        argmax = codon_counts.first;
-                    }
-                }
-                curVariantPosition->refCodon = argmax;
-                if (AAT::FromCodon.find(curVariantPosition->refCodon) == AAT::FromCodon.cend()) {
-                    continue;
-                }
-                curVariantPosition->refAminoAcid = AAT::FromCodon.at(curVariantPosition->refCodon);
+                int majorCoverage;
+                std::tie(majorCoverage, curVariantPosition->refCodon,
+                         curVariantPosition->refAminoAcid) = FindMajorityCall();
+                if (majorCoverage == 0) continue;
             }
 
             for (const auto& codon_counts : codons) {
                 if (curVariantPosition->refCodon == codon_counts.first) continue;
+                if (!curVariantPosition->altRefCodon.empty() &&
+                    curVariantPosition->altRefCodon == codon_counts.first)
+                    continue;
                 auto expected =
                     coverage * Probability(curVariantPosition->refCodon, codon_counts.first);
                 double p =

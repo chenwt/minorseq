@@ -133,6 +133,7 @@ public:
     std::string referenceName;
     std::string referenceSequence;
     std::string version;
+    std::string dbVersion;
     bool HasExpectedMinors() const;
     size_t NumExpectedMinors() const;
 

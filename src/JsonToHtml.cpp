@@ -273,7 +273,7 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
 
         table.discovery {
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
         }
 
         table.discovery tr:nth-child(1):not(.msa) {
@@ -609,7 +609,9 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
                 <th>Codon</th>
                 <th>%</th>
                 <th>Coverage</th>
-                <th>DRM</th>)";
+                <th>Drug Resistance)";
+        if (!config.dbVersion.empty()) out << "<sup>*</sup>";
+        out << "</th>";
         for (int hap = 0; hap < numHaplotypes; ++hap) {
             out << R"(<th>)"
                 << std::round(1000 * static_cast<double>(j["haplotypes"][hap]["frequency"])) / 10.0;
@@ -717,8 +719,9 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
     }
     out << "</table>" << std::endl;
 
+    if (!config.dbVersion.empty()) out << "<b><sup>*</sup>" << config.dbVersion << "</b>";
     out << R"(
-            <details style="margin-bottom: 20px">
+            <details style="margin-bottom: 20px;margin-top:15px">
             <summary>Legend</summary>
             <div style="padding-left:20px">)";
 
