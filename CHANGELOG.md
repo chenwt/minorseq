@@ -5,6 +5,7 @@
  - Database Version field to target config
  - Option `--max-perc -n` to juliet and julietflow
  - New pictures to JULIET.md
+ - Add tooltip to haplotype percentage, showing actual number of reads
 
 ### Changed
  - Option names
