@@ -59,8 +59,8 @@ const PlainOption Region{
 const PlainOption DRMOnly{
     "only_known_drms",
     { "drm-only", "k" },
-    "Only Known DRMs",
-    "Only report known DRM positions.",
+    "Only Report Variants in Target Config",
+    "Only report variants that confer drug resistance, as listed in the target configuration file.",
     CLI::Option::BoolType()
 };
 const PlainOption Phasing{
@@ -103,7 +103,7 @@ const PlainOption MinimalPerc{
 const PlainOption TargetConfigTC{
     "target_config",
     { "target-config-tc" },
-    "Target",
+    "Target Config",
     "Predefined target config tag, one of \"none\" or \"HIV_HXB2\".",
     CLI::Option::StringType("none"),
     {"none", "HIV_HXB2"},
