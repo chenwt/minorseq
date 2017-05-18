@@ -278,7 +278,7 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
         }
 
         /* Tooltip text */
-        .tooltip .tooltiptext {
+        .tooltip .tooltiptext, .tooltip .tooltiptextlarge {
             visibility: hidden;
             width: 50px;
             border: 1px dotted #2d2d2d;
@@ -298,8 +298,13 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
         }
 
         /* Show the tooltip text when you mouse over the tooltip container */
-        .tooltip:hover .tooltiptext {
+        .tooltip:hover .tooltiptext, .tooltip:hover .tooltiptextlarge {
             visibility: visible;
+        }
+
+        .tooltip .tooltiptextlarge {
+            width: 150px;
+            margin-left: -75px;
         }
 
         table.discovery {
@@ -618,7 +623,7 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
             out << "</th>";
         }
 
-        out << R"(<tr>
+        out << R"(</tr><tr>
                 <th colspan="3">)";
         if (referenceName.empty()) out << "Majority Call";
         if (referenceName.size() > 11)
@@ -627,9 +632,15 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
             out << referenceName;
         out << R"(</th>
                 <th colspan="5">Sample Variants</th>)";
-        if (numHaplotypes > 0)
-            out << R"(<th colspan=")" << (numHaplotypes) << R"(">Haplotypes %</th>
-                </tr>)";
+        if (numHaplotypes > 0) {
+            out << R"(<th colspan=")" << (numHaplotypes) << R"("><div class="tooltip">)";
+            out << "<span class=\"tooltiptextlarge\">";
+            out << "Reported: " << j["reported_haplotypes"] << "<br/>";
+            out << "Low counts: " << j["low_counts_haplotypes"] << "<br/>";
+            out << "Skipped: " << j["skipped_haplotypes"] << "<br/>";
+            out << "</span>"
+                << "Haplotypes %</div></th>";
+        }
         out << R"(
                 </tr>
                 <tr>

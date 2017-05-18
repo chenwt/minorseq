@@ -96,7 +96,7 @@ int AminoAcidCaller::CountNumberOfTests(const std::vector<TargetGene>& genes) co
 
             std::unordered_map<std::string, int> codons;
             for (const auto& nucRow : msaByRow_.Rows) {
-                const auto& row = nucRow.Bases;
+                const auto& row = nucRow->Bases;
                 // Read does not cover codon
                 if (bi + 2 >= static_cast<int>(row.size()) || bi < 0) continue;
                 if (row.at(bi + 0) == ' ' || row.at(bi + 1) == ' ' || row.at(bi + 2) == ' ')
@@ -156,8 +156,21 @@ void AminoAcidCaller::PhaseVariants()
             std::cerr << " " << pos_var.first;
         std::cerr << std::endl;
     }
+    std::vector<std::shared_ptr<Haplotype>> skipped;
     std::vector<std::shared_ptr<Haplotype>> observations;
     std::vector<std::shared_ptr<Haplotype>> generators;
+
+    auto ExtractRegionFromRow = [this](
+        const std::shared_ptr<Data::MSARow>& row,
+        const std::pair<int, std::shared_ptr<VariantGene::VariantPosition>>& pos_var, int l,
+        int r) {
+        std::string codon;
+        int local = pos_var.first - msaByRow_.BeginPos - 3;
+        for (int i = l; i < r; ++i)
+            codon += row->Bases.at(local + i);
+
+        return codon;
+    };
 
     // For each read
     for (const auto& row : msaByRow_.Rows) {
@@ -166,17 +179,12 @@ void AminoAcidCaller::PhaseVariants()
         std::vector<std::string> codons;
         bool skip = false;
         for (const auto& pos_var : variantPositions) {
-            std::string codon;
-            int local = pos_var.first - msaByRow_.BeginPos - 3;
-            for (int i = 0; i < 3; ++i)
-                codon += row.Bases.at(local + i - noConfOffset);
+            std::string codon = ExtractRegionFromRow(row, pos_var, 0, 3);
             if (!pos_var.second->IsHit(codon)) {
                 skip = true;
-                break;
             }
             codons.emplace_back(std::move(codon));
         }
-        if (skip) continue;
 
         // There are already haplotypes to compare against
         int miss = true;
@@ -198,7 +206,7 @@ void AminoAcidCaller::PhaseVariants()
                     }
                 }
                 if (same) {
-                    h->Names.push_back(row.Read->Name);
+                    h->Names.push_back(row->Read->Name);
                     miss = false;
                     break;
                 }
@@ -207,14 +215,17 @@ void AminoAcidCaller::PhaseVariants()
 
         CompareHaplotypes(generators);
         CompareHaplotypes(observations);
+        CompareHaplotypes(skipped);
 
         // If row could not be collapsed into an existing haplotype
         if (miss) {
             auto h = std::make_shared<Haplotype>();
-            h->Names = {row.Read->Name};
+            h->Names = {row->Read->Name};
             h->SetCodons(std::move(codons));
 
-            if (h->NoGaps)
+            if (skip)
+                skipped.emplace_back(std::move(h));
+            else if (h->NoGaps)
                 generators.emplace_back(std::move(h));
             else
                 observations.emplace_back(std::move(h));
@@ -319,6 +330,49 @@ void AminoAcidCaller::PhaseVariants()
         reconstructedHaplotypes_.push_back(*hn);
     }
     std::cerr << termcolor::reset;
+
+    const auto PrintHaplotype = [&ExtractRegionFromRow, &variantPositions,
+                                 this](std::shared_ptr<Haplotype> h) {
+        for (const auto& name : h->Names) {
+            std::cerr << name << "\t";
+            const auto& row = msaByRow_.NameToRow[name];
+
+            for (const auto& pos_var : variantPositions) {
+                std::string codon = ExtractRegionFromRow(row, pos_var, 0, 3);
+                std::cerr << codon;
+                std::cerr << "\t";
+            }
+            std::cerr << std::endl;
+        }
+        std::cerr << std::endl;
+    };
+
+    if (verbose_) std::cerr << std::endl << "HAPLOTYPES" << std::endl;
+    for (auto& hn : generators) {
+        genCounts_ += hn->Names.size();
+        if (verbose_) std::cerr << "HAPLOTYPE: " << hn->Name << std::endl;
+        if (verbose_) PrintHaplotype(hn);
+    }
+
+    if (verbose_) std::cerr << "FILTERED" << std::endl;
+    for (auto& h : observations) {
+        obsCounts_ += h->Names.size();
+        if (verbose_) PrintHaplotype(h);
+        lowCountHaplotypes_.emplace_back(*h);
+    }
+
+    if (verbose_) std::cerr << "SKIPPED" << std::endl;
+    for (auto& h : skipped) {
+        skpCounts_ += h->Names.size();
+        if (verbose_) PrintHaplotype(h);
+        filteredHaplotypes_.emplace_back(*h);
+    }
+
+    if (verbose_) {
+        std::cerr << "#HAPLOTYPES: " << genCounts_ << std::endl;
+        std::cerr << "#LOW-COUNTS: " << obsCounts_ << std::endl;
+        std::cerr << "#FILTERED: " << skpCounts_ << std::endl;
+    }
 }
 
 double AminoAcidCaller::Probability(const std::string& a, const std::string& b)
@@ -427,7 +481,7 @@ void AminoAcidCaller::CallVariants()
             // Relative to window begin
             const int bi = i - msaByRow_.BeginPos;
 
-            const int codonPos = 1 + (noConfOffset + ri) / 3;
+            const int codonPos = 1 + (ri) / 3;
             curVariantGene.relPositionToVariant.emplace(
                 codonPos, std::make_shared<VariantGene::VariantPosition>());
             auto& curVariantPosition = curVariantGene.relPositionToVariant.at(codonPos);
@@ -435,7 +489,7 @@ void AminoAcidCaller::CallVariants()
             std::map<std::string, int> codons;
             int coverage = 0;
             for (const auto& nucRow : msaByRow_.Rows) {
-                const auto& row = nucRow.Bases;
+                const auto& row = nucRow->Bases;
                 const auto CodonContains = [&row, &bi](const char x) {
                     return (row.at(bi + 0) == x || row.at(bi + 1) == x || row.at(bi + 2) == x);
                 };
@@ -604,11 +658,19 @@ JSON::Json AminoAcidCaller::JSON()
         if (j.find("variant_positions") != j.cend()) genes.push_back(j);
     }
     root["genes"] = genes;
-    std::vector<Json> haplotypes;
-    for (const auto& h : reconstructedHaplotypes_) {
-        haplotypes.push_back(h.ToJson());
-    }
-    root["haplotypes"] = haplotypes;
+    auto HapsToJson = [](const std::vector<Haplotype>& haps) {
+        std::vector<Json> haplotypes;
+        for (const auto& h : haps) {
+            haplotypes.push_back(h.ToJson());
+        }
+        return haplotypes;
+    };
+    root["haplotypes"] = HapsToJson(reconstructedHaplotypes_);
+    root["haplotypes_low_counts"] = HapsToJson(lowCountHaplotypes_);
+    root["haplotypes_filtered"] = HapsToJson(filteredHaplotypes_);
+    root["reported_haplotypes"] = genCounts_;
+    root["low_counts_haplotypes"] = obsCounts_;
+    root["skipped_haplotypes"] = skpCounts_;
 
     return root;
 }

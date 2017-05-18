@@ -103,6 +103,8 @@ public:
 private:
     std::vector<VariantGene> variantGenes_;
     std::vector<Haplotype> reconstructedHaplotypes_;
+    std::vector<Haplotype> lowCountHaplotypes_;
+    std::vector<Haplotype> filteredHaplotypes_;
     int noConfOffset = 0;
     const ErrorEstimates error_;
     const TargetConfig targetConfig_;
@@ -112,6 +114,10 @@ private:
     const bool drmOnly_;
     const double minimalPerc_;
     const double maximalPerc_;
+
+    int genCounts_ = 0;
+    int obsCounts_ = 0;
+    int skpCounts_ = 0;
 };
 }
 }  // ::PacBio::Juliet

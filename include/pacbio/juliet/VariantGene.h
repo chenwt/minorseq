@@ -73,10 +73,14 @@ struct VariantGene
         bool IsVariant() const { return !aminoAcidToCodons.empty(); }
         bool IsHit(const std::string& codon)
         {
-            if (codon == refCodon || codon == altRefCodon) return true;
+            if (codon == refCodon || codon == altRefCodon) {
+                return true;
+            }
             for (const auto amino_varCodon : aminoAcidToCodons) {
                 for (const auto variant_codon : amino_varCodon.second) {
-                    if (codon == variant_codon.codon) return true;
+                    if (codon == variant_codon.codon) {
+                        return true;
+                    }
                 }
             }
             return false;

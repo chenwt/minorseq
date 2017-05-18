@@ -59,6 +59,7 @@ struct Haplotype
         root["reads_soft"] = Size();
         root["frequency"] = GlobalFrequency;
         root["read_names"] = Names;
+        root["codons"] = Codons;
         return root;
     }
 };

@@ -1,5 +1,18 @@
 # MINORSEQ - CHANGELOG
 
+## [1.7.1]
+### Added
+ - Tooltip for 'Haplotypes \%' showing the number of reads of haplotypes
+   reported, filtered due to insufficient size, and filtered due to
+   gaps and subqv filtering
+ - Add the three number above to the json report
+ - Report 'low_counts_haplotypes' and 'skipped_haplotypes' in the json
+ - Add codons to haplotypes
+
+### Changed
+ - Fix no config phasing mode
+ - Skip non primary alignments
+
 ## [1.7.0]
 ### Added
  - Database Version field to target config

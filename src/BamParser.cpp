@@ -66,6 +66,7 @@ std::vector<std::shared_ptr<Data::ArrayRead>> BamToArrayReads(const std::string&
     // Iterate over all records and convert online
     for (auto& record : *query) {
         if (record.Impl().IsSupplementaryAlignment()) continue;
+        if (!record.Impl().IsPrimaryAlignment()) continue;
         if (record.ReferenceStart() < regionEnd && record.ReferenceEnd() > regionStart) {
             record.Clip(BAM::ClipType::CLIP_TO_REFERENCE, regionStart, regionEnd);
             returnList.emplace_back(
