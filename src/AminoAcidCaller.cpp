@@ -57,6 +57,7 @@
 
 #include <pacbio/juliet/AminoAcidCaller.h>
 #include <pacbio/juliet/AminoAcidTable.h>
+#include <pacbio/juliet/HaplotypeType.h>
 #include <pacbio/statistics/Fisher.h>
 #include <pacbio/util/Termcolor.h>
 #include <pbcopper/json/JSON.h>
@@ -156,9 +157,7 @@ void AminoAcidCaller::PhaseVariants()
             std::cerr << " " << pos_var.first;
         std::cerr << std::endl;
     }
-    std::vector<std::shared_ptr<Haplotype>> skipped;
     std::vector<std::shared_ptr<Haplotype>> observations;
-    std::vector<std::shared_ptr<Haplotype>> generators;
 
     auto ExtractRegionFromRow = [this](
         const std::shared_ptr<Data::MSARow>& row,
@@ -177,11 +176,11 @@ void AminoAcidCaller::PhaseVariants()
 
         // Get all codons for this row
         std::vector<std::string> codons;
-        bool skip = false;
+        uint8_t flag = 0;
         for (const auto& pos_var : variantPositions) {
             std::string codon = ExtractRegionFromRow(row, pos_var, 0, 3);
             if (!pos_var.second->IsHit(codon)) {
-                skip = true;
+                flag |= static_cast<int>(HaplotypeType::OFFTARGET);
             }
             codons.emplace_back(std::move(codon));
         }
@@ -213,43 +212,39 @@ void AminoAcidCaller::PhaseVariants()
             }
         };
 
-        CompareHaplotypes(generators);
         CompareHaplotypes(observations);
-        CompareHaplotypes(skipped);
 
         // If row could not be collapsed into an existing haplotype
         if (miss) {
             auto h = std::make_shared<Haplotype>();
             h->Names = {row->Read->Name};
             h->SetCodons(std::move(codons));
-
-            if (skip)
-                skipped.emplace_back(std::move(h));
-            else if (h->NoGaps)
-                generators.emplace_back(std::move(h));
-            else
-                observations.emplace_back(std::move(h));
+            h->Flags |= flag;
+            observations.emplace_back(std::move(h));
         }
     }
 
-    // Move those haplotypes out of generators that have insufficient coverage
-    auto f = [](const std::shared_ptr<Haplotype>& g) { return g->Size() >= 10; };
-    auto p = std::stable_partition(generators.begin(), generators.end(), f);
-    observations.insert(observations.end(), std::make_move_iterator(p),
-                        std::make_move_iterator(generators.end()));
-    generators.erase(p, generators.end());
+    std::vector<std::shared_ptr<Haplotype>> generators;
+    std::vector<std::shared_ptr<Haplotype>> filtered;
+    for (auto& h : observations) {
+        if (h->Size() < 10) h->Flags |= static_cast<int>(HaplotypeType::LOW_COV);
+        if (h->Flags == 0)
+            generators.emplace_back(std::move(h));
+        else
+            filtered.emplace_back(std::move(h));
+    }
 
     // Haplotype comparator, ascending
     auto HaplotypeComp = [](const std::shared_ptr<Haplotype>& a,
                             const std::shared_ptr<Haplotype>& b) { return a->Size() < b->Size(); };
 
     std::sort(generators.begin(), generators.end(), HaplotypeComp);
-    std::sort(observations.begin(), observations.end(), HaplotypeComp);
+    std::sort(filtered.begin(), filtered.end(), HaplotypeComp);
 
     if (mergeOutliers_) {
         // Given the set of haplotypes clustered by identity, try collapsing
-        // observations into generators.
-        for (auto& hw : observations) {
+        // filtered into generators.
+        for (auto& hw : filtered) {
             std::vector<double> probabilities;
             if (verbose_) std::cerr << *hw << std::endl;
             double genCov = 0;
@@ -354,24 +349,36 @@ void AminoAcidCaller::PhaseVariants()
         if (verbose_) PrintHaplotype(hn);
     }
 
-    if (verbose_) std::cerr << "FILTERED" << std::endl;
-    for (auto& h : observations) {
-        obsCounts_ += h->Names.size();
-        if (verbose_) PrintHaplotype(h);
-        lowCountHaplotypes_.emplace_back(*h);
-    }
+    std::map<int, int> filteredCounts;
 
-    if (verbose_) std::cerr << "SKIPPED" << std::endl;
-    for (auto& h : skipped) {
-        skpCounts_ += h->Names.size();
+    if (verbose_) std::cerr << "FILTERED" << std::endl;
+    for (auto& h : filtered) {
+        filteredCounts[h->Flags] += h->Names.size();
         if (verbose_) PrintHaplotype(h);
         filteredHaplotypes_.emplace_back(*h);
     }
 
+    int sumFiltered = 0;
+    for (const auto& kv : filteredCounts) {
+        sumFiltered += kv.second;
+        if (kv.first & static_cast<int>(HaplotypeType::WITH_GAP)) margWithGap_ += kv.second;
+        if (kv.first & static_cast<int>(HaplotypeType::WITH_HETERODUPLEX))
+            margWithHetero_ += kv.second;
+        if (kv.first & static_cast<int>(HaplotypeType::PARTIAL)) margPartial_ += kv.second;
+        if (kv.first == static_cast<int>(HaplotypeType::LOW_COV)) lowCov_ += kv.second;
+        if (kv.first & static_cast<int>(HaplotypeType::OFFTARGET)) margOfftarget_ += kv.second;
+    }
+
     if (verbose_) {
-        std::cerr << "#HAPLOTYPES: " << genCounts_ << std::endl;
-        std::cerr << "#LOW-COUNTS: " << obsCounts_ << std::endl;
-        std::cerr << "#FILTERED: " << skpCounts_ << std::endl;
+        std::cerr << "HEALTHY, REPORTED\t\t: " << genCounts_ << std::endl;
+        std::cerr << "HEALTHY, TOO LOW COVERAGE\t: " << lowCov_ << std::endl;
+        std::cerr << "---" << std::endl;
+        std::cerr << "ALL DAMAGED\t\t\t: " << margOfftarget_ << std::endl;
+        std::cerr << "MARGINAL WITH GAPS\t\t: " << margWithGap_ << std::endl;
+        std::cerr << "MARGINAL WITH HETERODUPLEXES\t: " << margWithHetero_ << std::endl;
+        std::cerr << "MARGINAL PARTIAL READS\t\t: " << margPartial_ << std::endl;
+        std::cerr << "---" << std::endl;
+        std::cerr << "SUM\t\t\t: " << genCounts_ + sumFiltered << std::endl;
     }
 }
 
@@ -666,12 +673,16 @@ JSON::Json AminoAcidCaller::JSON()
         return haplotypes;
     };
     root["haplotypes"] = HapsToJson(reconstructedHaplotypes_);
-    root["haplotypes_low_counts"] = HapsToJson(lowCountHaplotypes_);
-    root["haplotypes_filtered"] = HapsToJson(filteredHaplotypes_);
-    root["reported_haplotypes"] = genCounts_;
-    root["low_counts_haplotypes"] = obsCounts_;
-    root["skipped_haplotypes"] = skpCounts_;
-
+    // root["haplotypes_low_counts"] = HapsToJson(lowCountHaplotypes_);
+    // root["haplotypes_filtered"] = HapsToJson(filteredHaplotypes_);
+    Json counts;
+    counts["healthy_reported"] = genCounts_;
+    counts["healthy_low_coverage"] = lowCov_;
+    counts["all_damaged"] = margOfftarget_;
+    counts["marginal_with_gaps"] = margWithGap_;
+    counts["marginal_with_heteroduplexes"] = margWithHetero_;
+    counts["marginal_partial_reads"] = margPartial_;
+    root["haplotype_read_counts"] = counts;
     return root;
 }
 }

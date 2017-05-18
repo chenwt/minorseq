@@ -1,5 +1,9 @@
 # MINORSEQ - CHANGELOG
 
+## [1.7.2]
+### Changed
+ - More details about reads associated to certain haplotypes
+
 ## [1.7.1]
 ### Added
  - Tooltip for 'Haplotypes \%' showing the number of reads of haplotypes

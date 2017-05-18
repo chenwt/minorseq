@@ -369,14 +369,19 @@ the threshold.
 ### Can I filter for drug-resistance mutations?
 Yes, with `--drm-only` only known variants from the target config are being called.
 
-### What's up with the tooltips?
+### What's up with the haplotype tooltips?
 There are two types of tooltips in the haplotype part of the table.
 The first tooltip is for the "Haplotypes %" and shows the number of reads that
-count towards (i) actually reported haplotypes, (ii) haplotypes that have
-less than 10 reads, and (iii) haplotypes filtered by the heteroduplex filter
-or contain a deletion:
+count towards (a) actually reported haplotypes, (b) haplotypes that have
+less than 10 reads and are not being reported,
+and (c) haplotypes that are not suitable for phasing.
+Those first three categories are mutually exclusive and their sum is the
+total number of reads going into juliet.
+For the (c), the three different marginals provide insights into the sample
+quality; as they are marginals, they are not exclusive and can overlap.
+The following screenshot shows a sample with bad PCR conditions:
 
-<img src="img/juliet_haplotype-tooltip.png" width="200px">
+<img src="img/juliet_haplotype-tooltip.png" width="400px">
 
 The second type of tooltip is for each haplotype percentage and shows the
 number of reads contributing to this haplotype:

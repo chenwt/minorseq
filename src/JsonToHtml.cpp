@@ -303,8 +303,14 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
         }
 
         .tooltip .tooltiptextlarge {
-            width: 150px;
-            margin-left: -75px;
+            width: 380px;
+            margin-left: -190px;
+            align:center;
+        }
+
+        table.hapcounts {
+            margin-left: auto;
+            margin-right: auto;
         }
 
         table.discovery {
@@ -312,7 +318,8 @@ void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig
             margin-bottom: 5px;
         }
 
-        table.discovery tr:nth-child(1):not(.msa) {
+        table.discovery>tbody>tr:nth-child(1),
+        table.msacounts>tbody>tr:nth-child(1) {
             background-color: #3d3d3d;
             color: white;
         }
@@ -635,9 +642,37 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
         if (numHaplotypes > 0) {
             out << R"(<th colspan=")" << (numHaplotypes) << R"("><div class="tooltip">)";
             out << "<span class=\"tooltiptextlarge\">";
-            out << "Reported: " << j["reported_haplotypes"] << "<br/>";
-            out << "Low counts: " << j["low_counts_haplotypes"] << "<br/>";
-            out << "Skipped: " << j["skipped_haplotypes"] << "<br/>";
+            out << R"(<table class="hapcounts"><col width="280px" /><col width="60px" />)";
+            out << "<tr><td>"
+                << "<b>Haplotype Category</b>"
+                << "</td><td>"
+                << "<b>#Reads</b>"
+                << "</td</tr>" << std::endl;
+            out << "<tr><td>"
+                << "Reported"
+                << "</td><td>" << j["haplotype_read_counts"]["healthy_reported"] << "</td</tr>"
+                << std::endl;
+            out << "<tr><td>"
+                << "Insufficient Coverage (unreported)"
+                << "</td><td>" << j["haplotype_read_counts"]["healthy_low_coverage"] << "</td</tr>"
+                << std::endl;
+            out << "<tr><td>"
+                << "Overall Damaged (unreported)"
+                << "</td><td>" << j["haplotype_read_counts"]["all_damaged"] << "</td</tr>"
+                << std::endl;
+            out << "<tr><td>"
+                << R"(<span style="padding-left:10px">- Marginal Gaps</span>)"
+                << "</td><td>" << j["haplotype_read_counts"]["marginal_with_gaps"] << "</td</tr>"
+                << std::endl;
+            out << "<tr><td>"
+                << R"(<span style="padding-left:10px">- Marginal Heteroduplexes</span>)"
+                << "</td><td>" << j["haplotype_read_counts"]["marginal_with_heteroduplexes"]
+                << "</td</tr>" << std::endl;
+            out << "<tr><td>"
+                << R"(<span style="padding-left:10px">- Marginal Partial</span>)"
+                << "</td><td>" << j["haplotype_read_counts"]["marginal_partial_reads"]
+                << "</td</tr>" << std::endl;
+            out << "</table>";
             out << "</span>"
                 << "Haplotypes %</div></th>";
         }
@@ -720,7 +755,7 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
                         <tr class="msa">
                         <td colspan=3 style="background-color: white"></td>
                         <td colspan=14 style="padding:0; margin:0">
-                        <table style="padding:0; margin:0">
+                        <table style="padding:0; margin:0" class="msacounts">
                         <col width="50px" />
                         <col width="67px" />
                         <col width="67px" />
