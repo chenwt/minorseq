@@ -1,5 +1,6 @@
 #pragma once
 
+#include <pacbio/juliet/HaplotypeType.h>
 #include <pacbio/util/Termcolor.h>
 
 #include <pbcopper/json/JSON.h>
@@ -13,7 +14,7 @@ struct Haplotype
     std::vector<std::string> Codons;
     double SoftCollapses = 0;
     double GlobalFrequency = 0;
-    bool NoGaps = true;
+    int Flags = 0;
 
     double Size() const { return Names.size() + SoftCollapses; }
 
@@ -26,11 +27,11 @@ struct Haplotype
     {
         Codons = std::forward<std::vector<std::string>>(codons);
         for (const auto& c : Codons) {
-            if (c.find('-') != std::string::npos || c.find('N') != std::string::npos ||
-                c.find(' ') != std::string::npos) {
-                NoGaps = false;
-                break;
-            }
+            if (c.find('-') != std::string::npos)
+                Flags |= static_cast<int>(HaplotypeType::WITH_GAP);
+            if (c.find('N') != std::string::npos)
+                Flags |= static_cast<int>(HaplotypeType::WITH_HETERODUPLEX);
+            if (c.find(' ') != std::string::npos) Flags |= static_cast<int>(HaplotypeType::PARTIAL);
         }
     }
 
@@ -59,6 +60,7 @@ struct Haplotype
         root["reads_soft"] = Size();
         root["frequency"] = GlobalFrequency;
         root["read_names"] = Names;
+        root["codons"] = Codons;
         return root;
     }
 };

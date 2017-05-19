@@ -62,7 +62,9 @@ struct MSAByRow
         for (const auto& r : reads) {
             auto row = AddRead(*r);
             row.Read = r;
-            Rows.emplace_back(std::move(row));
+            const auto x = std::make_shared<MSARow>(std::move(row));
+            NameToRow[r->Name] = x;
+            Rows.emplace_back(x);
         }
 
         BeginPos += 1;
@@ -74,8 +76,11 @@ struct MSAByRow
         for (const auto& r : reads)
             BeginEnd(r);
 
-        for (const auto& r : reads)
-            Rows.emplace_back(AddRead(r));
+        for (const auto& r : reads) {
+            const auto x = std::make_shared<MSARow>(AddRead(r));
+            NameToRow[r.Name] = x;
+            Rows.emplace_back(x);
+        }
 
         BeginPos += 1;
         EndPos += 1;
@@ -87,6 +92,7 @@ struct MSAByRow
         EndPos = std::max(EndPos, read.ReferenceEnd());
     }
 
+private:
     MSARow AddRead(const Data::ArrayRead& read)
     {
         MSARow row(EndPos - BeginPos);
@@ -131,10 +137,12 @@ struct MSAByRow
         return row;
     }
 
+public:
     const Data::QvThresholds qvThresholds;
     int BeginPos = std::numeric_limits<int>::max();
     int EndPos = 0;
-    std::vector<MSARow> Rows;
+    std::vector<std::shared_ptr<MSARow>> Rows;
+    std::map<std::string, std::shared_ptr<MSARow>> NameToRow;
 };
 }
 }  // ::PacBio::Juliet

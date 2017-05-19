@@ -55,6 +55,7 @@ BAM files have to PacBio-compliant, meaning, cigar `M` is forbidden.
 provide one BAM per barcode.
 Input CCS reads should have a minimal predicted accuracy of 0.99,
 filtering instruction [available here](JULIETFLOW.md#filtering).
+Reads that are not primary or supplementary alignments, get ignored.
 
 ## Output
 *Juliet* provides a JSON and/or HTML file:
@@ -352,5 +353,37 @@ The option `--max-perc` skips variants above a given threshold.
 For example, `--max-perc 90` will only show variant calls with an observed
 abundance of less than 90%. This might also help to phase minor variants.
 
+Another example, where major calls dilute phased minor variant haplotypes below
+the threshold.
+
+
+**BEFORE (partial screenshot):**
+
+<img src="img/juliet_major-before.png" width="500px">
+
+**AFTER:**
+
+<img src="img/juliet_major-after.png" width="500px">
+
+
 ### Can I filter for drug-resistance mutations?
 Yes, with `--drm-only` only known variants from the target config are being called.
+
+### What's up with the haplotype tooltips?
+There are two types of tooltips in the haplotype part of the table.
+The first tooltip is for the "Haplotypes %" and shows the number of reads that
+count towards (a) actually reported haplotypes, (b) haplotypes that have
+less than 10 reads and are not being reported,
+and (c) haplotypes that are not suitable for phasing.
+Those first three categories are mutually exclusive and their sum is the
+total number of reads going into juliet.
+For the (c), the three different marginals provide insights into the sample
+quality; as they are marginals, they are not exclusive and can overlap.
+The following screenshot shows a sample with bad PCR conditions:
+
+<img src="img/juliet_haplotype-tooltip.png" width="400px">
+
+The second type of tooltip is for each haplotype percentage and shows the
+number of reads contributing to this haplotype:
+
+<img src="img/juliet_haplotype-perc-tooltip.png" width="120px">

@@ -32,6 +32,12 @@ function echoHelp() {
   exit 0
 }
 
+hash samtools 2>/dev/null || { echo >&2 "I require samtools but it's not installed. Aborting."; }
+hash juliet 2>/dev/null || { echo >&2 "I require juliet but it's not installed. Aborting."; }
+hash cleric 2>/dev/null || { echo >&2 "I require cleric but it's not installed. Aborting."; }
+hash fuse 2>/dev/null || { echo >&2 "I require fuse but it's not installed. Aborting."; }
+hash blasr 2>/dev/null || { echo >&2 "I require blasr but it's not installed. Aborting."; }
+
 # Option parsing
 config=""
 cores=1
