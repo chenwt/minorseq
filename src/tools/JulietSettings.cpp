@@ -53,7 +53,7 @@ const PlainOption Region{
     "region",
     { "region", "r"},
     "Region of Interest",
-    "Genomic region of interest, reads will be clipped to that region, empty means all reads.",
+    "Clip reads to this genomic region. Empty means all reads.",
     CLI::Option::StringType("")
 };
 const PlainOption DRMOnly{
