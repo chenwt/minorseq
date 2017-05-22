@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="doc/img/juliet.png" alt="juliet logo" width="200px"/>
+  <img src="doc/img/minorseq.png" alt="minorseq logos" width="400px"/>
 </p>
 <h1 align="center">MinorSeq</h1>
 <p align="center">Minor Variant Calling and Phasing Tools</p>
