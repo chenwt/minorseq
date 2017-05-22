@@ -686,7 +686,7 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
                 <th>Codon</th>
                 <th>%</th>
                 <th>Coverage</th>
-                <th>Drug Resistance)";
+                <th>Affected Drugs)";
         if (!config.dbVersion.empty()) out << "<sup>*</sup>";
         out << "</th>";
         for (int hap = 0; hap < numHaplotypes; ++hap) {
@@ -823,7 +823,8 @@ void JsonToHtml::Discovery(std::ostream& out, const JSON::Json& j, const TargetC
     out << "<li>The mutated nucleotide is highlighted in the codon.</li>" << std::endl;
     out << "<li>Percentage is per codon.</li>" << std::endl;
     out << "<li>Coverage includes deletions.</li>" << std::endl;
-    out << "<li>Known drug-resistance mutations positions are annotated in the DRM column.</li>"
+    out << "<li>Drugs affected by known drug resistance mutations are listed in the corresponding "
+           "column.</li>"
         << std::endl;
     out << "</ul>" << std::endl;
     out << "<p>Alignment Details:</p>" << std::endl;

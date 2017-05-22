@@ -1,5 +1,9 @@
 # MINORSEQ - CHANGELOG
 
+## [1.7.3]
+### Changed
+ - Renamed Drug Resistance to Affected Drugs
+
 ## [1.7.2]
 ### Changed
  - More details about reads associated to certain haplotypes
