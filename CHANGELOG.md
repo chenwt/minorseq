@@ -1,5 +1,10 @@
 # MINORSEQ - CHANGELOG
 
+## [1.7.4]
+### Changed
+ - Fuse: Don't abort, rather warn if coverage is below 50. Run in permissive
+   mode, with minimal coverage of 1.
+
 ## [1.7.3]
 ### Changed
  - Renamed Drug Resistance to Affected Drugs

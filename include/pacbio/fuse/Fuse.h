@@ -65,7 +65,7 @@ private:
         std::map<int, std::pair<std::string, int>>* posInsCov, int windowSize = 20) const;
 
 private:
-    const int minCoverage_ = 50;
+    const int minCoverageRecommended_ = 50;
     const double minInsertionCoverageFreq_ = 0.5;
 
     std::string consensusSequence_;
