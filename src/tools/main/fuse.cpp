@@ -70,10 +70,6 @@ static int Runner(const PacBio::CLI::Results& options)
 
     std::ofstream outputFastaStream(outputFile);
     const auto consensus = fuse.ConsensusSequence();
-    if (consensus.empty()) {
-        std::cerr << "ERROR: Insufficient coverage of < 50x" << std::endl;
-        return EXIT_FAILURE;
-    }
     outputFastaStream << ">CONSENSUS" << std::endl;
     outputFastaStream << consensus << std::endl;
 
