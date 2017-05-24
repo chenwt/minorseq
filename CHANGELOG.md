@@ -4,6 +4,7 @@
 ### Changed
  - Fuse: Don't abort, rather warn if coverage is below 50. Run in permissive
    mode, with minimal coverage of 1.
+ - Fuse: Do not output non-ascii chars if coverage drops to 0
 
 ## [1.7.3]
 ### Changed

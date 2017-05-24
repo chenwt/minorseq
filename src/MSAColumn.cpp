@@ -52,7 +52,11 @@ int MSAColumn::MaxElement() const
 char MSAColumn::MaxBase() const
 {
     static const char bases[]{'A', 'C', 'G', 'T', '-'};
-    return bases[MaxElement()];
+    int maxElement = MaxElement();
+    if (maxElement == 5)
+        return ' ';
+    else
+        return bases[maxElement];
 }
 int MSAColumn::Max() const { return counts.at(MaxElement()); }
 

@@ -90,7 +90,7 @@ std::string Fuse::CreateConsensus(const std::vector<Data::ArrayRead>& arrayReads
         if (posIns.find(c.refPos) != posIns.cend()) consensus += posIns[c.refPos];
         if (c.Coverage() >= minCoverage) {
             const auto maxBase = c.MaxBase();
-            if (maxBase != '-') consensus += c.MaxBase();
+            if (maxBase != '-' && maxBase != ' ') consensus += c.MaxBase();
         }
     }
     return consensus;
