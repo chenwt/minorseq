@@ -68,76 +68,75 @@ void Cleric::Convert(std::string outputFile)
 
     // Get data source
     auto query = IO::BamQuery(alignmentPath_);
+    std::unique_ptr<BAM::BamWriter> out;
 
-    // Retrieve header if available
-    const auto Header = [&query]() {
-        for (auto read : *query) {
-            return read.Header().DeepCopy();
-        }
-        return BAM::BamHeader();
-    };
-    BAM::BamHeader h = Header();
+    auto ProcessHeaderAndCreateBamWriter = [this, &outputFile, &out](const BAM::BamRecord& read) {
+        BAM::BamHeader h = read.Header().DeepCopy();
 
-    if (h.Sequences().empty()) throw std::runtime_error("Could not find reference sequence name");
+        if (h.Sequences().empty())
+            throw std::runtime_error("Could not find reference sequence name");
 
-    const auto localFromReferenceName = h.Sequences().begin()->Name();
-    if (localFromReferenceName != fromReferenceName_)
-        throw std::runtime_error("Internal error. Reference name mismatches");
+        const auto localFromReferenceName = h.Sequences().begin()->Name();
+        if (localFromReferenceName != fromReferenceName_)
+            throw std::runtime_error("Internal error. Reference name mismatches");
 
-    const auto RemoveGaps = [](const std::string& input) {
-        std::string seq = input;
-        seq.erase(std::remove(seq.begin(), seq.end(), '-'), seq.end());
-        return seq;
-    };
-    toReferenceGapless_ = RemoveGaps(toReferenceSequence_);
-    fromReferenceGapless_ = RemoveGaps(fromReferenceSequence_);
+        const auto RemoveGaps = [](const std::string& input) {
+            std::string seq = input;
+            seq.erase(std::remove(seq.begin(), seq.end(), '-'), seq.end());
+            return seq;
+        };
+        toReferenceGapless_ = RemoveGaps(toReferenceSequence_);
+        fromReferenceGapless_ = RemoveGaps(fromReferenceSequence_);
 
-    for (size_t pos = 0, i = 0; i < fromReferenceSequence_.size(); ++i) {
-        if (fromReferenceSequence_.at(i) != '-') {
-            if (sam_pos_to_fasta_pos.find(i) == sam_pos_to_fasta_pos.cend()) {
-                sam_pos_to_fasta_pos.emplace(pos, i);
+        for (size_t pos = 0, i = 0; i < fromReferenceSequence_.size(); ++i) {
+            if (fromReferenceSequence_.at(i) != '-') {
+                if (sam_pos_to_fasta_pos.find(i) == sam_pos_to_fasta_pos.cend()) {
+                    sam_pos_to_fasta_pos.emplace(pos, i);
+                }
+                ++pos;
             }
-            ++pos;
         }
-    }
 
-    for (size_t pos = 0, i = 0; i < toReferenceSequence_.size(); ++i) {
-        if (toReferenceSequence_.at(i) != '-') {
-            if (fasta_pos_to_sam_pos.find(i) == fasta_pos_to_sam_pos.cend()) {
-                fasta_pos_to_sam_pos.emplace(i, pos);
+        for (size_t pos = 0, i = 0; i < toReferenceSequence_.size(); ++i) {
+            if (toReferenceSequence_.at(i) != '-') {
+                if (fasta_pos_to_sam_pos.find(i) == fasta_pos_to_sam_pos.cend()) {
+                    fasta_pos_to_sam_pos.emplace(i, pos);
+                }
+                ++pos;
             }
-            ++pos;
         }
-    }
 
-    h.ClearSequences();
-    auto bamRefSequence =
-        BAM::SequenceInfo(toReferenceName_, std::to_string(toReferenceGapless_.size()));
-    bamRefSequence.Checksum(BAM::MD5Hash(toReferenceSequence_));
-    h.AddSequence(bamRefSequence);
+        h.ClearSequences();
+        auto bamRefSequence =
+            BAM::SequenceInfo(toReferenceName_, std::to_string(toReferenceGapless_.size()));
+        bamRefSequence.Checksum(BAM::MD5Hash(toReferenceSequence_));
+        h.AddSequence(bamRefSequence);
 
-    const bool isXml = Utility::FileExtension(outputFile) == "xml";
-    if (isXml) boost::replace_last(outputFile, ".consensusalignmentset.xml", ".bam");
+        const bool isXml = Utility::FileExtension(outputFile) == "xml";
+        if (isXml) boost::replace_last(outputFile, ".consensusalignmentset.xml", ".bam");
 
-    // Write Dataset
-    using BAM::DataSet;
-    const std::string metatype = "PacBio.AlignmentFile.AlignmentBamFile";
-    DataSet clericSet(DataSet::TypeEnum::ALIGNMENT);
-    BAM::ExternalResource resource(metatype, outputFile);
+        // Write Dataset
+        using BAM::DataSet;
+        const std::string metatype = "PacBio.AlignmentFile.AlignmentBamFile";
+        DataSet clericSet(DataSet::TypeEnum::ALIGNMENT);
+        BAM::ExternalResource resource(metatype, outputFile);
 
-    BAM::FileIndex pbi("PacBio.Index.PacBioIndex", outputFile + ".pbi");
-    resource.FileIndices().Add(pbi);
+        BAM::FileIndex pbi("PacBio.Index.PacBioIndex", outputFile + ".pbi");
+        resource.FileIndices().Add(pbi);
 
-    clericSet.ExternalResources().Add(resource);
-    clericSet.Name(clericSet.TimeStampedName());
+        clericSet.ExternalResources().Add(resource);
+        clericSet.Name(clericSet.TimeStampedName());
 
-    const auto outputPrefix = outputFile.substr(0, outputFile.size() - 4);
-    std::ofstream clericDSout(outputPrefix + ".consensusalignmentset.xml");
-    clericSet.SaveToStream(clericDSout);
+        const auto outputPrefix = outputFile.substr(0, outputFile.size() - 4);
+        std::ofstream clericDSout(outputPrefix + ".consensusalignmentset.xml");
+        clericSet.SaveToStream(clericDSout);
+
+        out.reset(new BAM::BamWriter(outputFile, h));
+    };
 
     // Convert and write to BAM
-    std::unique_ptr<BAM::BamWriter> out(new BAM::BamWriter(outputFile, h));
     for (auto read : *query) {
+        if (!out) ProcessHeaderAndCreateBamWriter(read);
         std::string source_str = fromReferenceSequence_;
         std::string dest_str = toReferenceSequence_;
 
