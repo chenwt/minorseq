@@ -71,11 +71,10 @@ void Cleric::Convert(std::string outputFile)
 
     // Retrieve header if available
     const auto Header = [&query]() {
-        if (query->cbegin() == query->cend()) {
-            std::cerr << "Empty input" << std::endl;
-            return BAM::BamHeader();
+        for (auto read : *query) {
+            return read.Header().DeepCopy();
         }
-        return query->cbegin()->Header().DeepCopy();
+        return BAM::BamHeader();
     };
     BAM::BamHeader h = Header();
 
