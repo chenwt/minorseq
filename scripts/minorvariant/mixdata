@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+coverage=${COVERAGE:-3000}
+percentage=${PERCENTAGE:-1}
+outputprefix=${OUTPUT_PREFIX:-mix}
+numdatasets=$#
+
+coverageMajority=$((coverage * (100 - (numdatasets - 1) * percentage) / 100))
+coverageMinority=$((coverage * percentage / 100))
+
+samtools view -H $1 > ${outputprefix}.sam
+
+for i in ${@:2}
+do
+    samtools view -H $i | grep '^@RG' >> ${outputprefix}.sam
+done
+
+samtools view $1 | shuf | head -n $coverageMajority >> ${outputprefix}.sam
+shift
+
+while test $# -gt 0
+do
+    samtools view $1 | shuf | head -n $coverageMinority >> ${outputprefix}.sam
+    shift
+done
+
+samtools view -@10 -bS ${outputprefix}.sam > ${outputprefix}.bam
+rm ${outputprefix}.sam

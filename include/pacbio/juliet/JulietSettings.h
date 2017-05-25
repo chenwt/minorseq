@@ -67,6 +67,7 @@ struct JulietSettings
     double SubstitutionRate;
     double DeletionRate;
     double MinimalPerc;
+    double MaximalPerc;
 
     /// Parses the provided CLI::Results and retrieves a defined set of options.
     JulietSettings(const PacBio::CLI::Results& options);

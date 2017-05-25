@@ -53,14 +53,14 @@ const PlainOption Region{
     "region",
     { "region", "r"},
     "Region of Interest",
-    "Genomic region of interest, reads will be clipped to that region, empty means all reads.",
+    "Clip reads to this genomic region. Empty means all reads.",
     CLI::Option::StringType("")
 };
 const PlainOption DRMOnly{
     "only_known_drms",
     { "drm-only", "k" },
-    "Only Known DRMs",
-    "Only report known DRM positions.",
+    "Only Report Variants in Target Config",
+    "Only report variants that confer drug resistance, as listed in the target configuration file.",
     CLI::Option::BoolType()
 };
 const PlainOption Phasing{
@@ -103,7 +103,7 @@ const PlainOption MinimalPerc{
 const PlainOption TargetConfigTC{
     "target_config",
     { "target-config-tc" },
-    "Target",
+    "Target Config",
     "Predefined target config tag, one of \"none\" or \"HIV_HXB2\".",
     CLI::Option::StringType("none"),
     {"none", "HIV_HXB2"},
@@ -132,6 +132,13 @@ const PlainOption MergeOutliers{
     JSON::Json(nullptr),
     CLI::OptionFlags::HIDE_FROM_HELP
 };
+const PlainOption MaximalPerc{
+    "maximal_percentage",
+    { "max-perc", "n" },
+    "Maximal Variant Percentage",
+    "Maximal variant percentage to report.",
+    CLI::Option::FloatType(100)
+};
 const PlainOption Debug{
     "debug",
     { "debug" },
@@ -153,6 +160,7 @@ JulietSettings::JulietSettings(const PacBio::CLI::Results& options)
     , SubstitutionRate(options[OptionNames::SubstitutionRate])
     , DeletionRate(options[OptionNames::DeletionRate])
     , MinimalPerc(options[OptionNames::MinimalPerc])
+    , MaximalPerc(options[OptionNames::MaximalPerc])
 {
     const std::string targetConfigTC = options[OptionNames::TargetConfigTC];
     const std::string targetConfigCLI = options[OptionNames::TargetConfigCLI];
@@ -241,7 +249,8 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
     {
         OptionNames::Region,
         OptionNames::DRMOnly,
-        OptionNames::MinimalPerc
+        OptionNames::MinimalPerc,
+        OptionNames::MaximalPerc
     });
 
     i.AddGroup("Chemistry override (specify both)",

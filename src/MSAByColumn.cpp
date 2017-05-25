@@ -59,7 +59,7 @@ MSAByColumn::MSAByColumn(const MSAByRow& msaRows)
 
     for (const auto& row : msaRows.Rows) {
         int localPos = 0;
-        for (const auto& c : row.Bases) {
+        for (const auto& c : row->Bases) {
             switch (c) {
                 case 'A':
                 case 'C':
@@ -77,7 +77,7 @@ MSAByColumn::MSAByColumn(const MSAByRow& msaRows)
                     throw std::runtime_error("Unexpected base " + std::string(1, c));
             }
         }
-        for (const auto& ins : row.Insertions) {
+        for (const auto& ins : row->Insertions) {
             counts[ins.first].insertions[ins.second]++;
         }
     }

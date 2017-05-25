@@ -1,5 +1,54 @@
 # MINORSEQ - CHANGELOG
 
+## [1.7.4]
+### Changed
+ - Fuse: Don't abort, rather warn if coverage is below 50. Run in permissive
+   mode, with minimal coverage of 1.
+ - Fuse: Do not output non-ascii chars if coverage drops to 0
+
+## [1.7.3]
+### Changed
+ - Renamed Drug Resistance to Affected Drugs
+
+## [1.7.2]
+### Changed
+ - More details about reads associated to certain haplotypes
+
+## [1.7.1]
+### Added
+ - Tooltip for 'Haplotypes \%' showing the number of reads of haplotypes
+   reported, filtered due to insufficient size, and filtered due to
+   gaps and subqv filtering
+ - Add the three number above to the json report
+ - Report 'low_counts_haplotypes' and 'skipped_haplotypes' in the json
+ - Add codons to haplotypes
+
+### Changed
+ - Fix no config phasing mode
+ - Skip non primary alignments
+
+## [1.7.0]
+### Added
+ - Database Version field to target config
+ - Option `--max-perc -n` to juliet and julietflow
+ - New pictures to JULIET.md
+ - Add tooltip to haplotype percentage, showing actual number of reads
+
+### Changed
+ - Option names
+
+## [1.6.0]
+### Added
+ - All HIV genes
+ - Add `-g` to julietflow to clip to a certain region
+ - Add mixdata script
+
+### Changed
+ - Julietflow keep tmp dir renamed to `-z`, as `-t` is for target sequence
+ - New HTML look and feel
+ - Reverse overcorrection fix, not prime time ready yet
+ - Fix offset when config is missing
+
 ## [1.5.0]
 ### Added
  - Add drm only mode `-k` to julietflow

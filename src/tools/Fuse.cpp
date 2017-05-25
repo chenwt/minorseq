@@ -57,7 +57,7 @@
 namespace PacBio {
 namespace Fuse {
 
-Fuse::Fuse(const std::string& ccsInput, int minCoverage) : minCoverage_(minCoverage)
+Fuse::Fuse(const std::string& ccsInput, int minCoverage) : minCoverageRecommended_(minCoverage)
 {
     const auto arrayReads = FetchAlignedReads(ccsInput);
     consensusSequence_ = CreateConsensus(arrayReads);
@@ -72,6 +72,14 @@ std::string Fuse::CreateConsensus(const std::vector<Data::ArrayRead>& arrayReads
     if (arrayReads.empty()) throw std::runtime_error("Empty input. Could not find records.");
     Data::MSAByColumn msa(arrayReads);
 
+    int actualCoverage = arrayReads.size();
+    int minCoverage = minCoverageRecommended_;
+    if (actualCoverage < minCoverageRecommended_) {
+        minCoverage = 1;
+        std::cerr << "WARNING: Insufficient coverage of " << minCoverage
+                  << "! Operating in permissive mode. "
+                  << "Recommended coverage is >50x!" << std::endl;
+    }
     auto posInsCov = CollectInsertions(msa);
     std::map<int, std::string> posIns;
     while (!posInsCov.empty())
@@ -80,9 +88,9 @@ std::string Fuse::CreateConsensus(const std::vector<Data::ArrayRead>& arrayReads
     std::string consensus;
     for (const auto& c : msa.counts) {
         if (posIns.find(c.refPos) != posIns.cend()) consensus += posIns[c.refPos];
-        if (c.Coverage() > minCoverage_) {
+        if (c.Coverage() >= minCoverage) {
             const auto maxBase = c.MaxBase();
-            if (maxBase != '-') consensus += c.MaxBase();
+            if (maxBase != '-' && maxBase != ' ') consensus += c.MaxBase();
         }
     }
     return consensus;

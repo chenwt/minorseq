@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2017, Pacific Biosciences of California, Inc.
+// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,45 +35,19 @@
 
 // Author: Armin Töpfer
 
-#include <pbbam/DataSet.h>
-
-#include <pacbio/io/BamParser.h>
+#pragma once
 
 namespace PacBio {
-namespace IO {
-std::unique_ptr<BAM::internal::IQuery> BamQuery(const std::string& filePath)
+namespace Juliet {
+
+enum class HaplotypeType : int
 {
-    BAM::DataSet ds(filePath);
-    const auto filter = BAM::PbiFilter::FromDataSet(ds);
-    std::unique_ptr<BAM::internal::IQuery> query(nullptr);
-    if (filter.IsEmpty())
-        query.reset(new BAM::EntireFileQuery(ds));
-    else
-        query.reset(new BAM::PbiFilterQuery(filter, ds));
-    return query;
+    REPORT = 0,
+    WITH_GAP = 1,
+    WITH_HETERODUPLEX = 2,
+    PARTIAL = 4,
+    LOW_COV = 8,
+    OFFTARGET = 16
+};
 }
-
-std::vector<std::shared_ptr<Data::ArrayRead>> BamToArrayReads(const std::string& filePath,
-                                                              int regionStart, int regionEnd)
-{
-    std::vector<std::shared_ptr<Data::ArrayRead>> returnList;
-    regionStart = std::max(regionStart - 1, 0);
-    regionEnd = std::max(regionEnd - 1, 0);
-
-    auto query = BamQuery(filePath);
-
-    int idx = 0;
-    // Iterate over all records and convert online
-    for (auto& record : *query) {
-        if (record.Impl().IsSupplementaryAlignment()) continue;
-        if (!record.Impl().IsPrimaryAlignment()) continue;
-        if (record.ReferenceStart() < regionEnd && record.ReferenceEnd() > regionStart) {
-            record.Clip(BAM::ClipType::CLIP_TO_REFERENCE, regionStart, regionEnd);
-            returnList.emplace_back(
-                std::make_shared<Data::BAMArrayRead>(Data::BAMArrayRead(record, idx++)));
-        }
-    }
-    return returnList;
-}
-}
-}  // ::PacBio::IO
+}  //::PacBio::Juliet
