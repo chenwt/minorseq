@@ -41,10 +41,10 @@ namespace PacBio {
 namespace Data {
 struct FisherResult
 {
-    std::array<double, 6> pValues = {{0, 0, 0, 0, 0, 0}};
-    std::array<double, 6> mask = {{0, 0, 0, 0, 0, 0}};
-    bool hit = false;
-    int argMax = 0;
+    std::array<double, 6> PValues = {{0, 0, 0, 0, 0, 0}};
+    std::array<double, 6> Mask = {{0, 0, 0, 0, 0, 0}};
+    bool Hit = false;
+    int ArgMax = 0;
 };
 }
 }  // ::PacBio::Statistics

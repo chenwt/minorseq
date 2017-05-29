@@ -48,16 +48,18 @@ namespace PacBio {
 namespace Data {
 MSAByColumn::MSAByColumn(const MSAByRow& msaRows)
 {
-    beginPos = msaRows.BeginPos - 1;
-    endPos = msaRows.EndPos - 1;
-    counts.resize(msaRows.EndPos - msaRows.BeginPos);
-    int pos = msaRows.BeginPos;
-    for (auto& c : counts) {
-        c.refPos = pos;
+    beginPos_ = msaRows.BeginPos() - 1;
+    endPos_ = msaRows.EndPos() - 1;
+
+    int pos = msaRows.BeginPos();
+    int size = msaRows.EndPos() - msaRows.BeginPos();
+    counts.reserve(size);
+    for (int i = 0; i < size; ++i) {
+        counts.emplace_back(pos);
         ++pos;
     }
 
-    for (const auto& row : msaRows.Rows) {
+    for (const auto& row : msaRows.Rows()) {
         int localPos = 0;
         for (const auto& c : row->Bases) {
             switch (c) {
@@ -78,7 +80,7 @@ MSAByColumn::MSAByColumn(const MSAByRow& msaRows)
             }
         }
         for (const auto& ins : row->Insertions) {
-            counts[ins.first].insertions[ins.second]++;
+            counts[ins.first].IncInsertion(ins.second);
         }
     }
 }

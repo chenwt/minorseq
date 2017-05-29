@@ -77,15 +77,15 @@ Data::FisherResult Tests::FisherCCS(const std::array<int, 5>& observed)
     };
 
     Data::FisherResult fr;
-    fr.pValues = {{fisherCCS(0), fisherCCS(1), fisherCCS(2), fisherCCS(3), fisherCCS(4)}};
+    fr.PValues = {{fisherCCS(0), fisherCCS(1), fisherCCS(2), fisherCCS(3), fisherCCS(4)}};
     for (int i = 0; i < 5; ++i) {
-        if (fr.pValues.at(i) < alpha && observed.at(i) > 1) {
-            if (i != argMax) fr.hit = true;
-            fr.mask[i] = 1;
+        if (fr.PValues.at(i) < alpha && observed.at(i) > 1) {
+            if (i != argMax) fr.Hit = true;
+            fr.Mask[i] = 1;
         } else
-            fr.mask[i] = 0;
+            fr.Mask[i] = 0;
     }
-    fr.argMax = argMax;
+    fr.ArgMax = argMax;
     return fr;
 }
 

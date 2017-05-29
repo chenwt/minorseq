@@ -50,99 +50,29 @@
 namespace PacBio {
 namespace Data {
 
-struct MSAByRow
+class MSAByRow
 {
+public:
     MSAByRow() = default;
-
-    MSAByRow(const std::vector<std::shared_ptr<Data::ArrayRead>>& reads)
-    {
-        for (const auto& r : reads)
-            BeginEnd(*r);
-
-        for (const auto& r : reads) {
-            auto row = AddRead(*r);
-            row.Read = r;
-            const auto x = std::make_shared<MSARow>(std::move(row));
-            NameToRow[r->Name] = x;
-            Rows.emplace_back(x);
-        }
-
-        BeginPos += 1;
-        EndPos += 1;
-    }
-
-    MSAByRow(const std::vector<Data::ArrayRead>& reads)
-    {
-        for (const auto& r : reads)
-            BeginEnd(r);
-
-        for (const auto& r : reads) {
-            const auto x = std::make_shared<MSARow>(AddRead(r));
-            NameToRow[r.Name] = x;
-            Rows.emplace_back(x);
-        }
-
-        BeginPos += 1;
-        EndPos += 1;
-    }
-
-    void BeginEnd(const Data::ArrayRead& read)
-    {
-        BeginPos = std::min(BeginPos, read.ReferenceStart());
-        EndPos = std::max(EndPos, read.ReferenceEnd());
-    }
-
-private:
-    MSARow AddRead(const Data::ArrayRead& read)
-    {
-        MSARow row(EndPos - BeginPos);
-
-        int pos = read.ReferenceStart() - BeginPos;
-        assert(pos >= 0);
-
-        std::string insertion;
-        auto CheckInsertion = [&insertion, &row, &pos]() {
-            if (insertion.empty()) return;
-            row.Insertions[pos] = insertion;
-            insertion = "";
-        };
-
-        for (const auto& b : read.Bases) {
-            switch (b.Cigar) {
-                case 'X':
-                case '=':
-                    CheckInsertion();
-                    if (b.MeetQVThresholds(qvThresholds))
-                        row.Bases[pos++] = b.Nucleotide;
-                    else
-                        row.Bases[pos++] = 'N';
-                    break;
-                case 'D':
-                    CheckInsertion();
-                    row.Bases[pos++] = '-';
-                    break;
-                case 'I':
-                    insertion += b.Nucleotide;
-                    break;
-                case 'P':
-                    CheckInsertion();
-                    break;
-                case 'S':
-                    CheckInsertion();
-                    break;
-                default:
-                    throw std::runtime_error("Unexpected cigar " + std::to_string(b.Cigar));
-            }
-        }
-        return row;
-    }
+    MSAByRow(const std::vector<std::shared_ptr<Data::ArrayRead>>& reads);
+    MSAByRow(const std::vector<Data::ArrayRead>& reads);
 
 public:
-    const Data::QvThresholds qvThresholds;
-    int BeginPos = std::numeric_limits<int>::max();
-    int EndPos = 0;
-    std::vector<std::shared_ptr<MSARow>> Rows;
-    std::map<std::string, std::shared_ptr<MSARow>> NameToRow;
+    void BeginEnd(const Data::ArrayRead& read);
+    int BeginPos() const { return beginPos_; }
+    int EndPos() const { return endPos_; }
+    const std::vector<std::shared_ptr<MSARow>>& Rows() const { return rows_; }
+    std::shared_ptr<MSARow> NameToRow(const std::string& name) const { return nameToRow_.at(name); }
+
+private:
+    std::vector<std::shared_ptr<MSARow>> rows_;
+    std::map<std::string, std::shared_ptr<MSARow>> nameToRow_;
+    const Data::QvThresholds qvThresholds_;
+    int beginPos_ = std::numeric_limits<int>::max();
+    int endPos_ = 0;
+
+private:
+    MSARow AddRead(const Data::ArrayRead& read);
 };
 }
 }  // ::PacBio::Juliet

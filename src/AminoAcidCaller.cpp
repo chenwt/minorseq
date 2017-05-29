@@ -93,10 +93,10 @@ int AminoAcidCaller::CountNumberOfTests(const std::vector<TargetGene>& genes) co
             // Only work on beginnings of a codon
             if (ri % 3 != 0) continue;
             // Relative to window begin
-            const int bi = i - msaByRow_.BeginPos;
+            const int bi = i - msaByRow_.BeginPos();
 
             std::unordered_map<std::string, int> codons;
-            for (const auto& nucRow : msaByRow_.Rows) {
+            for (const auto& nucRow : msaByRow_.Rows()) {
                 const auto& row = nucRow->Bases;
                 // Read does not cover codon
                 if (bi + 2 >= static_cast<int>(row.size()) || bi < 0) continue;
@@ -164,7 +164,7 @@ void AminoAcidCaller::PhaseVariants()
         const std::pair<int, std::shared_ptr<VariantGene::VariantPosition>>& pos_var, int l,
         int r) {
         std::string codon;
-        int local = pos_var.first - msaByRow_.BeginPos - 3;
+        int local = pos_var.first - msaByRow_.BeginPos() - 3;
         for (int i = l; i < r; ++i)
             codon += row->Bases.at(local + i);
 
@@ -172,7 +172,7 @@ void AminoAcidCaller::PhaseVariants()
     };
 
     // For each read
-    for (const auto& row : msaByRow_.Rows) {
+    for (const auto& row : msaByRow_.Rows()) {
 
         // Get all codons for this row
         std::vector<std::string> codons;
@@ -330,7 +330,7 @@ void AminoAcidCaller::PhaseVariants()
                                  this](std::shared_ptr<Haplotype> h) {
         for (const auto& name : h->Names) {
             std::cerr << name << "\t";
-            const auto& row = msaByRow_.NameToRow[name];
+            const auto& row = msaByRow_.NameToRow(name);
 
             for (const auto& pos_var : variantPositions) {
                 std::string codon = ExtractRegionFromRow(row, pos_var, 0, 3);
@@ -449,8 +449,8 @@ void AminoAcidCaller::CallVariants()
     const bool hasReference = !targetConfig_.referenceSequence.empty();
     // If no user config has been provided, use complete input region
     if (genes.empty()) {
-        noConfOffset = msaByRow_.BeginPos;
-        TargetGene tg(noConfOffset, msaByRow_.EndPos, "Unnamed ORF", {});
+        noConfOffset = msaByRow_.BeginPos();
+        TargetGene tg(noConfOffset, msaByRow_.EndPos(), "Unnamed ORF", {});
         genes.emplace_back(tg);
     }
 
@@ -486,7 +486,7 @@ void AminoAcidCaller::CallVariants()
             // Only work on beginnings of a codon
             if (ri % 3 != 0) continue;
             // Relative to window begin
-            const int bi = i - msaByRow_.BeginPos;
+            const int bi = i - msaByRow_.BeginPos();
 
             const int codonPos = 1 + (ri) / 3;
             curVariantGene.relPositionToVariant.emplace(
@@ -495,7 +495,7 @@ void AminoAcidCaller::CallVariants()
 
             std::map<std::string, int> codons;
             int coverage = 0;
-            for (const auto& nucRow : msaByRow_.Rows) {
+            for (const auto& nucRow : msaByRow_.Rows()) {
                 const auto& row = nucRow->Bases;
                 const auto CodonContains = [&row, &bi](const char x) {
                     return (row.at(bi + 0) == x || row.at(bi + 1) == x || row.at(bi + 2) == x);
@@ -614,7 +614,7 @@ void AminoAcidCaller::CallVariants()
             if (!curVariantPosition->aminoAcidToCodons.empty()) {
                 curVariantPosition->coverage = coverage;
                 for (int j = -3; j < 6; ++j) {
-                    if (i + j >= msaByRow_.BeginPos && i + j < msaByRow_.EndPos) {
+                    if (i + j >= msaByRow_.BeginPos() && i + j < msaByRow_.EndPos()) {
                         int abs = ai + j;
                         JSON::Json msaCounts;
                         msaCounts["rel_pos"] = j;

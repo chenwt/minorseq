@@ -35,19 +35,19 @@
 
 // Author: Armin Töpfer
 
-#include <array>
 #include <numeric>
-
-#include <pacbio/data/FisherResult.h>
 
 #include <pacbio/data/MSAColumn.h>
 
 namespace PacBio {
 namespace Data {
-int MSAColumn::Coverage() const { return std::accumulate(counts.cbegin(), counts.cend(), 0); }
+MSAColumn::MSAColumn(int refPos) : refPos_(refPos) {}
+
+int MSAColumn::Coverage() const { return std::accumulate(counts_.cbegin(), counts_.cend(), 0); }
+
 int MSAColumn::MaxElement() const
 {
-    return std::distance(counts.begin(), std::max_element(counts.begin(), counts.end()));
+    return std::distance(counts_.begin(), std::max_element(counts_.begin(), counts_.end()));
 }
 char MSAColumn::MaxBase() const
 {
@@ -58,17 +58,51 @@ char MSAColumn::MaxBase() const
     else
         return bases[maxElement];
 }
-int MSAColumn::Max() const { return counts.at(MaxElement()); }
+int MSAColumn::Max() const { return counts_.at(MaxElement()); }
 
 void MSAColumn::AddFisherResult(const FisherResult& f)
 {
-    pValues = f.pValues;
-    mask = f.mask;
-    hit = f.hit;
-    argMax = f.argMax;
+    pValues_ = f.PValues;
+    mask_ = f.Mask;
+    hit_ = f.Hit;
+    argMax_ = f.ArgMax;
 }
 
-void MSAColumn::AddFisherResult(const std::map<std::string, double>& f) { insertionsPValues = f; }
+void MSAColumn::AddFisherResult(const std::map<std::string, double>& f) { insertionsPValues_ = f; }
 
+std::ostream& MSAColumn::InDels(std::ostream& stream)
+{
+    stream << refPos_ << "\t";
+    if (mask_.at(4) == 1) stream << "(-," << counts_.at(4) << "," << pValues_.at(4) << ")\t";
+    for (const auto& bases_pvalue : insertionsPValues_)
+        if (bases_pvalue.second < 0.01)
+            stream << "(" << bases_pvalue.first << "," << insertions_.at(bases_pvalue.first) << ","
+                   << bases_pvalue.second << ")\t";
+    stream << std::endl;
+    return stream;
+}
+
+std::vector<std::string> MSAColumn::SignificantInsertions() const
+{
+    std::vector<std::string> results;
+    for (const auto& bases_pvalue : insertionsPValues_)
+        if (bases_pvalue.second < 0.01) results.push_back(bases_pvalue.first);
+    return results;
+}
+
+int MSAColumn::RefPos() const { return refPos_; }
+
+void MSAColumn::IncInsertion(const std::string& seq) { insertions_[seq]++; }
+
+const std::map<std::string, int>& MSAColumn::Insertions() const { return insertions_; }
+
+double MSAColumn::PValue(const int i) const { return pValues_.at(i); }
+
+std::ostream& operator<<(std::ostream& stream, const MSAColumn& r)
+{
+    for (int j = 0; j < 6; ++j)
+        stream << r[j] << "\t" << r.PValue(j) << "\t";
+    return stream;
+}
 }  // namespace Data
 }  // namespace PacBio

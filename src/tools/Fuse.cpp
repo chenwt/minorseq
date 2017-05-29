@@ -86,8 +86,8 @@ std::string Fuse::CreateConsensus(const std::vector<Data::ArrayRead>& arrayReads
         posIns.insert(FindInsertions(&posInsCov));
 
     std::string consensus;
-    for (const auto& c : msa.counts) {
-        if (posIns.find(c.refPos) != posIns.cend()) consensus += posIns[c.refPos];
+    for (const auto& c : msa) {
+        if (posIns.find(c.RefPos()) != posIns.cend()) consensus += posIns[c.RefPos()];
         if (c.Coverage() >= minCoverage) {
             const auto maxBase = c.MaxBase();
             if (maxBase != '-' && maxBase != ' ') consensus += c.MaxBase();
@@ -101,18 +101,18 @@ std::map<int, std::pair<std::string, int>> Fuse::CollectInsertions(
 {
     std::map<int, std::pair<std::string, int>> posInsCov;
     for (const auto& c : msa) {
-        if (!c.insertions.empty()) {
+        if (!c.Insertions().empty()) {
             int argmax = -1;
             std::string max;
             double minInsertionCoverage = c.Coverage() * minInsertionCoverageFreq_;
-            for (const auto& ins_count : c.insertions) {
+            for (const auto& ins_count : c.Insertions()) {
                 if (ins_count.first.size() % 3 != 0) continue;
                 if (ins_count.second > argmax && ins_count.second > minInsertionCoverage) {
                     argmax = ins_count.second;
                     max = ins_count.first;
                 }
             }
-            if (argmax != -1) posInsCov[c.refPos] = std::make_pair(max, argmax);
+            if (argmax != -1) posInsCov[c.RefPos()] = std::make_pair(max, argmax);
         }
     }
     return posInsCov;

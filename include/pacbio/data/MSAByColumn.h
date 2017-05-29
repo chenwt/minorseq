@@ -62,11 +62,11 @@ public:
 
 public:
     /// Parameter is an index in ABSOLUTE reference space
-    MSAColumn operator[](int i) const { return counts[i - beginPos]; }
+    MSAColumn operator[](int i) const { return counts[i - beginPos_]; }
     /// Parameter is an index in ABSOLUTE reference space
-    MSAColumn& operator[](int i) { return counts[i - beginPos]; }
+    MSAColumn& operator[](int i) { return counts[i - beginPos_]; }
 
-    bool has(int i) { return i >= beginPos && i < endPos; }
+    bool has(int i) { return i >= beginPos_ && i < endPos_; }
 
     // clang-format off
     MsaIt      begin()        { return counts.begin();  }
@@ -78,9 +78,13 @@ public:
     // clang-format on
 
 public:
+    int BeginPos() const { return beginPos_; }
+    int EndPos() const { return endPos_; }
+
+private:
     MsaVec counts;
-    int beginPos = std::numeric_limits<int>::max();
-    int endPos = 0;
+    int beginPos_ = std::numeric_limits<int>::max();
+    int endPos_ = 0;
 
 private:
     void BeginEnd(const Data::ArrayRead& read);

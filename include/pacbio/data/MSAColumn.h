@@ -50,17 +50,20 @@ namespace Data {
 class MSAColumn
 {
 public:
+    MSAColumn(int refPos);
+
+public:
     // Relative per nucleotide abundance
     double Frequency(int i) const { return (*this)[i] / static_cast<double>(Coverage()); }
     double Frequency(char c) const { return (*this)[c] / static_cast<double>(Coverage()); }
 
-    // Nucleotide counts
-    int operator[](int i) const { return counts[i]; }
-    int& operator[](int i) { return counts[i]; }
-    int operator[](char c) const { return counts[NucleotideToTag(c)]; }
-    int& operator[](char c) { return counts[NucleotideToTag(c)]; }
+    // Nucleotide counts_
+    int operator[](int i) const { return counts_[i]; }
+    int& operator[](int i) { return counts_[i]; }
+    int operator[](char c) const { return counts_[NucleotideToTag(c)]; }
+    int& operator[](char c) { return counts_[NucleotideToTag(c)]; }
 
-    operator std::array<int, 6>() { return counts; }
+    operator std::array<int, 6>() { return counts_; }
     explicit operator int() { return Coverage(); }
 
 public:
@@ -68,48 +71,26 @@ public:
     char MaxBase() const;
     int MaxElement() const;
     int Max() const;
+    int RefPos() const;
+    std::vector<std::string> SignificantInsertions() const;
+    const std::map<std::string, int>& Insertions() const;
+    double PValue(const int i) const;
 
 public:
     void AddFisherResult(const FisherResult& f);
     void AddFisherResult(const std::map<std::string, double>& f);
+    std::ostream& InDels(std::ostream& stream);
+    void IncInsertion(const std::string& seq);
 
-    std::ostream& InDels(std::ostream& stream)
-    {
-        stream << refPos << "\t";
-        if (mask.at(4) == 1) stream << "(-," << counts.at(4) << "," << pValues.at(4) << ")\t";
-        for (const auto& bases_pvalue : insertionsPValues)
-            if (bases_pvalue.second < 0.01)
-                stream << "(" << bases_pvalue.first << "," << insertions.at(bases_pvalue.first)
-                       << "," << bases_pvalue.second << ")\t";
-        stream << std::endl;
-        return stream;
-    }
-
-    std::vector<std::string> SignificantInsertions() const
-    {
-        std::vector<std::string> results;
-        for (const auto& bases_pvalue : insertionsPValues)
-            if (bases_pvalue.second < 0.01) results.push_back(bases_pvalue.first);
-        return results;
-    }
-
-public:
-    int refPos = -1;
-    std::array<int, 6> counts{{0, 0, 0, 0, 0, 0}};
-    std::map<std::string, int> insertions;
-    std::map<std::string, double> insertionsPValues;
-    std::array<double, 6> pValues{{1, 1, 1, 1, 1, 1}};
-    std::array<double, 6> mask{{0, 0, 0, 0, 0, 0}};
-    bool hit = false;
-    int argMax = 0;
-
-public:
-    friend std::ostream& operator<<(std::ostream& stream, const MSAColumn& r)
-    {
-        for (int j = 0; j < 6; ++j)
-            stream << r.counts.at(j) << "\t" << r.pValues.at(j) << "\t";
-        return stream;
-    }
+private:
+    std::array<int, 6> counts_{{0, 0, 0, 0, 0, 0}};
+    std::map<std::string, int> insertions_;
+    std::map<std::string, double> insertionsPValues_;
+    std::array<double, 6> pValues_{{1, 1, 1, 1, 1, 1}};
+    std::array<double, 6> mask_{{0, 0, 0, 0, 0, 0}};
+    bool hit_ = false;
+    int argMax_ = 0;
+    int refPos_ = -1;
 };
 }  // namespace Data
 }  // namespace PacBio
