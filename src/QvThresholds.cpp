@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
+// Copyright (c) 2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,22 +35,29 @@
 
 // Author: Armin Töpfer
 
-#pragma once
-
-#include <map>
-#include <memory>
+#include <cstdlib>
 #include <string>
-#include <vector>
+
+#include <pacbio/data/QvThresholds.h>
 
 namespace PacBio {
 namespace Data {
-
-struct MSARow
+QvThresholds::QvThresholds()
 {
-    MSARow(const int size) : Bases(size, ' ') {}
-    std::vector<char> Bases;
-    std::map<int, std::string> Insertions;
-    std::shared_ptr<Data::ArrayRead> Read;
-};
+    auto SetQV = [](const char* env, boost::optional<uint8_t>* qv,
+                    boost::optional<uint8_t> defaultQv = boost::none) {
+        char* val = std::getenv(env);
+        *qv = val == NULL ? defaultQv : std::stoi(std::string(val));
+    };
+    SetQV("DELQV", &DelQV);
+    SetQV("SUBQV", &SubQV, 42);
+    SetQV("INSQV", &InsQV);
+    SetQV("QUALQV", &QualQV);
 }
-}  // ::PacBio::Data
+
+boost::optional<uint8_t> DelQV;
+boost::optional<uint8_t> SubQV;
+boost::optional<uint8_t> InsQV;
+boost::optional<uint8_t> QualQV;
+}
+}

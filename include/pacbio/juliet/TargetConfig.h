@@ -50,23 +50,8 @@ public:
     DMutation(char refAA, int pos, char curAA);
 
 public:
-    // operator int() const { return pos; }
-    operator std::string() const
-    {
-        std::string out;
-        out += refAA;
-        out += std::to_string(pos);
-        out += curAA;
-        return out;
-    }
-
-    bool operator==(const DMutation& a) const
-    {
-        if (a.pos != pos) return false;
-        if (a.curAA != '*' && curAA != '*' && a.curAA != curAA) return false;
-        if (a.refAA != '*' && refAA != '*' && a.refAA != refAA) return false;
-        return true;
-    }
+    operator std::string() const;
+    bool operator==(const DMutation& a) const;
 
 public:
     char refAA;

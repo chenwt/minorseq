@@ -41,7 +41,7 @@
 #include <string>
 #include <vector>
 
-#include <pacbio/data/MSAByColumn.h>
+#include <pacbio/data/MSA.h>
 #include <pbbam/BamRecord.h>
 
 namespace PacBio {

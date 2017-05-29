@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
+// Copyright (c) 2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,19 +35,53 @@
 
 // Author: Armin Töpfer
 
-#pragma once
+#include <string>
+
+#include <pacbio/data/NucleotideConversion.h>
 
 namespace PacBio {
-namespace Juliet {
+namespace Data {
 
-enum class HaplotypeType : int
+#if __cplusplus < 201402L  // C++11
+char TagToNucleotide(uint8_t t)
 {
-    REPORT = 0,
-    WITH_GAP = 1,
-    WITH_HETERODUPLEX = 2,
-    PARTIAL = 4,
-    LOW_COV = 8,
-    OFFTARGET = 16
-};
+    switch (t) {
+        case 0:
+            return 'A';
+        case 1:
+            return 'C';
+        case 2:
+            return 'G';
+        case 3:
+            return 'T';
+        case 4:
+            return '-';
+        case 5:
+            return 'N';
+        default:
+            throw std::runtime_error("Unsupported tag: " + std::to_string(t));
+    }
 }
-}  //::PacBio::Juliet
+
+uint8_t NucleotideToTag(char t)
+{
+    switch (t) {
+        case 'A':
+            return 0;
+        case 'C':
+            return 1;
+        case 'G':
+            return 2;
+        case 'T':
+            return 3;
+        case '-':
+            return 4;
+        case 'N':
+            return 5;
+        default:
+            throw std::runtime_error("Unsupported character: " + std::to_string(t));
+    }
+}
+#endif
+}
+}  // ::PacBio::Data

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
+// Copyright (c) 2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -37,42 +37,55 @@
 
 #pragma once
 
-#include <limits>
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
-
-#include <pacbio/data/ArrayRead.h>
-#include <pacbio/data/MSARow.h>
-#include <pacbio/data/QvThresholds.h>
-
 namespace PacBio {
 namespace Data {
 
-class MSAByRow
+#if __cplusplus < 201402L  // C++11
+char TagToNucleotide(uint8_t t);
+uint8_t NucleotideToTag(char t);
+#else  // C++14
+// Convert {0, 1, 2, 3, 4, 5} to {'A', 'C', 'G', 'T', '-', 'N'}
+static constexpr char TagToNucleotide(uint8_t t)
 {
-public:
-    MSAByRow() = default;
-    MSAByRow(const std::vector<std::shared_ptr<Data::ArrayRead>>& reads);
-    MSAByRow(const std::vector<Data::ArrayRead>& reads);
-
-public:
-    void BeginEnd(const Data::ArrayRead& read);
-    int BeginPos() const { return beginPos_; }
-    int EndPos() const { return endPos_; }
-    const std::vector<std::shared_ptr<MSARow>>& Rows() const { return rows_; }
-    std::shared_ptr<MSARow> NameToRow(const std::string& name) const { return nameToRow_.at(name); }
-
-private:
-    std::vector<std::shared_ptr<MSARow>> rows_;
-    std::map<std::string, std::shared_ptr<MSARow>> nameToRow_;
-    const Data::QvThresholds qvThresholds_;
-    int beginPos_ = std::numeric_limits<int>::max();
-    int endPos_ = 0;
-
-private:
-    MSARow AddRead(const Data::ArrayRead& read);
-};
+    switch (t) {
+        case 0:
+            return 'A';
+        case 1:
+            return 'C';
+        case 2:
+            return 'G';
+        case 3:
+            return 'T';
+        case 4:
+            return '-';
+        case 5:
+            return 'N';
+        default:
+            return '?';
+            // throw std::runtime_error("Woot is that tag? " + std::to_string(t));
+    }
 }
-}  // ::PacBio::Juliet
+// Convert {'A', 'C', 'G', 'T', '-', 'N'} to {0, 1, 2, 3, 4, 5}
+static constexpr uint8_t NucleotideToTag(char t)
+{
+    switch (t) {
+        case 'A':
+            return 0;
+        case 'C':
+            return 1;
+        case 'G':
+            return 2;
+        case 'T':
+            return 3;
+        case '-':
+            return 4;
+        case 'N':
+            return 5;
+        default:
+            return 255;
+            // throw std::runtime_error("Woot is that char " + std::to_string(t));
+    }
+}
+#endif
+}
+}  // ::PacBio::Data

@@ -54,7 +54,7 @@
 #include <pbcopper/utility/FileUtils.h>
 
 #include <pacbio/data/ArrayRead.h>
-#include <pacbio/data/MSAByColumn.h>
+#include <pacbio/data/MSA.h>
 #include <pacbio/io/BamParser.h>
 #include <pacbio/juliet/AminoAcidCaller.h>
 #include <pacbio/juliet/JsonToHtml.h>

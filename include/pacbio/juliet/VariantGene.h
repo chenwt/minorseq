@@ -70,65 +70,13 @@ struct VariantGene
         };
         std::map<char, std::vector<VariantCodon>> aminoAcidToCodons;
 
-        bool IsVariant() const { return !aminoAcidToCodons.empty(); }
-        bool IsHit(const std::string& codon)
-        {
-            if (codon == refCodon || codon == altRefCodon) {
-                return true;
-            }
-            for (const auto amino_varCodon : aminoAcidToCodons) {
-                for (const auto variant_codon : amino_varCodon.second) {
-                    if (codon == variant_codon.codon) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
+        bool IsVariant() const;
+        bool IsHit(const std::string& codon);
     };
 
     std::map<int, std::shared_ptr<VariantPosition>> relPositionToVariant;
 
-    JSON::Json ToJson() const
-    {
-        using namespace JSON;
-        Json root;
-        root["name"] = geneName;
-        std::vector<Json> positions;
-        for (const auto& pos_variant : relPositionToVariant) {
-            Json jVarPos;
-            jVarPos["ref_position"] = pos_variant.first;
-            jVarPos["ref_codon"] = pos_variant.second->refCodon;
-            jVarPos["coverage"] = pos_variant.second->coverage;
-            jVarPos["ref_amino_acid"] = std::string(1, pos_variant.second->refAminoAcid);
-
-            if (pos_variant.second->aminoAcidToCodons.empty()) continue;
-            std::vector<Json> jVarAAs;
-            for (const auto& aa_varCodon : pos_variant.second->aminoAcidToCodons) {
-                Json jVarAA;
-                jVarAA["amino_acid"] = std::string(1, aa_varCodon.first);
-                std::vector<Json> jCodons;
-
-                if (aa_varCodon.second.empty()) continue;
-                for (const auto& codon : aa_varCodon.second) {
-                    Json jCodon;
-                    jCodon["codon"] = codon.codon;
-                    jCodon["frequency"] = codon.frequency;
-                    jCodon["pValue"] = codon.pValue;
-                    jCodon["known_drm"] = codon.knownDRM;
-                    jCodon["haplotype_hit"] = codon.haplotypeHit;
-                    jCodons.push_back(jCodon);
-                }
-                jVarAA["variant_codons"] = jCodons;
-                jVarAAs.push_back(jVarAA);
-            }
-            jVarPos["variant_amino_acids"] = jVarAAs;
-            jVarPos["msa"] = pos_variant.second->msa;
-            positions.push_back(jVarPos);
-        }
-        if (!positions.empty()) root["variant_positions"] = positions;
-        return root;
-    }
+    JSON::Json ToJson() const;
 };
 }
 }  // ::PacBio::Juliet

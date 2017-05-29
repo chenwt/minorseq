@@ -37,16 +37,97 @@
 
 #pragma once
 
-#include <algorithm>
+#include <pacbio/data/QvThresholds.h>
+
 #include <array>
 #include <map>
+#include <string>
 #include <vector>
-
-#include <pacbio/data/ArrayRead.h>
-#include <pacbio/data/FisherResult.h>
 
 namespace PacBio {
 namespace Data {
+class ArrayRead;
+struct FisherResult;
+
+class MSAByColumn;
+class MSAColumn;
+struct MSARow;
+
+class MSAByRow
+{
+public:
+    MSAByRow() = default;
+    MSAByRow(const std::vector<std::shared_ptr<Data::ArrayRead>>& reads);
+    MSAByRow(const std::vector<Data::ArrayRead>& reads);
+
+public:
+    void BeginEnd(const Data::ArrayRead& read);
+    int BeginPos() const { return beginPos_; }
+    int EndPos() const { return endPos_; }
+    const std::vector<std::shared_ptr<MSARow>>& Rows() const { return rows_; }
+    std::shared_ptr<MSARow> NameToRow(const std::string& name) const { return nameToRow_.at(name); }
+
+private:
+    std::vector<std::shared_ptr<MSARow>> rows_;
+    std::map<std::string, std::shared_ptr<MSARow>> nameToRow_;
+    const Data::QvThresholds qvThresholds_;
+    int beginPos_ = std::numeric_limits<int>::max();
+    int endPos_ = 0;
+
+private:
+    MSARow AddRead(const Data::ArrayRead& read);
+};
+
+struct MSARow
+{
+    MSARow(const int size) : Bases(size, ' ') {}
+    std::vector<char> Bases;
+    std::map<int, std::string> Insertions;
+    std::shared_ptr<Data::ArrayRead> Read;
+};
+
+/// Multiple sequence alignment containing counts
+class MSAByColumn
+{
+private:
+    using MsaVec = std::vector<MSAColumn>;
+
+public:
+    using MsaIt = MsaVec::iterator;
+    using MsaItConst = MsaVec::const_iterator;
+
+public:
+    MSAByColumn(const MSAByRow& nucMat);
+
+public:
+    /// Parameter is an index in ABSOLUTE reference space
+    MSAColumn operator[](int i) const;
+    /// Parameter is an index in ABSOLUTE reference space
+    MSAColumn& operator[](int i);
+
+    bool has(int i);
+
+    MsaIt begin();
+    MsaIt end();
+    MsaItConst begin() const;
+    MsaItConst end() const;
+    MsaItConst cbegin() const;
+    MsaItConst cend() const;
+
+public:
+    int BeginPos() const { return beginPos_; }
+    int EndPos() const { return endPos_; }
+
+private:
+    MsaVec counts;
+    int beginPos_ = std::numeric_limits<int>::max();
+    int endPos_ = 0;
+
+private:
+    void BeginEnd(const Data::ArrayRead& read);
+    void FillCounts(const ArrayRead& read, const QvThresholds& qvThresholds);
+};
+
 class MSAColumn
 {
 public:
@@ -54,17 +135,17 @@ public:
 
 public:
     // Relative per nucleotide abundance
-    double Frequency(int i) const { return (*this)[i] / static_cast<double>(Coverage()); }
-    double Frequency(char c) const { return (*this)[c] / static_cast<double>(Coverage()); }
+    double Frequency(int i) const;
+    double Frequency(char c) const;
 
     // Nucleotide counts_
-    int operator[](int i) const { return counts_[i]; }
-    int& operator[](int i) { return counts_[i]; }
-    int operator[](char c) const { return counts_[NucleotideToTag(c)]; }
-    int& operator[](char c) { return counts_[NucleotideToTag(c)]; }
+    int operator[](int i) const;
+    int& operator[](int i);
+    int operator[](char c) const;
+    int& operator[](char c);
 
-    operator std::array<int, 6>() { return counts_; }
-    explicit operator int() { return Coverage(); }
+    operator std::array<int, 6>();
+    explicit operator int();
 
 public:
     int Coverage() const;

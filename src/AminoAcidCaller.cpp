@@ -55,9 +55,11 @@
 
 #include <boost/optional.hpp>
 
+#include <pacbio/data/ArrayRead.h>
 #include <pacbio/juliet/AminoAcidCaller.h>
 #include <pacbio/juliet/AminoAcidTable.h>
-#include <pacbio/juliet/HaplotypeType.h>
+#include <pacbio/juliet/ErrorEstimates.h>
+#include <pacbio/juliet/JulietSettings.h>
 #include <pacbio/statistics/Fisher.h>
 #include <pacbio/util/Termcolor.h>
 #include <pbcopper/json/JSON.h>

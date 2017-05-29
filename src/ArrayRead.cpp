@@ -37,14 +37,11 @@
 
 #include <algorithm>
 #include <array>
-#include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
 
 #include <pbbam/BamRecord.h>
-
-#include <pacbio/data/ArrayBase.h>
 
 #include <pacbio/data/ArrayRead.h>
 
@@ -108,46 +105,15 @@ std::string BAMArrayRead::SequencingChemistry() const
     return Record.ReadGroup().SequencingChemistry();
 }
 
-#if __cplusplus < 201402L  // C++11
-char TagToNucleotide(uint8_t t)
+std::ostream& operator<<(std::ostream& stream, const ArrayRead& r)
 {
-    switch (t) {
-        case 0:
-            return 'A';
-        case 1:
-            return 'C';
-        case 2:
-            return 'G';
-        case 3:
-            return 'T';
-        case 4:
-            return '-';
-        case 5:
-            return 'N';
-        default:
-            throw std::runtime_error("Unsupported tag: " + std::to_string(t));
-    }
+    stream << r.ReferenceStart() << std::endl;
+    for (const auto& b : r.Bases)
+        stream << b.Cigar;
+    stream << std::endl;
+    for (const auto& b : r.Bases)
+        stream << b.Nucleotide;
+    return stream;
 }
-
-uint8_t NucleotideToTag(char t)
-{
-    switch (t) {
-        case 'A':
-            return 0;
-        case 'C':
-            return 1;
-        case 'G':
-            return 2;
-        case 'T':
-            return 3;
-        case '-':
-            return 4;
-        case 'N':
-            return 5;
-        default:
-            throw std::runtime_error("Unsupported character: " + std::to_string(t));
-    }
-}
-#endif
 }  // namespace Data
 }  // namespace PacBio

@@ -37,25 +37,12 @@
 
 #pragma once
 
-#include <array>
-#include <cmath>
-#include <exception>
-#include <fstream>
-#include <functional>
-#include <iostream>
-#include <limits>
-#include <list>
 #include <memory>
-#include <numeric>
-#include <sstream>
-#include <unordered_map>
 #include <vector>
 
-#include <pacbio/data/MSAByColumn.h>
-#include <pacbio/data/MSAByRow.h>
+#include <pacbio/data/MSA.h>
 #include <pacbio/juliet/ErrorEstimates.h>
 #include <pacbio/juliet/Haplotype.h>
-#include <pacbio/juliet/JulietSettings.h>
 #include <pacbio/juliet/TargetConfig.h>
 #include <pacbio/juliet/TransitionTable.h>
 #include <pacbio/juliet/VariantGene.h>
@@ -63,6 +50,8 @@
 
 namespace PacBio {
 namespace Juliet {
+struct JulietSettings;
+
 /// Given a MSA and p-values for each nucleotide of each position,
 /// generate machine-interpretable and human-readable output about mutated
 /// amino acids.
