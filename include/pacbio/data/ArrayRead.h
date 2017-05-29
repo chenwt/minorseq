@@ -140,7 +140,6 @@ public:  // ctors
     /// Constructor that needs the BamRecord to be "unrolled" and a unique index
     BAMArrayRead(const BAM::BamRecord& record, int idx);
 
-    // friend std::ostream& operator<<(std::ostream& stream, const ArrayRead& r);
     virtual std::string SequencingChemistry() const override;
 
 private:
