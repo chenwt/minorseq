@@ -93,6 +93,7 @@ private:
 /// A particular row of a MSA.
 struct MSARow
 {
+public:
     MSARow(const int size) : Bases(size, ' ') {}
     /// Invididual bases with '-' as deletion.
     std::vector<char> Bases;
@@ -100,6 +101,9 @@ struct MSARow
     std::map<int, std::string> Insertions;
     /// The underlying ArrayRead.
     std::shared_ptr<Data::ArrayRead> Read;
+
+public:
+    bool CodonAt(const int winPos, std::string* codon) const;
 };
 
 /// Represents a MSA by columns. Each column is a distribution of counts.

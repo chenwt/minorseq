@@ -52,9 +52,42 @@ namespace PacBio {
 namespace Juliet {
 struct JulietSettings;
 
-/// Given a MSA and p-values for each nucleotide of each position,
-/// generate machine-interpretable and human-readable output about mutated
-/// amino acids.
+/// Stores performance metrics of juliet
+struct PerformanceMetrics
+{
+public:
+    double TruePositives = 0;
+    double FalsePositives = 0;
+    double FalseNegative = 0;
+    double TrueNegative = 0;
+    const double NumberOfTests;
+    const double NumExpectedMinors;
+
+public:
+    PerformanceMetrics(double numberOfTests, double numExpectedMinors)
+        : NumberOfTests(numberOfTests), NumExpectedMinors(numExpectedMinors)
+    {
+    }
+
+public:
+    std::string ToJson() const;
+
+public:
+    double TruePositiveRate() const;
+    double FalsePositiveRate() const;
+    double Accuracy() const;
+};
+
+/// Contains a single codon, it's abundance, and the translated amino acid
+struct MajorityCall
+{
+    std::string Codon;
+    int Coverage = 0;
+    char AA;
+};
+
+/// Given a MSA, target config, and noise model, compute variant amino acids
+/// and generate machine-interpretable output.
 class AminoAcidCaller
 {
 public:
@@ -69,18 +102,31 @@ public:
     void PhaseVariants();
 
 private:
+    /// Finds the major codon given the codon map
+    static MajorityCall FindMajorityCodon(const std::map<std::string, int>& codons);
+
+private:
     static constexpr float alpha = 0.01;
     void CallVariants();
+
+    /// Counts the number of tests that will be performed.
+    /// This number can be used to bonferroni correct p-values.
     int CountNumberOfTests(const std::vector<TargetGene>& genes) const;
+
+    /// Find those drugs associated with the current variant and generate
+    /// a summary string.
     std::string FindDRMs(const std::string& geneName, const std::vector<TargetGene>& genes,
                          const DMutation curDRM) const;
+
+    /// Compute the probability that the two strings generated each other
+    /// via sequencing noise.
     double Probability(const std::string& a, const std::string& b);
-    std::pair<bool, bool> MeasurePerformance(const TargetGene& tg,
-                                             const std::pair<std::string, int>& codon_counts,
-                                             const int& codonPos, const int& i, const double& p,
-                                             const int& coverage, const std::string& geneName,
-                                             double* truePositives, double* falsePositives,
-                                             double* falseNegative, double* trueNegative);
+
+    /// Compute if the current variant hits an expected minor and
+    /// use it to measure the performance of juliet.
+    bool MeasurePerformance(const TargetGene& tg, const std::string& codon,
+                            const bool& variableSite, const int& aaPos, const double& p,
+                            PerformanceMetrics* pm);
 
 private:
     Data::MSAByRow msaByRow_;
@@ -93,7 +139,6 @@ private:
     std::vector<VariantGene> variantGenes_;
     std::vector<Haplotype> reconstructedHaplotypes_;
     std::vector<Haplotype> filteredHaplotypes_;
-    int noConfOffset = 0;
     const ErrorEstimates error_;
     const TargetConfig targetConfig_;
     const bool verbose_;
@@ -112,3 +157,5 @@ private:
 };
 }
 }  // ::PacBio::Juliet
+
+#include "pacbio/juliet/internal/AminoAcidCaller.inl"

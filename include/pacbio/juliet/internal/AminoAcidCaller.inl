@@ -37,47 +37,29 @@
 
 #pragma once
 
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
-
-#include <pbcopper/json/JSON.h>
-
 namespace PacBio {
 namespace Juliet {
-struct VariantGene
+inline std::ostream& operator<<(std::ostream& out, const PerformanceMetrics& pm)
 {
-    VariantGene(const std::string& name, const int offset) : geneName(name), geneOffset(offset) {}
-    std::string geneName;
-    int geneOffset;
+    out << pm.TruePositiveRate() << " " << pm.FalsePositiveRate() << " " << pm.NumberOfTests << " "
+        << pm.Accuracy() << " " << pm.FalsePositives;
+    return out;
+}
 
-    struct VariantPosition
-    {
-        std::string refCodon;
-        std::string altRefCodon;
-        char refAminoAcid;
-        char altRefAminoAcid;
-        std::vector<JSON::Json> msa;
-        int coverage;
+inline double PerformanceMetrics::TruePositiveRate() const
+{
+    return TruePositives / NumExpectedMinors;
+}
 
-        struct VariantCodon
-        {
-            std::string codon;
-            double frequency;
-            double pValue;
-            std::string knownDRM;
-            std::vector<bool> haplotypeHit;
-        };
-        std::map<char, std::vector<VariantCodon>> aminoAcidToCodons;
+inline double PerformanceMetrics::FalsePositiveRate() const
+{
+    return FalsePositives / (NumberOfTests - NumExpectedMinors);
+}
 
-        bool IsVariant() const;
-        bool IsHit(const std::string& codon);
-    };
-
-    std::map<int, std::shared_ptr<VariantPosition>> relPositionToVariant;
-
-    JSON::Json ToJson() const;
-};
+inline double PerformanceMetrics::Accuracy() const
+{
+    return (TruePositives + TrueNegative) /
+           (TruePositives + FalsePositives + FalseNegative + TrueNegative);
+}
 }
 }  // ::PacBio::Juliet

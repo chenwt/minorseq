@@ -172,6 +172,25 @@ MSARow MSAByRow::AddRead(const Data::ArrayRead& read)
     return row;
 }
 
+bool MSARow::CodonAt(const int winPos, std::string* codon) const
+{
+    const auto CodonContains = [this, &winPos](const char x) {
+        return (Bases.at(winPos + 0) == x || Bases.at(winPos + 1) == x ||
+                Bases.at(winPos + 2) == x);
+    };
+
+    // Read does not cover codon
+    if (winPos + 2 >= static_cast<int>(Bases.size()) || winPos < 0) return false;
+    if (CodonContains(' ')) return false;
+
+    // Read has a deletion
+    if (CodonContains('-')) return false;
+
+    *codon = std::string() + Bases.at(winPos) + Bases.at(winPos + 1) + Bases.at(winPos + 2);
+
+    return true;
+}
+
 int MSAColumn::Coverage() const { return std::accumulate(counts_.cbegin(), counts_.cend(), 0); }
 
 std::vector<std::string> MSAColumn::SignificantInsertions() const
