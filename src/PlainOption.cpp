@@ -34,40 +34,33 @@
 // SUCH DAMAGE.
 
 // Author: Armin Töpfer
-#pragma once
 
-#include <string>
-#include <vector>
-
-#include <pbcopper/cli/CLI.h>
+#include <pacbio/data/PlainOption.h>
 
 namespace PacBio {
 namespace Data {
-class PlainOption
+PlainOption::PlainOption(const std::string& id, const std::vector<std::string>& cliOptions,
+                         const std::string& name, const std::string& description,
+                         const JSON::Json& defaultValue, const JSON::Json& choices,
+                         const CLI::OptionFlags& flags)
+    : id_(id)
+    , cliOptions_(cliOptions)
+    , name_(name)
+    , description_(description)
+    , defaultValue_(defaultValue)
+    , choices_(choices)
+    , flags_(flags)
 {
-public:
-    PlainOption() = delete;
-    PlainOption(const std::string& id, const std::vector<std::string>& cliOptions,
-                const std::string& name, const std::string& description,
-                const JSON::Json& defaultValue, const JSON::Json& choices = JSON::Json(nullptr),
-                const CLI::OptionFlags& flags = CLI::OptionFlags::DEFAULT);
+}
 
-public:
-    // Converts this to a CLI::Option for pbcopper's CLI parameters or TC.
-    operator CLI::Option() const;
-    // Converts this to a pair allowing to add this to a tool contract.
-    operator std::pair<std::string, std::string>() const;
-    // Allows to identify this via its id.
-    operator std::string() const;
-
-private:
-    std::string id_;
-    std::vector<std::string> cliOptions_;
-    std::string name_;
-    std::string description_;
-    JSON::Json defaultValue_;
-    JSON::Json choices_;
-    CLI::OptionFlags flags_;
-};
+PlainOption::operator CLI::Option() const
+{
+    return {id_, cliOptions_, description_, defaultValue_, choices_, flags_};
+}
+PlainOption::operator std::pair<std::string, std::string>() const
+{
+    return std::make_pair(id_, name_);
+}
+PlainOption::operator std::string() const { return id_; }
 }
 }  // :: PacBio::CLI
