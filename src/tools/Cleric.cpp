@@ -54,7 +54,7 @@ namespace Cleric {
 void Cleric::Align(const std::string& fromReference, const std::string& toReference,
                    std::string* fromReferenceAligned, std::string* toReferenceAligned)
 {
-    auto align = Align::SimdNeedleWunschAlignment(fromReference, toReference);
+    auto align = Align::PariwiseAlignmentFasta(fromReference, toReference);
 
     *fromReferenceAligned = align.Target;
     *toReferenceAligned = align.Query;
