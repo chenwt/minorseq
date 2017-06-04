@@ -207,7 +207,7 @@ void AminoAcidCaller::PhaseVariants()
                     }
                 }
                 if (same) {
-                    h->Names.push_back(row->Read->Name);
+                    h->Names.push_back(row->Read->Name());
                     miss = false;
                     break;
                 }
@@ -219,7 +219,7 @@ void AminoAcidCaller::PhaseVariants()
         // If row could not be collapsed into an existing haplotype
         if (miss) {
             auto h = std::make_shared<Haplotype>();
-            h->Names = {row->Read->Name};
+            h->Names = {row->Read->Name()};
             h->SetCodons(std::move(codons));
             h->Flags |= flag;
             observations.emplace_back(std::move(h));

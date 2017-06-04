@@ -62,22 +62,23 @@ class ArrayRead
 public:  // ctors
     ArrayRead(const int idx = -1, const std::string& name = "");
 
-    // friend std::ostream& operator<<(std::ostream& stream, const ArrayRead& r);
-
 public:  // non-mod methods
     int ReferenceStart() const { return referenceStart_; }
     int ReferenceEnd() const { return referenceEnd_; }
+    const std::vector<ArrayBase>& Bases() const
+    {
+        return const_cast<std::vector<ArrayBase>&>(bases_);
+    }
+    const std::string& Name() const { return name_; }
     virtual std::string SequencingChemistry() const;
 
 public:
     friend std::ostream& operator<<(std::ostream& stream, const ArrayRead& r);
 
-public:  // data
-    std::vector<ArrayBase> Bases;
-    const int Idx;
-    const std::string Name;
-
 protected:
+    std::vector<ArrayBase> bases_;
+    const int idx_;
+    const std::string name_;
     size_t referenceStart_;
     size_t referenceEnd_;
 };

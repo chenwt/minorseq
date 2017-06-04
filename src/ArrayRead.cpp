@@ -48,7 +48,7 @@
 namespace PacBio {
 namespace Data {
 
-ArrayRead::ArrayRead(const int idx, const std::string& name) : Idx(idx), Name(name){};
+ArrayRead::ArrayRead(const int idx, const std::string& name) : idx_(idx), name_(name){};
 
 BAMArrayRead::BAMArrayRead(const BAM::BamRecord& record, int idx)
     : ArrayRead(idx, record.FullName())
@@ -85,17 +85,17 @@ BAMArrayRead::BAMArrayRead(const BAM::BamRecord& record, int idx)
         assert(seq.size() == qual.size());
     }
 
-    Bases.reserve(cigar.length());
+    bases_.reserve(cigar.length());
     if (richQVs)
         for (size_t i = 0; i < cigar.length(); ++i)
-            Bases.emplace_back(cigar.at(i), seq.at(i), qual.at(i), subQV.at(i), delQV.at(i),
-                               insQV.at(i));
+            bases_.emplace_back(cigar.at(i), seq.at(i), qual.at(i), subQV.at(i), delQV.at(i),
+                                insQV.at(i));
     else if (hasQualities)
         for (size_t i = 0; i < cigar.length(); ++i)
-            Bases.emplace_back(cigar.at(i), seq.at(i), qual.at(i));
+            bases_.emplace_back(cigar.at(i), seq.at(i), qual.at(i));
     else
         for (size_t i = 0; i < cigar.length(); ++i)
-            Bases.emplace_back(cigar.at(i), seq.at(i), 0);
+            bases_.emplace_back(cigar.at(i), seq.at(i), 0);
 }
 
 std::string ArrayRead::SequencingChemistry() const { return ""; }
@@ -108,10 +108,10 @@ std::string BAMArrayRead::SequencingChemistry() const
 std::ostream& operator<<(std::ostream& stream, const ArrayRead& r)
 {
     stream << r.ReferenceStart() << std::endl;
-    for (const auto& b : r.Bases)
+    for (const auto& b : r.bases_)
         stream << b.Cigar;
     stream << std::endl;
-    for (const auto& b : r.Bases)
+    for (const auto& b : r.bases_)
         stream << b.Nucleotide;
     return stream;
 }

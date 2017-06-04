@@ -111,7 +111,7 @@ MSAByRow::MSAByRow(const std::vector<std::shared_ptr<Data::ArrayRead>>& reads)
         auto row = AddRead(*r);
         row.Read = r;
         const auto x = std::make_shared<MSARow>(std::move(row));
-        nameToRow_[r->Name] = x;
+        nameToRow_[r->Name()] = x;
         rows_.emplace_back(x);
     }
 
@@ -126,7 +126,7 @@ MSAByRow::MSAByRow(const std::vector<Data::ArrayRead>& reads)
 
     for (const auto& r : reads) {
         const auto x = std::make_shared<MSARow>(AddRead(r));
-        nameToRow_[r.Name] = x;
+        nameToRow_[r.Name()] = x;
         rows_.emplace_back(x);
     }
 
@@ -154,7 +154,7 @@ MSARow MSAByRow::AddRead(const Data::ArrayRead& read)
         insertion = "";
     };
 
-    for (const auto& b : read.Bases) {
+    for (const auto& b : read.Bases()) {
         switch (b.Cigar) {
             case 'X':
             case '=':
