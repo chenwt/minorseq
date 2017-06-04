@@ -50,7 +50,7 @@
 #include <pacbio/data/ArrayRead.h>
 #include <pbbam/BamRecord.h>
 
-#include <pacbio/io/BamParser.h>
+#include <pacbio/io/BamUtils.h>
 
 #include <pacbio/fuse/Fuse.h>
 
@@ -141,7 +141,7 @@ std::pair<int, std::string> Fuse::FindInsertions(
 
 std::vector<Data::ArrayRead> Fuse::FetchAlignedReads(const std::string& ccsInput) const
 {
-    auto query = IO::BamQuery(ccsInput);
+    auto query = IO::BamUtils::BamQuery(ccsInput);
 
     std::vector<Data::ArrayRead> reads;
     int idx = 0;

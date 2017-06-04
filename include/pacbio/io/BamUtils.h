@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2017, Pacific Biosciences of California, Inc.
+// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,45 +35,28 @@
 
 // Author: Armin Töpfer
 
-#include <pbbam/DataSet.h>
+#pragma once
 
-#include <pacbio/io/BamParser.h>
+#include <limits>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <pbbam/EntireFileQuery.h>
+#include <pbbam/PbiFilterQuery.h>
+
+#include <pacbio/data/ArrayRead.h>
 
 namespace PacBio {
 namespace IO {
-std::unique_ptr<BAM::internal::IQuery> BamQuery(const std::string& filePath)
+struct BamUtils
 {
-    BAM::DataSet ds(filePath);
-    const auto filter = BAM::PbiFilter::FromDataSet(ds);
-    std::unique_ptr<BAM::internal::IQuery> query(nullptr);
-    if (filter.IsEmpty())
-        query.reset(new BAM::EntireFileQuery(ds));
-    else
-        query.reset(new BAM::PbiFilterQuery(filter, ds));
-    return query;
-}
+    static std::unique_ptr<BAM::internal::IQuery> BamQuery(const std::string& filePath);
 
-std::vector<std::shared_ptr<Data::ArrayRead>> BamToArrayReads(const std::string& filePath,
-                                                              int regionStart, int regionEnd)
-{
-    std::vector<std::shared_ptr<Data::ArrayRead>> returnList;
-    regionStart = std::max(regionStart - 1, 0);
-    regionEnd = std::max(regionEnd - 1, 0);
-
-    auto query = BamQuery(filePath);
-
-    int idx = 0;
-    // Iterate over all records and convert online
-    for (auto& record : *query) {
-        if (record.Impl().IsSupplementaryAlignment()) continue;
-        if (!record.Impl().IsPrimaryAlignment()) continue;
-        if (record.ReferenceStart() < regionEnd && record.ReferenceEnd() > regionStart) {
-            record.Clip(BAM::ClipType::CLIP_TO_REFERENCE, regionStart, regionEnd);
-            returnList.emplace_back(
-                std::make_shared<Data::BAMArrayRead>(Data::BAMArrayRead(record, idx++)));
-        }
-    }
-    return returnList;
-}
+    /// \brief Wrapper around pbbam to ease BAM parsing and region extraction
+    static std::vector<std::shared_ptr<Data::ArrayRead>> BamToArrayReads(
+        const std::string& filePath, int regionStart = 0,
+        int regionEnd = std::numeric_limits<int>::max());
+};
 }
 }  // ::PacBio::IO

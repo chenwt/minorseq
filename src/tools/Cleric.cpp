@@ -45,7 +45,7 @@
 #include <pbbam/MD5.h>
 
 #include <pacbio/align/SimdAlignment.h>
-#include <pacbio/io/BamParser.h>
+#include <pacbio/io/BamUtils.h>
 
 #include <pacbio/cleric/Cleric.h>
 
@@ -67,7 +67,7 @@ void Cleric::Convert(std::string outputFile)
     using BAM::CigarOperationType;
 
     // Get data source
-    auto query = IO::BamQuery(alignmentPath_);
+    auto query = IO::BamUtils::BamQuery(alignmentPath_);
     std::unique_ptr<BAM::BamWriter> out;
 
     auto ProcessHeaderAndCreateBamWriter = [this, &outputFile, &out](const BAM::BamRecord& read) {

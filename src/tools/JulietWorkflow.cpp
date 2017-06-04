@@ -55,7 +55,7 @@
 
 #include <pacbio/data/ArrayRead.h>
 #include <pacbio/data/MSA.h>
-#include <pacbio/io/BamParser.h>
+#include <pacbio/io/BamUtils.h>
 #include <pacbio/juliet/AminoAcidCaller.h>
 #include <pacbio/juliet/JsonToHtml.h>
 #include <pacbio/juliet/JulietSettings.h>
@@ -127,7 +127,8 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
         outputJson = prefix + ".json";
     }
 
-    auto sharedReads = IO::BamToArrayReads(bamInput, settings.RegionStart, settings.RegionEnd);
+    auto sharedReads =
+        IO::BamUtils::BamToArrayReads(bamInput, settings.RegionStart, settings.RegionEnd);
 
     if (sharedReads.empty()) {
         std::cerr << "Empty input." << std::endl;
@@ -181,7 +182,8 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
 void JulietWorkflow::Error(const JulietSettings& settings)
 {
     for (const auto& inputFile : settings.InputFiles) {
-        auto reads = IO::BamToArrayReads(inputFile, settings.RegionStart, settings.RegionEnd);
+        auto reads =
+            IO::BamUtils::BamToArrayReads(inputFile, settings.RegionStart, settings.RegionEnd);
         Data::MSAByColumn msa(reads);
         double sub = 0;
         double del = 0;
