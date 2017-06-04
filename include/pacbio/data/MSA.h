@@ -74,6 +74,8 @@ public:
     /// The name equivalent to BamRecord::FullName()
     std::shared_ptr<MSARow> NameToRow(const std::string& name) const { return nameToRow_.at(name); }
 
+    std::map<std::string, int> CodonsAt(const int i) const;
+
 private:
     std::vector<std::shared_ptr<MSARow>> rows_;
     std::map<std::string, std::shared_ptr<MSARow>> nameToRow_;
@@ -103,7 +105,8 @@ public:
     std::shared_ptr<Data::ArrayRead> Read;
 
 public:
-    bool CodonAt(const int winPos, std::string* codon) const;
+    std::string CodonAt(const int pos) const;
+    bool CodingCodonAt(const int winPos, std::string* codon) const;
 };
 
 /// Represents a MSA by columns. Each column is a distribution of counts.

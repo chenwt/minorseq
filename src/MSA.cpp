@@ -44,6 +44,7 @@
 
 #include <pacbio/data/ArrayRead.h>
 #include <pacbio/data/FisherResult.h>
+#include <pacbio/juliet/AminoAcidTable.h>
 
 #include <pacbio/data/MSA.h>
 
@@ -103,8 +104,8 @@ MSAByRow::MSAByRow(const std::vector<std::shared_ptr<Data::ArrayRead>>& reads)
         rows_.emplace_back(x);
     }
 
-    beginPos_ += 1;
-    endPos_ += 1;
+    ++beginPos_;
+    ++endPos_;
 }
 
 MSAByRow::MSAByRow(const std::vector<Data::ArrayRead>& reads)
@@ -118,8 +119,20 @@ MSAByRow::MSAByRow(const std::vector<Data::ArrayRead>& reads)
         rows_.emplace_back(x);
     }
 
-    beginPos_ += 1;
-    endPos_ += 1;
+    ++beginPos_;
+    ++endPos_;
+}
+
+std::map<std::string, int> MSAByRow::CodonsAt(const int i) const
+{
+    std::map<std::string, int> codons;
+
+    std::string codon;
+    for (const auto& row : rows_) {
+        if (row->CodingCodonAt(i, &codon)) ++codons[codon];
+    }
+
+    return codons;
 }
 
 void MSAByRow::UpdateBoundaries(const Data::ArrayRead& read)
@@ -172,8 +185,19 @@ MSARow MSAByRow::AddRead(const Data::ArrayRead& read)
     return row;
 }
 
-bool MSARow::CodonAt(const int winPos, std::string* codon) const
+std::string MSARow::CodonAt(const int pos) const
 {
+    int length = Bases.size();
+    std::string codon;
+    for (int i = pos; i < pos + 3; ++i)
+        if (i > 0 && i < length) codon += Bases.at(i);
+    return codon;
+}
+
+bool MSARow::CodingCodonAt(const int winPos, std::string* codon) const
+{
+    using AAT = Juliet::AminoAcidTable;
+
     const auto CodonContains = [this, &winPos](const char x) {
         return (Bases.at(winPos + 0) == x || Bases.at(winPos + 1) == x ||
                 Bases.at(winPos + 2) == x);
@@ -186,7 +210,10 @@ bool MSARow::CodonAt(const int winPos, std::string* codon) const
     // Read has a deletion
     if (CodonContains('-')) return false;
 
-    *codon = std::string() + Bases.at(winPos) + Bases.at(winPos + 1) + Bases.at(winPos + 2);
+    auto proposedCodon = CodonAt(winPos);
+    if (AAT::FromCodon.find(proposedCodon) == AAT::FromCodon.cend()) return false;
+
+    *codon = proposedCodon;
 
     return true;
 }
