@@ -621,18 +621,17 @@ void AminoAcidCaller::CallVariants()
                         JSON::Json msaCounts;
                         msaCounts["rel_pos"] = j;
                         msaCounts["abs_pos"] = abs;
-                        msaCounts["A"] = msaByColumn_[abs][0];
-                        msaCounts["C"] = msaByColumn_[abs][1];
-                        msaCounts["G"] = msaByColumn_[abs][2];
-                        msaCounts["T"] = msaByColumn_[abs][3];
-                        msaCounts["-"] = msaByColumn_[abs][4];
-                        msaCounts["N"] = msaByColumn_[abs][5];
+                        msaCounts["A"] = msaByColumn_[abs]['A'];
+                        msaCounts["C"] = msaByColumn_[abs]['C'];
+                        msaCounts["G"] = msaByColumn_[abs]['G'];
+                        msaCounts["T"] = msaByColumn_[abs]['T'];
+                        msaCounts["-"] = msaByColumn_[abs]['-'];
+                        msaCounts["N"] = msaByColumn_[abs]['N'];
                         if (hasReference)
                             msaCounts["wt"] =
                                 std::string(1, targetConfig_.referenceSequence.at(abs));
                         else
-                            msaCounts["wt"] = std::string(
-                                1, Data::TagToNucleotide(msaByColumn_[abs].MaxElement()));
+                            msaCounts["wt"] = std::string(1, msaByColumn_[abs].MaxBase());
                         curVariantPosition->msa.push_back(msaCounts);
                     }
                 }

@@ -171,9 +171,8 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
         for (auto& column : aac.msaByColumn_) {
             ++pos;
             msaStream << pos;
-            const std::array<int, 6>& counts = column;
-            for (const auto& c : counts)
-                msaStream << " " << c;
+            for (const auto& c : {'A', 'C', 'G', 'T', '-', 'N'})
+                msaStream << " " << column[c];
             msaStream << std::endl;
         }
         msaStream.close();
@@ -189,8 +188,8 @@ void JulietWorkflow::Error(const JulietSettings& settings)
         int columnCount = 0;
         for (const auto& column : msa) {
             if (column.Coverage() > 100) {
-                del += column.Frequency(4);
-                sub += 1.0 - column.Frequency(4) - column.Frequency(column.MaxElement());
+                del += column.Frequency('-');
+                sub += 1.0 - column.Frequency('-') - column.Frequency(column.MaxBase());
                 ++columnCount;
             }
         }

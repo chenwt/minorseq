@@ -72,7 +72,7 @@ MSAByColumn::MSAByColumn(const MSAByRow& msaRows)
                 case 'T':
                 case '-':
                 case 'N':
-                    counts.at(localPos)[c]++;
+                    counts.at(localPos).IncCounts(c);
                     ++localPos;
                     break;
                 case ' ':
@@ -88,9 +88,10 @@ MSAByColumn::MSAByColumn(const MSAByRow& msaRows)
     }
 }
 
-MSAColumn MSAByColumn::operator[](int i) const { return counts[i - beginPos_]; }
-/// Parameter is an index in ABSOLUTE reference space
-MSAColumn& MSAByColumn::operator[](int i) { return counts[i - beginPos_]; }
+MSAColumn& MSAByColumn::operator[](int i) const
+{
+    return const_cast<MSAColumn&>(counts[i - beginPos_]);
+}
 
 bool MSAByColumn::has(int i) { return i >= beginPos_ && i < endPos_; }
 
@@ -104,7 +105,7 @@ MSAByColumn::MsaItConst MSAByColumn::cend() const { return counts.cend(); }
 MSAByRow::MSAByRow(const std::vector<std::shared_ptr<Data::ArrayRead>>& reads)
 {
     for (const auto& r : reads)
-        BeginEnd(*r);
+        UpdateBoundaries(*r);
 
     for (const auto& r : reads) {
         auto row = AddRead(*r);
@@ -121,7 +122,7 @@ MSAByRow::MSAByRow(const std::vector<std::shared_ptr<Data::ArrayRead>>& reads)
 MSAByRow::MSAByRow(const std::vector<Data::ArrayRead>& reads)
 {
     for (const auto& r : reads)
-        BeginEnd(r);
+        UpdateBoundaries(r);
 
     for (const auto& r : reads) {
         const auto x = std::make_shared<MSARow>(AddRead(r));
@@ -133,7 +134,7 @@ MSAByRow::MSAByRow(const std::vector<Data::ArrayRead>& reads)
     endPos_ += 1;
 }
 
-void MSAByRow::BeginEnd(const Data::ArrayRead& read)
+void MSAByRow::UpdateBoundaries(const Data::ArrayRead& read)
 {
     beginPos_ = std::min(beginPos_, read.ReferenceStart());
     endPos_ = std::max(endPos_, read.ReferenceEnd());
@@ -188,13 +189,11 @@ MSAColumn::MSAColumn(int refPos) : refPos_(refPos) {}
 double MSAColumn::Frequency(int i) const { return (*this)[i] / static_cast<double>(Coverage()); }
 double MSAColumn::Frequency(char c) const { return Frequency(NucleotideToTag(c)); }
 
-int MSAColumn::operator[](int i) const { return counts_[i]; }
-int& MSAColumn::operator[](int i) { return counts_[i]; }
 int MSAColumn::operator[](char c) const { return counts_[NucleotideToTag(c)]; }
-int& MSAColumn::operator[](char c) { return counts_[NucleotideToTag(c)]; }
 
-MSAColumn::operator std::array<int, 6>() { return counts_; }
 MSAColumn::operator int() { return Coverage(); }
+
+void MSAColumn::IncCounts(const char c) { ++counts_[NucleotideToTag(c)]; }
 
 int MSAColumn::Coverage() const { return std::accumulate(counts_.cbegin(), counts_.cend(), 0); }
 
@@ -211,7 +210,6 @@ char MSAColumn::MaxBase() const
     else
         return bases[maxElement];
 }
-int MSAColumn::Max() const { return counts_.at(MaxElement()); }
 
 void MSAColumn::AddFisherResult(const FisherResult& f)
 {
@@ -249,12 +247,12 @@ void MSAColumn::IncInsertion(const std::string& seq) { insertions_[seq]++; }
 
 const std::map<std::string, int>& MSAColumn::Insertions() const { return insertions_; }
 
-double MSAColumn::PValue(const int i) const { return pValues_.at(i); }
+double MSAColumn::PValue(const char c) const { return pValues_.at(NucleotideToTag(c)); }
 
 std::ostream& operator<<(std::ostream& stream, const MSAColumn& r)
 {
-    for (int j = 0; j < 6; ++j)
-        stream << r[j] << "\t" << r.PValue(j) << "\t";
+    for (const auto& b : {'A', 'C', 'G', 'T', '-'})
+        stream << r[b] << "\t";
     return stream;
 }
 }  // namespace Data

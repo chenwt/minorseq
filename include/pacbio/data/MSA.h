@@ -52,7 +52,10 @@ struct FisherResult;
 class MSAByColumn;
 class MSAColumn;
 struct MSARow;
+class MSAByRow;
 
+/// Represents a multiple sequence alignment (MSA) via individual rows.
+/// Insertions are omitted and saved a special variable of each row.
 class MSAByRow
 {
 public:
@@ -61,10 +64,14 @@ public:
     MSAByRow(const std::vector<Data::ArrayRead>& reads);
 
 public:
-    void BeginEnd(const Data::ArrayRead& read);
+    /// The left-most position of all reads in the MSA.
     int BeginPos() const { return beginPos_; }
+    /// The right-most position of all reads in the MSA.
     int EndPos() const { return endPos_; }
+    /// The individual rows of the MSA.
     const std::vector<std::shared_ptr<MSARow>>& Rows() const { return rows_; }
+    /// Easy way to access a row by its name.
+    /// The name equivalent to BamRecord::FullName()
     std::shared_ptr<MSARow> NameToRow(const std::string& name) const { return nameToRow_.at(name); }
 
 private:
@@ -75,18 +82,29 @@ private:
     int endPos_ = 0;
 
 private:
+    /// Adds an ArrayRead to the MSA, by converting it to a MSARow object.
     MSARow AddRead(const Data::ArrayRead& read);
+
+    /// Updates the begin and end positions of the MSA, if this read
+    /// is extending the current boundaries.
+    void UpdateBoundaries(const Data::ArrayRead& read);
 };
 
+/// A particular row of a MSA.
 struct MSARow
 {
     MSARow(const int size) : Bases(size, ' ') {}
+    /// Invididual bases with '-' as deletion.
     std::vector<char> Bases;
+    /// Position to insertion string.
     std::map<int, std::string> Insertions;
+    /// The underlying ArrayRead.
     std::shared_ptr<Data::ArrayRead> Read;
 };
 
-/// Multiple sequence alignment containing counts
+/// Represents a MSA by columns. Each column is a distribution of counts.
+/// Offers iterators supporting a for each loop.
+/// Index parameters are in ABSOLUTE reference space.
 class MSAByColumn
 {
 private:
@@ -101,10 +119,8 @@ public:
 
 public:
     /// Parameter is an index in ABSOLUTE reference space
-    MSAColumn operator[](int i) const;
-    /// Parameter is an index in ABSOLUTE reference space
-    MSAColumn& operator[](int i);
-
+    MSAColumn& operator[](int i) const;
+    /// Checks if the index is available.
     bool has(int i);
 
     MsaIt begin();
@@ -115,53 +131,57 @@ public:
     MsaItConst cend() const;
 
 public:
+    /// The left-most position of all reads in the MSA.
     int BeginPos() const { return beginPos_; }
+    /// The right-most position of all reads in the MSA.
     int EndPos() const { return endPos_; }
 
 private:
     MsaVec counts;
     int beginPos_ = std::numeric_limits<int>::max();
     int endPos_ = 0;
-
-private:
-    void BeginEnd(const Data::ArrayRead& read);
-    void FillCounts(const ArrayRead& read, const QvThresholds& qvThresholds);
 };
 
+/// Represents a single MSA column with counts for each nucleotide, insertions,
+/// and results of the Fisher's Exact test can be associated.
+/// Nucleotide alphabet is {A, C, G, T, -, N}.
 class MSAColumn
 {
 public:
     MSAColumn(int refPos);
 
 public:
-    // Relative per nucleotide abundance
-    double Frequency(int i) const;
+    /// Relative abundance for given nucleotide.
     double Frequency(char c) const;
 
-    // Nucleotide counts_
-    int operator[](int i) const;
-    int& operator[](int i);
+    /// Access counts for a given nucleotide.
     int operator[](char c) const;
-    int& operator[](char c);
 
-    operator std::array<int, 6>();
+    // operator std::array<int, 6>();
     explicit operator int();
 
 public:
+    /// Coverage including deletions and Ns.
     int Coverage() const;
+    /// Nucleotide with the highest counts.
     char MaxBase() const;
-    int MaxElement() const;
-    int Max() const;
+    /// Position in the absolute reference space.
     int RefPos() const;
+    /// Insertions called significantly abundant
     std::vector<std::string> SignificantInsertions() const;
+    /// Insertions and respective counts
     const std::map<std::string, int>& Insertions() const;
-    double PValue(const int i) const;
+    /// P-value for given nucleotide.
+    double PValue(const char c) const;
 
-public:
+public:  // NOT YET USED
+    void IncInsertion(const std::string& seq);
     void AddFisherResult(const FisherResult& f);
     void AddFisherResult(const std::map<std::string, double>& f);
     std::ostream& InDels(std::ostream& stream);
-    void IncInsertion(const std::string& seq);
+
+public:
+    friend std::ostream& operator<<(std::ostream& stream, const MSAColumn& r);
 
 private:
     std::array<int, 6> counts_{{0, 0, 0, 0, 0, 0}};
@@ -172,6 +192,18 @@ private:
     bool hit_ = false;
     int argMax_ = 0;
     int refPos_ = -1;
+
+private:
+    /// Relative per nucleotide abundance for given index. Index is wrt the
+    /// underlying data structures.
+    double Frequency(int i) const;
+    // The maximal element of all nucleotide, as index.
+    int MaxElement() const;
+    // Increase counts for given nucleotide.
+    void IncCounts(const char c);
+
+public:
+    friend MSAByColumn;
 };
 }  // namespace Data
 }  // namespace PacBio
