@@ -98,22 +98,28 @@ BAMArrayRead::BAMArrayRead(const BAM::BamRecord& record, int idx)
             bases_.emplace_back(cigar.at(i), seq.at(i), 0);
 }
 
-std::string ArrayRead::SequencingChemistry() const { return ""; }
-
-std::string BAMArrayRead::SequencingChemistry() const
+ArrayBase::ArrayBase(char cigar, char nucleotide, uint8_t qualQV, uint8_t subQV, uint8_t delQV,
+                     uint8_t insQV)
+    : Cigar(cigar)
+    , Nucleotide(nucleotide)
+    , QualQV(qualQV)
+    , DelQV(delQV)
+    , SubQV(subQV)
+    , InsQV(insQV)
+    , ProbTrue(1 - pow(10, -1.0 * qualQV / 10.0))
+    , ProbCorrectBase(1 - pow(10, -1.0 * subQV / 10.0))
+    , ProbNoDeletion(1 - pow(10, -1.0 * delQV / 10.0))
+    , ProbNoInsertion(1 - pow(10, -1.0 * insQV / 10.0))
 {
-    return Record.ReadGroup().SequencingChemistry();
 }
-
-std::ostream& operator<<(std::ostream& stream, const ArrayRead& r)
+ArrayBase::ArrayBase(char cigar, char nucleotide, uint8_t qualQV)
+    : Cigar(cigar)
+    , Nucleotide(nucleotide)
+    , QualQV(qualQV)
+    , ProbTrue(1 - pow(10, -1.0 * qualQV / 10.0))
 {
-    stream << r.ReferenceStart() << std::endl;
-    for (const auto& b : r.bases_)
-        stream << b.Cigar;
-    stream << std::endl;
-    for (const auto& b : r.bases_)
-        stream << b.Nucleotide;
-    return stream;
 }
+ArrayBase::ArrayBase(char cigar, char nucleotide) : Cigar(cigar), Nucleotide(nucleotide) {}
+
 }  // namespace Data
 }  // namespace PacBio

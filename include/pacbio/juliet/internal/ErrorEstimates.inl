@@ -37,20 +37,19 @@
 
 #pragma once
 
-#include <boost/optional.hpp>
+#include <algorithm>
+#include <iostream>
+#include <locale>
+#include <stdexcept>
+#include <string>
 
 namespace PacBio {
-namespace Data {
-struct QvThresholds
+namespace Juliet {
+inline std::ostream& operator<<(std::ostream& stream, const ErrorEstimates& r)
 {
-public:
-    QvThresholds();
-
-public:
-    boost::optional<uint8_t> DelQV;
-    boost::optional<uint8_t> SubQV;
-    boost::optional<uint8_t> InsQV;
-    boost::optional<uint8_t> QualQV;
-};
+    stream << "match:" << r.Match << "\tsubstitution:" << r.Substitution
+           << "\tdeletion:" << r.Deletion << "\tinsertion:" << r.Insertion;
+    return stream;
 }
-}  // ::PacBio::Data
+}
+}  // ::PacBio::Juliet

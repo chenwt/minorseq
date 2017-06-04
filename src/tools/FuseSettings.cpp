@@ -66,15 +66,6 @@ FuseSettings::FuseSettings(const PacBio::CLI::Results& options)
     OutputFile = options.PositionalArguments().back();
 }
 
-size_t FuseSettings::ThreadCount(int n)
-{
-    const int m = std::thread::hardware_concurrency();
-
-    if (n < 1) return std::max(1, m + n);
-
-    return std::min(m, n);
-}
-
 void FuseSettings::SplitRegion(const std::string& region, int* start, int* end)
 {
     if (region.compare("") != 0) {

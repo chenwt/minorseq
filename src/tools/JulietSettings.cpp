@@ -173,15 +173,6 @@ JulietSettings::JulietSettings(const PacBio::CLI::Results& options)
     SplitRegion(options[OptionNames::Region], &RegionStart, &RegionEnd);
 }
 
-size_t JulietSettings::ThreadCount(int n)
-{
-    const int m = std::thread::hardware_concurrency();
-
-    if (n < 1) return std::max(1, m + n);
-
-    return std::min(m, n);
-}
-
 void JulietSettings::SplitRegion(const std::string& region, int* start, int* end)
 {
     if (region.compare("") != 0) {

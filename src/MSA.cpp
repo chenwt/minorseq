@@ -49,6 +49,8 @@
 
 namespace PacBio {
 namespace Data {
+MSAColumn::MSAColumn(int refPos) : refPos_(refPos) {}
+
 MSAByColumn::MSAByColumn(const MSAByRow& msaRows)
 {
     beginPos_ = msaRows.BeginPos() - 1;
@@ -87,20 +89,6 @@ MSAByColumn::MSAByColumn(const MSAByRow& msaRows)
         }
     }
 }
-
-MSAColumn& MSAByColumn::operator[](int i) const
-{
-    return const_cast<MSAColumn&>(counts[i - beginPos_]);
-}
-
-bool MSAByColumn::has(int i) { return i >= beginPos_ && i < endPos_; }
-
-MSAByColumn::MsaIt MSAByColumn::begin() { return counts.begin(); }
-MSAByColumn::MsaIt MSAByColumn::end() { return counts.end(); }
-MSAByColumn::MsaItConst MSAByColumn::begin() const { return counts.begin(); }
-MSAByColumn::MsaItConst MSAByColumn::end() const { return counts.end(); }
-MSAByColumn::MsaItConst MSAByColumn::cbegin() const { return counts.cbegin(); }
-MSAByColumn::MsaItConst MSAByColumn::cend() const { return counts.cend(); }
 
 MSAByRow::MSAByRow(const std::vector<std::shared_ptr<Data::ArrayRead>>& reads)
 {
@@ -184,54 +172,7 @@ MSARow MSAByRow::AddRead(const Data::ArrayRead& read)
     return row;
 }
 
-MSAColumn::MSAColumn(int refPos) : refPos_(refPos) {}
-
-double MSAColumn::Frequency(int i) const { return (*this)[i] / static_cast<double>(Coverage()); }
-double MSAColumn::Frequency(char c) const { return Frequency(NucleotideToTag(c)); }
-
-int MSAColumn::operator[](char c) const { return counts_[NucleotideToTag(c)]; }
-
-MSAColumn::operator int() { return Coverage(); }
-
-void MSAColumn::IncCounts(const char c) { ++counts_[NucleotideToTag(c)]; }
-
 int MSAColumn::Coverage() const { return std::accumulate(counts_.cbegin(), counts_.cend(), 0); }
-
-int MSAColumn::MaxElement() const
-{
-    return std::distance(counts_.begin(), std::max_element(counts_.begin(), counts_.end()));
-}
-char MSAColumn::MaxBase() const
-{
-    static const char bases[]{'A', 'C', 'G', 'T', '-'};
-    int maxElement = MaxElement();
-    if (maxElement == 5)
-        return ' ';
-    else
-        return bases[maxElement];
-}
-
-void MSAColumn::AddFisherResult(const FisherResult& f)
-{
-    pValues_ = f.PValues;
-    mask_ = f.Mask;
-    hit_ = f.Hit;
-    argMax_ = f.ArgMax;
-}
-
-void MSAColumn::AddFisherResult(const std::map<std::string, double>& f) { insertionsPValues_ = f; }
-
-std::ostream& MSAColumn::InDels(std::ostream& stream)
-{
-    stream << refPos_ << "\t";
-    if (mask_.at(4) == 1) stream << "(-," << counts_.at(4) << "," << pValues_.at(4) << ")\t";
-    for (const auto& bases_pvalue : insertionsPValues_)
-        if (bases_pvalue.second < 0.01)
-            stream << "(" << bases_pvalue.first << "," << insertions_.at(bases_pvalue.first) << ","
-                   << bases_pvalue.second << ")\t";
-    stream << std::endl;
-    return stream;
-}
 
 std::vector<std::string> MSAColumn::SignificantInsertions() const
 {
@@ -241,19 +182,12 @@ std::vector<std::string> MSAColumn::SignificantInsertions() const
     return results;
 }
 
-int MSAColumn::RefPos() const { return refPos_; }
-
-void MSAColumn::IncInsertion(const std::string& seq) { insertions_[seq]++; }
-
-const std::map<std::string, int>& MSAColumn::Insertions() const { return insertions_; }
-
-double MSAColumn::PValue(const char c) const { return pValues_.at(NucleotideToTag(c)); }
-
-std::ostream& operator<<(std::ostream& stream, const MSAColumn& r)
+void MSAColumn::AddFisherResult(const FisherResult& f)
 {
-    for (const auto& b : {'A', 'C', 'G', 'T', '-'})
-        stream << r[b] << "\t";
-    return stream;
+    pValues_ = f.PValues;
+    mask_ = f.Mask;
+    hit_ = f.Hit;
+    argMax_ = f.ArgMax;
 }
 }  // namespace Data
 }  // namespace PacBio

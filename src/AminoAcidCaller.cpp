@@ -388,11 +388,11 @@ double AminoAcidCaller::Probability(const std::string& a, const std::string& b)
     double p = 1;
     for (size_t i = 0; i < a.size(); ++i) {
         if (a[i] == '-' || b[i] == '-')
-            p *= error_.deletion;
+            p *= error_.Deletion;
         else if (a[i] != b[i])
-            p *= error_.substitution;
+            p *= error_.Substitution;
         else
-            p *= error_.match;
+            p *= error_.Match;
     }
     return p;
 };

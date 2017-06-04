@@ -51,6 +51,21 @@ namespace Juliet {
 /// Contains user provided CLI configuration for Juliet
 struct JulietSettings
 {
+public:
+    /// Given the description of the tool and its version, create all
+    /// necessary CLI::Options for the ccs executable.
+    static PacBio::CLI::Interface CreateCLI();
+
+    /// Splits region into ReconstructionStart and ReconstructionEnd.
+    static void SplitRegion(const std::string& region, int* start, int* end);
+
+    static AnalysisMode AnalysisModeFromOptions(const PacBio::CLI::Results& options);
+
+public:
+    /// Parses the provided CLI::Results and retrieves a defined set of options.
+    JulietSettings(const PacBio::CLI::Results& options);
+
+public:
     std::string CLI;
     std::vector<std::string> InputFiles;
     std::string OutputPrefix;
@@ -68,20 +83,6 @@ struct JulietSettings
     double DeletionRate;
     double MinimalPerc;
     double MaximalPerc;
-
-    /// Parses the provided CLI::Results and retrieves a defined set of options.
-    JulietSettings(const PacBio::CLI::Results& options);
-
-    size_t ThreadCount(int n);
-
-    /// Given the description of the tool and its version, create all
-    /// necessary CLI::Options for the ccs executable.
-    static PacBio::CLI::Interface CreateCLI();
-
-    /// Splits region into ReconstructionStart and ReconstructionEnd.
-    static void SplitRegion(const std::string& region, int* start, int* end);
-
-    static AnalysisMode AnalysisModeFromOptions(const PacBio::CLI::Results& options);
 };
 }
 }  // ::PacBio::Juliet

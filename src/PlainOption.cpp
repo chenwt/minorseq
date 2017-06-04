@@ -52,15 +52,5 @@ PlainOption::PlainOption(const std::string& id, const std::vector<std::string>& 
     , flags_(flags)
 {
 }
-
-PlainOption::operator CLI::Option() const
-{
-    return {id_, cliOptions_, description_, defaultValue_, choices_, flags_};
-}
-PlainOption::operator std::pair<std::string, std::string>() const
-{
-    return std::make_pair(id_, name_);
-}
-PlainOption::operator std::string() const { return id_; }
 }
 }  // :: PacBio::CLI

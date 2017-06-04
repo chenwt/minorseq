@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
+// Copyright (c) 2011-2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,22 +35,55 @@
 
 // Author: Armin Töpfer
 
-#pragma once
-
-#include <boost/optional.hpp>
-
 namespace PacBio {
 namespace Data {
-struct QvThresholds
-{
-public:
-    QvThresholds();
 
-public:
-    boost::optional<uint8_t> DelQV;
-    boost::optional<uint8_t> SubQV;
-    boost::optional<uint8_t> InsQV;
-    boost::optional<uint8_t> QualQV;
-};
+inline int ArrayRead::ReferenceStart() const { return referenceStart_; }
+inline int ArrayRead::ReferenceEnd() const { return referenceEnd_; }
+inline const std::vector<ArrayBase>& ArrayRead::Bases() const
+{
+    return const_cast<std::vector<ArrayBase>&>(bases_);
 }
-}  // ::PacBio::Data
+inline const std::string& ArrayRead::Name() const { return name_; }
+
+inline std::string ArrayRead::SequencingChemistry() const { return ""; }
+
+inline std::string BAMArrayRead::SequencingChemistry() const
+{
+    return Record.ReadGroup().SequencingChemistry();
+}
+
+inline std::ostream& operator<<(std::ostream& stream, const ArrayRead& r)
+{
+    stream << r.ReferenceStart() << std::endl;
+    for (const auto& b : r.bases_)
+        stream << b.Cigar;
+    stream << std::endl;
+    for (const auto& b : r.bases_)
+        stream << b.Nucleotide;
+    return stream;
+}
+
+inline bool ArrayBase::MeetQVThresholds(const QvThresholds& qvs) const
+{
+    return MeetQualQVThreshold(qvs.QualQV) && MeetDelQVThreshold(qvs.DelQV) &&
+           MeetSubQVThreshold(qvs.SubQV) && MeetInsQVThreshold(qvs.InsQV);
+}
+inline bool ArrayBase::MeetQualQVThreshold(boost::optional<uint8_t> threshold) const
+{
+    return !threshold || !QualQV || *QualQV >= *threshold;
+}
+inline bool ArrayBase::MeetDelQVThreshold(boost::optional<uint8_t> threshold) const
+{
+    return !threshold || !DelQV || *DelQV >= *threshold;
+}
+inline bool ArrayBase::MeetSubQVThreshold(boost::optional<uint8_t> threshold) const
+{
+    return !threshold || !SubQV || *SubQV >= *threshold;
+}
+inline bool ArrayBase::MeetInsQVThreshold(boost::optional<uint8_t> threshold) const
+{
+    return !threshold || !InsQV || *InsQV >= *threshold;
+}
+}  // namespace Data
+}  // namespace PacBio

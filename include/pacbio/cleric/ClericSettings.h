@@ -49,15 +49,18 @@ namespace Cleric {
 /// Contains user provided CLI configuration for Cleric
 struct ClericSettings
 {
-    std::vector<std::string> InputFiles;
-    std::string OutputPrefix;
-
-    /// Parses the provided CLI::Results and retrieves a defined set of options.
-    ClericSettings(const PacBio::CLI::Results& options);
-
+public:
     /// Given the description of the tool and its version, create all
     /// necessary CLI::Options for the ccs executable.
     static PacBio::CLI::Interface CreateCLI();
+
+public:
+    /// Parses the provided CLI::Results and retrieves a defined set of options.
+    ClericSettings(const PacBio::CLI::Results& options);
+
+public:
+    std::vector<std::string> InputFiles;
+    std::string OutputPrefix;
 };
 }
 }  // ::PacBio::Cleric

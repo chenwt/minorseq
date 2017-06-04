@@ -63,13 +63,10 @@ public:  // ctors
     ArrayRead(const int idx = -1, const std::string& name = "");
 
 public:  // non-mod methods
-    int ReferenceStart() const { return referenceStart_; }
-    int ReferenceEnd() const { return referenceEnd_; }
-    const std::vector<ArrayBase>& Bases() const
-    {
-        return const_cast<std::vector<ArrayBase>&>(bases_);
-    }
-    const std::string& Name() const { return name_; }
+    int ReferenceStart() const;
+    int ReferenceEnd() const;
+    const std::vector<ArrayBase>& Bases() const;
+    const std::string& Name() const;
     virtual std::string SequencingChemistry() const;
 
 public:
@@ -99,49 +96,15 @@ private:
 struct ArrayBase
 {
     ArrayBase(char cigar, char nucleotide, uint8_t qualQV, uint8_t subQV, uint8_t delQV,
-              uint8_t insQV)
-        : Cigar(cigar)
-        , Nucleotide(nucleotide)
-        , QualQV(qualQV)
-        , DelQV(delQV)
-        , SubQV(subQV)
-        , InsQV(insQV)
-        , ProbTrue(1 - pow(10, -1.0 * qualQV / 10.0))
-        , ProbCorrectBase(1 - pow(10, -1.0 * subQV / 10.0))
-        , ProbNoDeletion(1 - pow(10, -1.0 * delQV / 10.0))
-        , ProbNoInsertion(1 - pow(10, -1.0 * insQV / 10.0))
-    {
-    }
-    ArrayBase(char cigar, char nucleotide, uint8_t qualQV)
-        : Cigar(cigar)
-        , Nucleotide(nucleotide)
-        , QualQV(qualQV)
-        , ProbTrue(1 - pow(10, -1.0 * qualQV / 10.0))
-    {
-    }
-    ArrayBase(char cigar, char nucleotide) : Cigar(cigar), Nucleotide(nucleotide) {}
+              uint8_t insQV);
+    ArrayBase(char cigar, char nucleotide, uint8_t qualQV);
+    ArrayBase(char cigar, char nucleotide);
 
-    bool MeetQVThresholds(const QvThresholds& qvs) const
-    {
-        return MeetQualQVThreshold(qvs.QualQV) && MeetDelQVThreshold(qvs.DelQV) &&
-               MeetSubQVThreshold(qvs.SubQV) && MeetInsQVThreshold(qvs.InsQV);
-    }
-    bool MeetQualQVThreshold(boost::optional<uint8_t> threshold) const
-    {
-        return !threshold || !QualQV || *QualQV >= *threshold;
-    }
-    bool MeetDelQVThreshold(boost::optional<uint8_t> threshold) const
-    {
-        return !threshold || !DelQV || *DelQV >= *threshold;
-    }
-    bool MeetSubQVThreshold(boost::optional<uint8_t> threshold) const
-    {
-        return !threshold || !SubQV || *SubQV >= *threshold;
-    }
-    bool MeetInsQVThreshold(boost::optional<uint8_t> threshold) const
-    {
-        return !threshold || !InsQV || *InsQV >= *threshold;
-    }
+    bool MeetQVThresholds(const QvThresholds& qvs) const;
+    bool MeetQualQVThreshold(boost::optional<uint8_t> threshold) const;
+    bool MeetDelQVThreshold(boost::optional<uint8_t> threshold) const;
+    bool MeetSubQVThreshold(boost::optional<uint8_t> threshold) const;
+    bool MeetInsQVThreshold(boost::optional<uint8_t> threshold) const;
 
     char Cigar;
     char Nucleotide;
@@ -156,3 +119,5 @@ struct ArrayBase
 };
 }  // namespace Data
 }  // namespace PacBio
+
+#include "pacbio/data/internal/ArrayRead.inl"

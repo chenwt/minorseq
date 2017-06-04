@@ -207,3 +207,5 @@ public:
 };
 }  // namespace Data
 }  // namespace PacBio
+
+#include "pacbio/data/internal/MSA.inl"

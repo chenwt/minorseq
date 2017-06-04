@@ -71,3 +71,5 @@ private:
 };
 }
 }  // :: PacBio::CLI
+
+#include "pacbio/data/internal/PlainOption.inl"

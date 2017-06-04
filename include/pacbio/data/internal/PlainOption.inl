@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
+// Copyright (c) 2014-2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,22 +35,16 @@
 
 // Author: Armin Töpfer
 
-#pragma once
-
-#include <boost/optional.hpp>
-
 namespace PacBio {
 namespace Data {
-struct QvThresholds
+inline PlainOption::operator CLI::Option() const
 {
-public:
-    QvThresholds();
-
-public:
-    boost::optional<uint8_t> DelQV;
-    boost::optional<uint8_t> SubQV;
-    boost::optional<uint8_t> InsQV;
-    boost::optional<uint8_t> QualQV;
-};
+    return {id_, cliOptions_, description_, defaultValue_, choices_, flags_};
 }
-}  // ::PacBio::Data
+inline PlainOption::operator std::pair<std::string, std::string>() const
+{
+    return std::make_pair(id_, name_);
+}
+inline PlainOption::operator std::string() const { return id_; }
+}
+}  // :: PacBio::CLI
