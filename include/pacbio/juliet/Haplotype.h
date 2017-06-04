@@ -53,62 +53,72 @@ enum class HaplotypeType : int
     OFFTARGET = 16
 };
 
-struct Haplotype
+class Haplotype
 {
-    std::string Name;
-    std::vector<std::string> Names;
-    std::vector<std::string> Codons;
-    double SoftCollapses = 0;
-    double GlobalFrequency = 0;
-    int Flags = 0;
-
-    double Size() const { return Names.size() + SoftCollapses; }
-
-    std::string ConcatCodons() const
+public:
+    Haplotype() = delete;
+    Haplotype(const std::string readName, const std::vector<std::string>& codons,
+              const HaplotypeType& flag)
+        : readNames_({readName}), codons_(codons), numCodons_(codons_.size())
     {
-        return std::accumulate(Codons.begin(), Codons.end(), std::string(""));
+        AddFlag(flag);
+        SetFlagsByCodons();
+    }
+    Haplotype(const std::vector<std::string> readNames, std::vector<std::string>&& codons,
+              const HaplotypeType flag)
+        : readNames_(readNames)
+        , codons_(std::forward<std::vector<std::string>>(codons))
+        , numCodons_(codons_.size())
+    {
+        AddFlag(flag);
+        SetFlagsByCodons();
     }
 
-    void SetCodons(std::vector<std::string>&& codons)
-    {
-        Codons = std::forward<std::vector<std::string>>(codons);
-        for (const auto& c : Codons) {
-            if (c.find('-') != std::string::npos)
-                Flags |= static_cast<int>(HaplotypeType::WITH_GAP);
-            if (c.find('N') != std::string::npos)
-                Flags |= static_cast<int>(HaplotypeType::WITH_HETERODUPLEX);
-            if (c.find(' ') != std::string::npos) Flags |= static_cast<int>(HaplotypeType::PARTIAL);
-        }
-    }
+public:  // non-mod methods
+    /// How many reads contributed to this haplotype
+    double Size() const;
+    /// Concat all codons to one string without seperator
+    std::string ConcatCodons() const;
+    /// Convert this to a JSON string
+    JSON::Json ToJson() const;
+    // All read names
+    const std::vector<std::string>& ReadNames() const;
+    // All codons
+    const std::string& Codon(const int i);
+    // Number of codons
+    size_t NumCodons() const;
+    // Combined flags
+    int Flags() const;
+    // Name of this haplotype
+    std::string Name();
 
-    friend std::ostream& operator<<(std::ostream& stream, const Haplotype& h)
-    {
-        stream << h.Size() << "\t";
-        for (const auto& c : h.Codons) {
-            if (c != "ATG" && c != "AAA" && c != "TAT" && c != "GGA" && c != "ACC")
-                stream << termcolor::white;
-            if (c == "TTG") stream << termcolor::red;
-            if (c == "AGA") stream << termcolor::green;
-            if (c == "TGT") stream << termcolor::blue;
-            if (c == "GCA") stream << termcolor::blue;
-            if (c == "TAC") stream << termcolor::yellow;
-            stream << " " << c << termcolor::reset;
-        }
-        return stream;
-    }
+public:  // mod methods
+    /// Set appropriate HaplotypeFlags from already stored codons
+    void SetFlagsByCodons();
+    /// Add HaplotypeFlag to this haplotype
+    void AddFlag(const HaplotypeType& flag);
+    /// Set the frequency of this
+    void Frequency(const double& freq);
+    /// Add additional read
+    void AddReadName(const std::string& name);
+    /// Add a fraction of reads as soft counts
+    void AddSoftReadCount(const double s);
+    /// Set name of this haplotype
+    void Name(const std::string& name);
 
-    JSON::Json ToJson() const
-    {
-        using namespace JSON;
-        Json root;
-        root["name"] = Name;
-        root["reads_hard"] = Names.size();
-        root["reads_soft"] = Size();
-        root["frequency"] = GlobalFrequency;
-        root["read_names"] = Names;
-        root["codons"] = Codons;
-        return root;
-    }
+public:
+    friend std::ostream& operator<<(std::ostream& stream, const Haplotype& h);
+
+private:
+    std::string name_;
+    std::vector<std::string> readNames_;
+    const std::vector<std::string> codons_;
+    size_t numCodons_;
+    double softCollapses_ = 0;
+    double frequency_ = 0;
+    int flags_ = 0;
 };
 }
 }
+
+#include "pacbio/juliet/internal/Haplotype.inl"

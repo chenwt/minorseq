@@ -178,11 +178,11 @@ void AminoAcidCaller::PhaseVariants()
 
         // Get all codons for this row
         std::vector<std::string> codons;
-        uint8_t flag = 0;
+        HaplotypeType flag;
         for (const auto& pos_var : variantPositions) {
             std::string codon = ExtractRegionFromRow(row, pos_var, 0, 3);
             if (!pos_var.second->IsHit(codon)) {
-                flag |= static_cast<int>(HaplotypeType::OFFTARGET);
+                flag = HaplotypeType::OFFTARGET;
             }
             codons.emplace_back(std::move(codon));
         }
@@ -196,18 +196,18 @@ void AminoAcidCaller::PhaseVariants()
             for (auto& h : haplotypes) {
                 // Don't trust if the number of codons differ.
                 // That should only be the case if reads are not full-spanning.
-                if (h->Codons.size() != codons.size()) {
+                if (h->NumCodons() != codons.size()) {
                     continue;
                 }
                 bool same = true;
                 for (size_t i = 0; i < codons.size(); ++i) {
-                    if (h->Codons.at(i) != codons.at(i)) {
+                    if (h->Codon(i) != codons.at(i)) {
                         same = false;
                         break;
                     }
                 }
                 if (same) {
-                    h->Names.push_back(row->Read->Name());
+                    h->AddReadName(row->Read->Name());
                     miss = false;
                     break;
                 }
@@ -218,19 +218,16 @@ void AminoAcidCaller::PhaseVariants()
 
         // If row could not be collapsed into an existing haplotype
         if (miss) {
-            auto h = std::make_shared<Haplotype>();
-            h->Names = {row->Read->Name()};
-            h->SetCodons(std::move(codons));
-            h->Flags |= flag;
-            observations.emplace_back(std::move(h));
+            observations.emplace_back(
+                std::make_shared<Haplotype>(row->Read->Name(), std::move(codons), flag));
         }
     }
 
     std::vector<std::shared_ptr<Haplotype>> generators;
     std::vector<std::shared_ptr<Haplotype>> filtered;
     for (auto& h : observations) {
-        if (h->Size() < 10) h->Flags |= static_cast<int>(HaplotypeType::LOW_COV);
-        if (h->Flags == 0)
+        if (h->Size() < 10) h->AddFlag(HaplotypeType::LOW_COV);
+        if (h->Flags() == 0)
             generators.emplace_back(std::move(h));
         else
             filtered.emplace_back(std::move(h));
@@ -254,8 +251,8 @@ void AminoAcidCaller::PhaseVariants()
                 genCov += hn->Size();
                 if (verbose_) std::cerr << *hn << " ";
                 double p = 1;
-                for (size_t a = 0; a < hw->Codons.size(); ++a) {
-                    double p2 = transitions_.Transition(hn->Codons.at(a), hw->Codons.at(a));
+                for (size_t a = 0; a < hw->NumCodons(); ++a) {
+                    double p2 = transitions_.Transition(hn->Codon(a), hw->Codon(a));
                     if (verbose_) std::cerr << std::setw(15) << p2;
                     if (p2 > 0) p *= p2;
                 }
@@ -278,7 +275,7 @@ void AminoAcidCaller::PhaseVariants()
             for (size_t i = 0; i < generators.size(); ++i) {
                 const auto softp = 1.0 * hw->Size() * probabilityWeight[i] / sumPW;
                 if (verbose_) std::cerr << softp << "\t";
-                generators[i]->SoftCollapses += softp;
+                generators[i]->AddSoftReadCount(softp);
             }
 
             if (verbose_) std::cerr << std::endl << std::endl;
@@ -301,26 +298,26 @@ void AminoAcidCaller::PhaseVariants()
     bool doubleName = generators.size() > alphabetSize;
     for (size_t genNumber = 0; genNumber < generators.size(); ++genNumber) {
         auto& hn = generators.at(genNumber);
-        hn->GlobalFrequency = hn->Size() / counts;
+        hn->Frequency(hn->Size() / counts);
         if (doubleName) {
-            hn->Name = std::string(1, 'A' + genNumber / alphabetSize) +
-                       std::string(1, 'a' + genNumber % alphabetSize);
+            hn->Name(std::string(1, 'A' + genNumber / alphabetSize) +
+                     std::string(1, 'a' + genNumber % alphabetSize));
         } else {
-            hn->Name = std::string(1, 'A' + genNumber);
+            hn->Name(std::string(1, 'A' + genNumber));
         }
-        if (verbose_) std::cerr << hn->GlobalFrequency << "\t" << hn->Size() << "\t";
-        size_t numCodons = hn->Codons.size();
+        if (verbose_) std::cerr << (hn->Size() / counts) << "\t" << hn->Size() << "\t";
+        size_t numCodons = hn->NumCodons();
         for (size_t i = 0; i < numCodons; ++i) {
             for (auto& kv : variantPositions.at(i).second->aminoAcidToCodons) {
                 for (auto& vc : kv.second) {
-                    bool hit = hn->Codons.at(i) == vc.codon;
+                    bool hit = hn->Codon(i) == vc.codon;
                     vc.haplotypeHit.push_back(hit);
                     if (hit) {
                         std::cerr << termcolor::red;
                     }
                 }
             }
-            if (verbose_) std::cerr << hn->Codons.at(i) << termcolor::reset << " ";
+            if (verbose_) std::cerr << hn->Codon(i) << termcolor::reset << " ";
         }
         if (verbose_) std::cerr << std::endl;
 
@@ -330,7 +327,7 @@ void AminoAcidCaller::PhaseVariants()
 
     const auto PrintHaplotype = [&ExtractRegionFromRow, &variantPositions,
                                  this](std::shared_ptr<Haplotype> h) {
-        for (const auto& name : h->Names) {
+        for (const auto& name : h->ReadNames()) {
             std::cerr << name << "\t";
             const auto& row = msaByRow_.NameToRow(name);
 
@@ -346,8 +343,8 @@ void AminoAcidCaller::PhaseVariants()
 
     if (verbose_) std::cerr << std::endl << "HAPLOTYPES" << std::endl;
     for (auto& hn : generators) {
-        genCounts_ += hn->Names.size();
-        if (verbose_) std::cerr << "HAPLOTYPE: " << hn->Name << std::endl;
+        genCounts_ += hn->ReadNames().size();
+        if (verbose_) std::cerr << "HAPLOTYPE: " << hn->Name() << std::endl;
         if (verbose_) PrintHaplotype(hn);
     }
 
@@ -355,7 +352,7 @@ void AminoAcidCaller::PhaseVariants()
 
     if (verbose_) std::cerr << "FILTERED" << std::endl;
     for (auto& h : filtered) {
-        filteredCounts[h->Flags] += h->Names.size();
+        filteredCounts[h->Flags()] += h->ReadNames().size();
         if (verbose_) PrintHaplotype(h);
         filteredHaplotypes_.emplace_back(*h);
     }
