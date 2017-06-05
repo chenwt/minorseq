@@ -60,7 +60,6 @@
 #include <pacbio/juliet/JsonToHtml.h>
 #include <pacbio/juliet/JulietSettings.h>
 #include <pacbio/statistics/Fisher.h>
-#include <pacbio/statistics/Tests.h>
 
 #include <pacbio/juliet/JulietWorkflow.h>
 

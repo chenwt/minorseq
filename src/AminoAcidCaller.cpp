@@ -75,7 +75,6 @@ AminoAcidCaller::AminoAcidCaller(const std::vector<std::shared_ptr<Data::ArrayRe
     , error_(error)
     , targetConfig_(settings.TargetConfigUser)
     , verbose_(settings.Verbose)
-    , mergeOutliers_(settings.MergeOutliers)
     , debug_(settings.Debug)
     , drmOnly_(settings.DRMOnly)
     , minimalPerc_(settings.MinimalPerc)
@@ -216,48 +215,7 @@ void AminoAcidCaller::PhaseVariants()
     std::sort(generators.begin(), generators.end(), HaplotypeComp);
     std::sort(filtered.begin(), filtered.end(), HaplotypeComp);
 
-    // TODO: replace this with the system matrix solution in J
-    if (mergeOutliers_) {
-        // Given the set of haplotypes clustered by identity, try collapsing
-        // filtered into generators.
-        for (auto& hw : filtered) {
-            std::vector<double> probabilities;
-            if (verbose_) std::cerr << *hw << std::endl;
-            double genCov = 0;
-            for (auto& hn : generators) {
-                genCov += hn->Size();
-                if (verbose_) std::cerr << *hn << " ";
-                double p = 1;
-                for (size_t a = 0; a < hw->NumCodons(); ++a) {
-                    double p2 = transitions_.Transition(hn->Codon(a), hw->Codon(a));
-                    if (verbose_) std::cerr << std::setw(15) << p2;
-                    if (p2 > 0) p *= p2;
-                }
-                if (verbose_) std::cerr << " = " << std::setw(15) << p << std::endl;
-                probabilities.push_back(p);
-            }
-
-            double sum = std::accumulate(probabilities.cbegin(), probabilities.cend(), 0.0);
-            std::vector<double> weight;
-            for (size_t i = 0; i < generators.size(); ++i)
-                weight.emplace_back(1.0 * generators[i]->Size() / genCov);
-
-            std::vector<double> probabilityWeight;
-            for (size_t i = 0; i < generators.size(); ++i)
-                probabilityWeight.emplace_back(weight[i] * probabilities[i] / sum);
-
-            double sumPW =
-                std::accumulate(probabilityWeight.cbegin(), probabilityWeight.cend(), 0.0);
-
-            for (size_t i = 0; i < generators.size(); ++i) {
-                const auto softp = 1.0 * hw->Size() * probabilityWeight[i] / sumPW;
-                if (verbose_) std::cerr << softp << "\t";
-                generators[i]->AddSoftReadCount(softp);
-            }
-
-            if (verbose_) std::cerr << std::endl << std::endl;
-        }
-    }
+    // TODO: matrix solution in J
 
     if (verbose_) std::cerr << "#Haplotypes: " << generators.size() << std::endl;
     double counts = 0;

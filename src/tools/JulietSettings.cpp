@@ -123,15 +123,6 @@ const PlainOption Verbose{
     "Verbose",
     CLI::Option::BoolType()
 };
-const PlainOption MergeOutliers{
-    "merge_outliers",
-    { "merge-outliers" },
-    "Merge Outliers",
-    "Merge outlier haplotypes.",
-    CLI::Option::BoolType(),
-    JSON::Json(nullptr),
-    CLI::OptionFlags::HIDE_FROM_HELP
-};
 const PlainOption MaximalPerc{
     "maximal_percentage",
     { "max-perc", "n" },
@@ -153,7 +144,6 @@ JulietSettings::JulietSettings(const PacBio::CLI::Results& options)
     : CLI(options.InputCommandLine())
     , InputFiles(options.PositionalArguments())
     , DRMOnly(options[OptionNames::DRMOnly])
-    , MergeOutliers(options[OptionNames::MergeOutliers])
     , Verbose(options[OptionNames::Verbose])
     , Debug(options[OptionNames::Debug])
     , Mode(AnalysisModeFromOptions(options))
@@ -225,7 +215,6 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
     {
         OptionNames::Verbose,
         OptionNames::Debug,
-        OptionNames::MergeOutliers,
         OptionNames::TargetConfigTC,
         OptionNames::Error
     });
@@ -257,7 +246,6 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
     tcTask.AddOption(OptionNames::DRMOnly);
     tcTask.AddOption(OptionNames::TargetConfigTC);
     tcTask.AddOption(OptionNames::TargetConfigCLI);
-    tcTask.AddOption(OptionNames::MergeOutliers);
     tcTask.AddOption(OptionNames::SubstitutionRate);
     tcTask.AddOption(OptionNames::DeletionRate);
     tcTask.AddOption(OptionNames::Debug);

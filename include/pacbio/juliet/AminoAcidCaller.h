@@ -44,7 +44,6 @@
 #include <pacbio/juliet/ErrorEstimates.h>
 #include <pacbio/juliet/Haplotype.h>
 #include <pacbio/juliet/TargetConfig.h>
-#include <pacbio/juliet/TransitionTable.h>
 #include <pacbio/juliet/VariantGene.h>
 #include <pbcopper/json/JSON.h>
 
@@ -130,7 +129,6 @@ private:
 
 private:
     Data::MSAByRow msaByRow_;
-    TransitionTable transitions_;
 
 public:
     Data::MSAByColumn msaByColumn_;
@@ -142,7 +140,6 @@ private:
     const ErrorEstimates error_;
     const TargetConfig targetConfig_;
     const bool verbose_;
-    const bool mergeOutliers_;
     const bool debug_;
     const bool drmOnly_;
     const double minimalPerc_;

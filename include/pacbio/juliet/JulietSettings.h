@@ -74,7 +74,6 @@ public:
     int RegionEnd = std::numeric_limits<int>::max();
     bool DRMOnly;
     bool SaveMSA;
-    bool MergeOutliers;
     bool Verbose;
     bool Debug;
 
