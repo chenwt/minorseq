@@ -85,10 +85,13 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
 {
     using BAM::DataSet;
 
+    // Different output file types
     std::string outputHtml;
     std::string outputJson;
     std::string outputMsa;
+    // Input file
     std::string bamInput;
+    // Populate the different io variables according to the CLI arguments
     for (const auto& i : settings.InputFiles) {
         const auto fileExt = PacBio::Utility::FileExtension(i);
         if (fileExt == "json") {
@@ -108,9 +111,9 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
         }
         DataSet ds(i);
         switch (ds.Type()) {
-            case DataSet::TypeEnum::SUBREAD:
-            case DataSet::TypeEnum::ALIGNMENT:
-            case DataSet::TypeEnum::CONSENSUS_ALIGNMENT:
+            case DataSet::TypeEnum::SUBREAD:              // Legacy
+            case DataSet::TypeEnum::ALIGNMENT:            // Legacy
+            case DataSet::TypeEnum::CONSENSUS_ALIGNMENT:  // It should only be this type
                 bamInput = i;
                 break;
             default:
@@ -119,13 +122,17 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
         }
     }
 
+    // Missing input error handling
     if (bamInput.empty()) throw std::runtime_error("Missing input file!");
+
+    // If no output type have been provided, output html and json
     if (outputHtml.empty() && outputJson.empty() && outputMsa.empty()) {
         const auto prefix = PacBio::Utility::FilePrefix(bamInput);
         outputHtml = prefix + ".html";
         outputJson = prefix + ".json";
     }
 
+    // Parse input data
     auto sharedReads =
         IO::BamUtils::BamToArrayReads(bamInput, settings.RegionStart, settings.RegionEnd);
 
@@ -134,11 +141,14 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
         exit(1);
     }
 
+    // Do not allow chemistry mixing for now
     std::string chemistry = sharedReads.front()->SequencingChemistry();
     for (size_t i = 1; i < sharedReads.size(); ++i)
         if (chemistry != sharedReads.at(i)->SequencingChemistry())
             throw std::runtime_error("Mixed chemistries are not allowed");
 
+    // If both, substitution and deletion rates have been provided, use those,
+    // otherwise use those from the chemistry
     ErrorEstimates error;
     if (settings.SubstitutionRate != 0.0 && settings.DeletionRate != 0.0) {
         error = ErrorEstimates(settings.SubstitutionRate, settings.DeletionRate);
@@ -148,6 +158,8 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
 
     // Call variants
     AminoAcidCaller aac(sharedReads, error, settings);
+
+    // Phase haplotypes
     if (settings.Mode == AnalysisMode::PHASING) aac.PhaseVariants();
 
     const auto json = aac.JSON();
@@ -163,7 +175,7 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
                          settings.CLI);
     }
 
-    // Store msa + p-values
+    // Store msa
     if (!outputMsa.empty()) {
         std::ofstream msaStream(outputMsa);
         msaStream << "pos A C G T - N" << std::endl;

@@ -49,20 +49,23 @@ namespace Juliet {
 class JsonToHtml
 {
 public:
-    /// Generate HTML output of variant amino acids
+    /// Generate HTML output
     static void HTML(std::ostream& out, const JSON::Json& j, const TargetConfig& config,
                      bool onlyKnownDRMs, std::string filename, std::string parameters);
 
 private:
+    /// Generate drug summary section
     static void DRMView(std::ostream& out, const JSON::Json& j, const TargetConfig& config,
                         bool onlyKnownDRMs);
-    /// Generate HTML output of variant amino acids
+    /// Generate variant discovery section
     static void Discovery(std::ostream& out, const JSON::Json& j, const TargetConfig& config,
                           bool onlyKnownDRMs, int numHaplotypes);
 
+    /// Strip " from string
     static std::string Strip(const std::string& input);
 
-    static void Encode(std::string& data);
+    // Escape special characters for HTML
+    static void Escape(std::string& data);
 };
 }
 }  //::PacBio::Juliet
