@@ -44,6 +44,8 @@
 
 namespace PacBio {
 namespace Juliet {
+/// A single drug resistance mutation with the position, the reference and
+/// observed amino acid
 class DMutation
 {
 public:
@@ -59,6 +61,7 @@ public:
     char curAA;
 };
 
+/// A single drug with its name and observed DMutations
 class DRM
 {
 public:
@@ -76,6 +79,7 @@ public:
     JSON::Json ToJson() const;
 };
 
+/// A known minor variant, provided by the user
 class ExpectedMinor
 {
 public:
@@ -87,6 +91,7 @@ public:
     JSON::Json ToJson() const;
 };
 
+/// A single gene with its name, reference coordinates, drms, and expected minors
 class TargetGene
 {
 public:
@@ -107,6 +112,8 @@ public:
     static JSON::Json ToJson(const std::vector<TargetGene>& genes);
 };
 
+/// The whole config with genes, information about the reference, and version
+/// variables.
 class TargetConfig
 {
 public:
