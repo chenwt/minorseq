@@ -142,7 +142,7 @@ run_prefix=${run_name%.*}
 wdir=$(pwd)
 if [[ "${keep}" = "1" ]]; then
   if [[ -d ${wdir}/${run_prefix}.tmp ]]; then
-    echo "Directory ${wdir}/${run_prefix}.tmp already exists, please remove to use option -k"
+    echo "Directory ${wdir}/${run_prefix}.tmp already exists, please remove to use option -z"
     exit 1
   fi
 fi
