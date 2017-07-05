@@ -47,7 +47,7 @@ ErrorEstimates::ErrorEstimates(const std::string& chemistry)
     substitution = 0.0005244257 / 3.0;
     deletion = 0.003791086;
     insertion = 0;
-    if (chemistry != "S/P1-C1" && chemistry != "S/P1-C1.2" && chemistry != "S/P2-C2") {
+    if (chemistry == "P6-C4" || chemistry == "S/P1-C1/beta") {
         std::cerr << "+---------------------------------------------------+" << std::endl
                   << "|                     ATTENTION!                    |" << std::endl
                   << "| - - - - - - - - - - - - - - - - - - - - - - - - - |" << std::endl
