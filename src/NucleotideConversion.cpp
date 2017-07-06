@@ -35,6 +35,7 @@
 
 // Author: Armin Töpfer
 
+#include <stdexcept>
 #include <string>
 
 #include <pacbio/data/NucleotideConversion.h>
