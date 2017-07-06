@@ -50,6 +50,23 @@ namespace PacBio {
 namespace Juliet {
 DMutation::DMutation(char refAA, int pos, char curAA) : refAA(refAA), pos(pos), curAA(curAA) {}
 
+DMutation::operator std::string() const
+{
+    std::string out;
+    out += refAA;
+    out += std::to_string(pos);
+    out += curAA;
+    return out;
+}
+
+bool DMutation::operator==(const DMutation& a) const
+{
+    if (a.pos != pos) return false;
+    if (a.curAA != '*' && curAA != '*' && a.curAA != curAA) return false;
+    if (a.refAA != '*' && refAA != '*' && a.refAA != refAA) return false;
+    return true;
+}
+
 JSON::Json DRM::ToJson() const
 {
     JSON::Json root;

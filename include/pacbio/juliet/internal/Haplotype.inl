@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2017, Pacific Biosciences of California, Inc.
+// Copyright (c) 2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,40 +35,41 @@
 
 // Author: Armin Töpfer
 
-#include <array>
-#include <numeric>
-
-#include <pacbio/data/FisherResult.h>
-
-#include <pacbio/data/MSAColumn.h>
-
 namespace PacBio {
-namespace Data {
-int MSAColumn::Coverage() const { return std::accumulate(counts.cbegin(), counts.cend(), 0); }
-int MSAColumn::MaxElement() const
-{
-    return std::distance(counts.begin(), std::max_element(counts.begin(), counts.end()));
-}
-char MSAColumn::MaxBase() const
-{
-    static const char bases[]{'A', 'C', 'G', 'T', '-'};
-    int maxElement = MaxElement();
-    if (maxElement == 5)
-        return ' ';
-    else
-        return bases[maxElement];
-}
-int MSAColumn::Max() const { return counts.at(MaxElement()); }
+namespace Juliet {
 
-void MSAColumn::AddFisherResult(const FisherResult& f)
+inline double Haplotype::Size() const { return readNames_.size() + softCollapses_; }
+
+inline const std::vector<std::string>& Haplotype::ReadNames() const
 {
-    pValues = f.pValues;
-    mask = f.mask;
-    hit = f.hit;
-    argMax = f.argMax;
+    return const_cast<std::vector<std::string>&>(readNames_);
 }
 
-void MSAColumn::AddFisherResult(const std::map<std::string, double>& f) { insertionsPValues = f; }
+inline const std::string& Haplotype::Codon(const int i) { return codons_.at(i); }
 
-}  // namespace Data
-}  // namespace PacBio
+inline size_t Haplotype::NumCodons() const { return numCodons_; }
+
+inline int Haplotype::Flags() const { return flags_; }
+
+inline std::string Haplotype::Name() { return name_; }
+
+inline void Haplotype::AddFlag(const HaplotypeType& flag) { flags_ |= static_cast<int>(flag); }
+
+inline void Haplotype::Frequency(const double& freq) { frequency_ = freq; }
+
+inline void Haplotype::AddReadName(const std::string& name) { readNames_.push_back(name); }
+
+inline void Haplotype::AddSoftReadCount(const double s) { softCollapses_ += s; }
+
+inline void Haplotype::Name(const std::string& name) { name_ = name; }
+
+inline std::ostream& operator<<(std::ostream& stream, const Haplotype& h)
+{
+    stream << h.Size() << "\t";
+    for (const auto& c : h.codons_) {
+        stream << " " << c;
+    }
+    return stream;
+}
+}
+}

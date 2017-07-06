@@ -44,60 +44,17 @@
 #include <string>
 #include <vector>
 
+#include <boost/optional.hpp>
+
 #include <pbbam/BamRecord.h>
 
-#include <pacbio/data/ArrayBase.h>
+#include <pacbio/data/NucleotideConversion.h>
+#include <pacbio/data/QvThresholds.h>
 
 namespace PacBio {
 namespace Data {
 
-#if __cplusplus < 201402L  // C++11
-char TagToNucleotide(uint8_t t);
-uint8_t NucleotideToTag(char t);
-#else  // C++14
-// Convert {0, 1, 2, 3, 4, 5} to {'A', 'C', 'G', 'T', '-', 'N'}
-static constexpr char TagToNucleotide(uint8_t t)
-{
-    switch (t) {
-        case 0:
-            return 'A';
-        case 1:
-            return 'C';
-        case 2:
-            return 'G';
-        case 3:
-            return 'T';
-        case 4:
-            return '-';
-        case 5:
-            return 'N';
-        default:
-            return '?';
-            // throw std::runtime_error("Woot is that tag? " + std::to_string(t));
-    }
-}
-// Convert {'A', 'C', 'G', 'T', '-', 'N'} to {0, 1, 2, 3, 4, 5}
-static constexpr uint8_t NucleotideToTag(char t)
-{
-    switch (t) {
-        case 'A':
-            return 0;
-        case 'C':
-            return 1;
-        case 'G':
-            return 2;
-        case 'T':
-            return 3;
-        case '-':
-            return 4;
-        case 'N':
-            return 5;
-        default:
-            return 255;
-            // throw std::runtime_error("Woot is that char " + std::to_string(t));
-    }
-}
-#endif
+struct ArrayBase;
 
 /// A single array read that is "unrolled", as in an array of bases.
 class ArrayRead
@@ -105,31 +62,20 @@ class ArrayRead
 public:  // ctors
     ArrayRead(const int idx = -1, const std::string& name = "");
 
-    // friend std::ostream& operator<<(std::ostream& stream, const ArrayRead& r);
-
 public:  // non-mod methods
-    int ReferenceStart() const { return referenceStart_; }
-    int ReferenceEnd() const { return referenceEnd_; }
+    int ReferenceStart() const;
+    int ReferenceEnd() const;
+    const std::vector<ArrayBase>& Bases() const;
+    const std::string& Name() const;
     virtual std::string SequencingChemistry() const;
 
 public:
-    friend std::ostream& operator<<(std::ostream& stream, const ArrayRead& r)
-    {
-        stream << r.ReferenceStart() << std::endl;
-        for (const auto& b : r.Bases)
-            stream << b.Cigar;
-        stream << std::endl;
-        for (const auto& b : r.Bases)
-            stream << b.Nucleotide;
-        return stream;
-    }
-
-public:  // data
-    std::vector<ArrayBase> Bases;
-    const int Idx;
-    const std::string Name;
+    friend std::ostream& operator<<(std::ostream& stream, const ArrayRead& r);
 
 protected:
+    std::vector<ArrayBase> bases_;
+    const int idx_;
+    const std::string name_;
     size_t referenceStart_;
     size_t referenceEnd_;
 };
@@ -140,11 +86,38 @@ public:  // ctors
     /// Constructor that needs the BamRecord to be "unrolled" and a unique index
     BAMArrayRead(const BAM::BamRecord& record, int idx);
 
-    // friend std::ostream& operator<<(std::ostream& stream, const ArrayRead& r);
     virtual std::string SequencingChemistry() const override;
 
 private:
     const BAM::BamRecord Record;
 };
+
+/// A single base in an ArrayRead with its associated qvs and cigar
+struct ArrayBase
+{
+    ArrayBase(char cigar, char nucleotide, uint8_t qualQV, uint8_t subQV, uint8_t delQV,
+              uint8_t insQV);
+    ArrayBase(char cigar, char nucleotide, uint8_t qualQV);
+    ArrayBase(char cigar, char nucleotide);
+
+    bool MeetQVThresholds(const QvThresholds& qvs) const;
+    bool MeetQualQVThreshold(boost::optional<uint8_t> threshold) const;
+    bool MeetDelQVThreshold(boost::optional<uint8_t> threshold) const;
+    bool MeetSubQVThreshold(boost::optional<uint8_t> threshold) const;
+    bool MeetInsQVThreshold(boost::optional<uint8_t> threshold) const;
+
+    char Cigar;
+    char Nucleotide;
+    boost::optional<uint8_t> QualQV;
+    boost::optional<uint8_t> DelQV;
+    boost::optional<uint8_t> SubQV;
+    boost::optional<uint8_t> InsQV;
+    double ProbTrue = 0;
+    double ProbCorrectBase = 0;
+    double ProbNoDeletion = 0;
+    double ProbNoInsertion = 0;
+};
 }  // namespace Data
 }  // namespace PacBio
+
+#include "pacbio/data/internal/ArrayRead.inl"

@@ -37,38 +37,29 @@
 
 #pragma once
 
-#include <fstream>
-#include <string>
-#include <vector>
-
-#include <pacbio/data/MSA.h>
-#include <pbbam/BamRecord.h>
-
 namespace PacBio {
-namespace Fuse {
-
-class Fuse
+namespace Juliet {
+inline std::ostream& operator<<(std::ostream& out, const PerformanceMetrics& pm)
 {
-public:
-    Fuse(const std::string& ccsInput, int minCoverage);
-    Fuse(const std::vector<Data::ArrayRead>& arrayReads);
-
-public:
-    std::string ConsensusSequence() const { return consensusSequence_; }
-
-private:
-    std::vector<Data::ArrayRead> FetchAlignedReads(const std::string& ccsInput) const;
-    std::string CreateConsensus(const std::vector<Data::ArrayRead>& arrayReads) const;
-    std::map<int, std::pair<std::string, int>> CollectInsertions(
-        const Data::MSAByColumn& msa) const;
-    std::pair<int, std::string> FindInsertions(
-        std::map<int, std::pair<std::string, int>>* posInsCov, int windowSize = 20) const;
-
-private:
-    const int minCoverageRecommended_ = 50;
-    const double minInsertionCoverageFreq_ = 0.5;
-
-    std::string consensusSequence_;
-};
+    out << pm.TruePositiveRate() << " " << pm.FalsePositiveRate() << " " << pm.NumberOfTests << " "
+        << pm.Accuracy() << " " << pm.FalsePositives;
+    return out;
 }
-}  // ::PacBio::Fuse
+
+inline double PerformanceMetrics::TruePositiveRate() const
+{
+    return TruePositives / NumExpectedMinors;
+}
+
+inline double PerformanceMetrics::FalsePositiveRate() const
+{
+    return FalsePositives / (NumberOfTests - NumExpectedMinors);
+}
+
+inline double PerformanceMetrics::Accuracy() const
+{
+    return (TruePositives + TrueNegative) /
+           (TruePositives + FalsePositives + FalseNegative + TrueNegative);
+}
+}
+}  // ::PacBio::Juliet

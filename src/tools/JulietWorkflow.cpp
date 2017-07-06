@@ -54,13 +54,12 @@
 #include <pbcopper/utility/FileUtils.h>
 
 #include <pacbio/data/ArrayRead.h>
-#include <pacbio/data/MSAByColumn.h>
-#include <pacbio/io/BamParser.h>
+#include <pacbio/data/MSA.h>
+#include <pacbio/io/BamUtils.h>
 #include <pacbio/juliet/AminoAcidCaller.h>
 #include <pacbio/juliet/JsonToHtml.h>
 #include <pacbio/juliet/JulietSettings.h>
 #include <pacbio/statistics/Fisher.h>
-#include <pacbio/statistics/Tests.h>
 
 #include <pacbio/juliet/JulietWorkflow.h>
 
@@ -86,10 +85,13 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
 {
     using BAM::DataSet;
 
+    // Different output file types
     std::string outputHtml;
     std::string outputJson;
     std::string outputMsa;
+    // Input file
     std::string bamInput;
+    // Populate the different io variables according to the CLI arguments
     for (const auto& i : settings.InputFiles) {
         const auto fileExt = PacBio::Utility::FileExtension(i);
         if (fileExt == "json") {
@@ -109,9 +111,9 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
         }
         DataSet ds(i);
         switch (ds.Type()) {
-            case DataSet::TypeEnum::SUBREAD:
-            case DataSet::TypeEnum::ALIGNMENT:
-            case DataSet::TypeEnum::CONSENSUS_ALIGNMENT:
+            case DataSet::TypeEnum::SUBREAD:              // Legacy
+            case DataSet::TypeEnum::ALIGNMENT:            // Legacy
+            case DataSet::TypeEnum::CONSENSUS_ALIGNMENT:  // It should only be this type
                 bamInput = i;
                 break;
             default:
@@ -120,25 +122,33 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
         }
     }
 
+    // Missing input error handling
     if (bamInput.empty()) throw std::runtime_error("Missing input file!");
+
+    // If no output type have been provided, output html and json
     if (outputHtml.empty() && outputJson.empty() && outputMsa.empty()) {
         const auto prefix = PacBio::Utility::FilePrefix(bamInput);
         outputHtml = prefix + ".html";
         outputJson = prefix + ".json";
     }
 
-    auto sharedReads = IO::BamToArrayReads(bamInput, settings.RegionStart, settings.RegionEnd);
+    // Parse input data
+    auto sharedReads =
+        IO::BamUtils::BamToArrayReads(bamInput, settings.RegionStart, settings.RegionEnd);
 
     if (sharedReads.empty()) {
         std::cerr << "Empty input." << std::endl;
         exit(1);
     }
 
+    // Do not allow chemistry mixing for now
     std::string chemistry = sharedReads.front()->SequencingChemistry();
     for (size_t i = 1; i < sharedReads.size(); ++i)
         if (chemistry != sharedReads.at(i)->SequencingChemistry())
             throw std::runtime_error("Mixed chemistries are not allowed");
 
+    // If both, substitution and deletion rates have been provided, use those,
+    // otherwise use those from the chemistry
     ErrorEstimates error;
     if (settings.SubstitutionRate != 0.0 && settings.DeletionRate != 0.0) {
         error = ErrorEstimates(settings.SubstitutionRate, settings.DeletionRate);
@@ -148,6 +158,8 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
 
     // Call variants
     AminoAcidCaller aac(sharedReads, error, settings);
+
+    // Phase haplotypes
     if (settings.Mode == AnalysisMode::PHASING) aac.PhaseVariants();
 
     const auto json = aac.JSON();
@@ -163,17 +175,16 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
                          settings.CLI);
     }
 
-    // Store msa + p-values
+    // Store msa
     if (!outputMsa.empty()) {
         std::ofstream msaStream(outputMsa);
         msaStream << "pos A C G T - N" << std::endl;
-        int pos = aac.msaByColumn_.beginPos;
+        int pos = aac.msaByColumn_.BeginPos();
         for (auto& column : aac.msaByColumn_) {
             ++pos;
             msaStream << pos;
-            const std::array<int, 6>& counts = column;
-            for (const auto& c : counts)
-                msaStream << " " << c;
+            for (const auto& c : {'A', 'C', 'G', 'T', '-', 'N'})
+                msaStream << " " << column[c];
             msaStream << std::endl;
         }
         msaStream.close();
@@ -182,15 +193,16 @@ void JulietWorkflow::AminoPhasing(const JulietSettings& settings)
 void JulietWorkflow::Error(const JulietSettings& settings)
 {
     for (const auto& inputFile : settings.InputFiles) {
-        auto reads = IO::BamToArrayReads(inputFile, settings.RegionStart, settings.RegionEnd);
+        auto reads =
+            IO::BamUtils::BamToArrayReads(inputFile, settings.RegionStart, settings.RegionEnd);
         Data::MSAByColumn msa(reads);
         double sub = 0;
         double del = 0;
         int columnCount = 0;
         for (const auto& column : msa) {
             if (column.Coverage() > 100) {
-                del += column.Frequency(4);
-                sub += 1.0 - column.Frequency(4) - column.Frequency(column.MaxElement());
+                del += column.Frequency('-');
+                sub += 1.0 - column.Frequency('-') - column.Frequency(column.MaxBase());
                 ++columnCount;
             }
         }

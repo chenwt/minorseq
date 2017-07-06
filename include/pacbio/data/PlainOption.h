@@ -43,36 +43,33 @@
 
 namespace PacBio {
 namespace Data {
-struct PlainOption
+class PlainOption
 {
-    std::string id;
-    std::vector<std::string> cliOptions;
-    std::string name;
-    std::string description;
-    JSON::Json defaultValue;
-    JSON::Json choices = JSON::Json(nullptr);
-    CLI::OptionFlags flags;
-
+public:
+    PlainOption() = delete;
     PlainOption(const std::string& id, const std::vector<std::string>& cliOptions,
                 const std::string& name, const std::string& description,
                 const JSON::Json& defaultValue, const JSON::Json& choices = JSON::Json(nullptr),
-                const CLI::OptionFlags& flags = CLI::OptionFlags::DEFAULT)
-        : id(id)
-        , cliOptions(cliOptions)
-        , name(name)
-        , description(description)
-        , defaultValue(defaultValue)
-        , choices(choices)
-        , flags(flags)
-    {
-    }
+                const CLI::OptionFlags& flags = CLI::OptionFlags::DEFAULT);
 
-    operator CLI::Option() const
-    {
-        return {id, cliOptions, description, defaultValue, choices, flags};
-    }
-    operator std::pair<std::string, std::string>() const { return std::make_pair(id, name); }
-    operator std::string() const { return id; }
+public:
+    // Converts this to a CLI::Option for pbcopper's CLI parameters or TC.
+    operator CLI::Option() const;
+    // Converts this to a pair allowing to add this to a tool contract.
+    operator std::pair<std::string, std::string>() const;
+    // Allows to identify this via its id.
+    operator std::string() const;
+
+private:
+    std::string id_;
+    std::vector<std::string> cliOptions_;
+    std::string name_;
+    std::string description_;
+    JSON::Json defaultValue_;
+    JSON::Json choices_;
+    CLI::OptionFlags flags_;
 };
 }
 }  // :: PacBio::CLI
+
+#include "pacbio/data/internal/PlainOption.inl"

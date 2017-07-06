@@ -37,20 +37,26 @@
 
 #pragma once
 
-#include <map>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace PacBio {
-namespace Data {
+#include <pbbam/EntireFileQuery.h>
+#include <pbbam/PbiFilterQuery.h>
 
-struct MSARow
+#include <pacbio/data/ArrayRead.h>
+
+namespace PacBio {
+namespace IO {
+struct BamUtils
 {
-    MSARow(const int size) : Bases(size, ' ') {}
-    std::vector<char> Bases;
-    std::map<int, std::string> Insertions;
-    std::shared_ptr<Data::ArrayRead> Read;
+    static std::unique_ptr<BAM::internal::IQuery> BamQuery(const std::string& filePath);
+
+    /// \brief Wrapper around pbbam to ease BAM parsing and region extraction
+    static std::vector<std::shared_ptr<Data::ArrayRead>> BamToArrayReads(
+        const std::string& filePath, int regionStart = 0,
+        int regionEnd = std::numeric_limits<int>::max());
 };
 }
-}  // ::PacBio::Data
+}  // ::PacBio::IO

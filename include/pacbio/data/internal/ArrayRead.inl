@@ -35,52 +35,55 @@
 
 // Author: Armin Töpfer
 
-#include <numeric>
-#include <vector>
-
-#include <pacbio/data/ArrayRead.h>
-#include <pacbio/data/MSAColumn.h>
-#include <pacbio/data/QvThresholds.h>
-
-#include <pacbio/data/MSAByColumn.h>
-
 namespace PacBio {
 namespace Data {
-MSAByColumn::MSAByColumn(const MSAByRow& msaRows)
-{
-    beginPos = msaRows.BeginPos - 1;
-    endPos = msaRows.EndPos - 1;
-    counts.resize(msaRows.EndPos - msaRows.BeginPos);
-    int pos = msaRows.BeginPos;
-    for (auto& c : counts) {
-        c.refPos = pos;
-        ++pos;
-    }
 
-    for (const auto& row : msaRows.Rows) {
-        int localPos = 0;
-        for (const auto& c : row->Bases) {
-            switch (c) {
-                case 'A':
-                case 'C':
-                case 'G':
-                case 'T':
-                case '-':
-                case 'N':
-                    counts.at(localPos)[c]++;
-                    ++localPos;
-                    break;
-                case ' ':
-                    ++localPos;
-                    break;
-                default:
-                    throw std::runtime_error("Unexpected base " + std::string(1, c));
-            }
-        }
-        for (const auto& ins : row->Insertions) {
-            counts[ins.first].insertions[ins.second]++;
-        }
-    }
+inline int ArrayRead::ReferenceStart() const { return referenceStart_; }
+inline int ArrayRead::ReferenceEnd() const { return referenceEnd_; }
+inline const std::vector<ArrayBase>& ArrayRead::Bases() const
+{
+    return const_cast<std::vector<ArrayBase>&>(bases_);
+}
+inline const std::string& ArrayRead::Name() const { return name_; }
+
+inline std::string ArrayRead::SequencingChemistry() const { return ""; }
+
+inline std::string BAMArrayRead::SequencingChemistry() const
+{
+    return Record.ReadGroup().SequencingChemistry();
+}
+
+inline std::ostream& operator<<(std::ostream& stream, const ArrayRead& r)
+{
+    stream << r.ReferenceStart() << std::endl;
+    for (const auto& b : r.bases_)
+        stream << b.Cigar;
+    stream << std::endl;
+    for (const auto& b : r.bases_)
+        stream << b.Nucleotide;
+    return stream;
+}
+
+inline bool ArrayBase::MeetQVThresholds(const QvThresholds& qvs) const
+{
+    return MeetQualQVThreshold(qvs.QualQV) && MeetDelQVThreshold(qvs.DelQV) &&
+           MeetSubQVThreshold(qvs.SubQV) && MeetInsQVThreshold(qvs.InsQV);
+}
+inline bool ArrayBase::MeetQualQVThreshold(boost::optional<uint8_t> threshold) const
+{
+    return !threshold || !QualQV || *QualQV >= *threshold;
+}
+inline bool ArrayBase::MeetDelQVThreshold(boost::optional<uint8_t> threshold) const
+{
+    return !threshold || !DelQV || *DelQV >= *threshold;
+}
+inline bool ArrayBase::MeetSubQVThreshold(boost::optional<uint8_t> threshold) const
+{
+    return !threshold || !SubQV || *SubQV >= *threshold;
+}
+inline bool ArrayBase::MeetInsQVThreshold(boost::optional<uint8_t> threshold) const
+{
+    return !threshold || !InsQV || *InsQV >= *threshold;
 }
 }  // namespace Data
 }  // namespace PacBio

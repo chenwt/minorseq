@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2017, Pacific Biosciences of California, Inc.
+// Copyright (c) 2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,31 +35,53 @@
 
 // Author: Armin Töpfer
 
-#pragma once
+#include <string>
 
-#include <pacbio/data/FisherResult.h>
-#include <pacbio/statistics/Fisher.h>
+#include <pacbio/data/NucleotideConversion.h>
 
 namespace PacBio {
-namespace Statistics {
-class Tests
+namespace Data {
+
+#if __cplusplus < 201402L  // C++11
+char TagToNucleotide(uint8_t t)
 {
-public:
-    /// Compute Fisher's exact test for CCS substitutions and deletions
-    static std::map<std::string, double> FisherCCS(const std::array<int, 5>& observed,
-                                                   const std::map<std::string, int> insertions);
-
-    /// Compute Fisher's exact test for CCS substitutions and deletions
-    static Data::FisherResult FisherCCS(const std::array<int, 5>& observed);
-
-private:
-    static constexpr float alpha = 0.01;
-
-private:
-    static std::array<double, 5> CalculatePml(const std::array<int, 5>& observed, int* argMax,
-                                              double* sum);
-
-    static std::array<double, 5> CalculatePriors(const int argMax);
-};
+    switch (t) {
+        case 0:
+            return 'A';
+        case 1:
+            return 'C';
+        case 2:
+            return 'G';
+        case 3:
+            return 'T';
+        case 4:
+            return '-';
+        case 5:
+            return 'N';
+        default:
+            throw std::runtime_error("Unsupported tag: " + std::to_string(t));
+    }
 }
-}  // ::PacBio::Statistics
+
+uint8_t NucleotideToTag(char t)
+{
+    switch (t) {
+        case 'A':
+            return 0;
+        case 'C':
+            return 1;
+        case 'G':
+            return 2;
+        case 'T':
+            return 3;
+        case '-':
+            return 4;
+        case 'N':
+            return 5;
+        default:
+            throw std::runtime_error("Unsupported character: " + std::to_string(t));
+    }
+}
+#endif
+}
+}  // ::PacBio::Data

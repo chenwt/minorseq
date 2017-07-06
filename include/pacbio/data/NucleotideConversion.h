@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
+// Copyright (c) 2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -37,38 +37,55 @@
 
 #pragma once
 
-#include <fstream>
-#include <string>
-#include <vector>
-
-#include <pacbio/data/MSA.h>
-#include <pbbam/BamRecord.h>
-
 namespace PacBio {
-namespace Fuse {
+namespace Data {
 
-class Fuse
+#if __cplusplus < 201402L  // C++11
+char TagToNucleotide(uint8_t t);
+uint8_t NucleotideToTag(char t);
+#else  // C++14
+// Convert {0, 1, 2, 3, 4, 5} to {'A', 'C', 'G', 'T', '-', 'N'}
+static constexpr char TagToNucleotide(uint8_t t)
 {
-public:
-    Fuse(const std::string& ccsInput, int minCoverage);
-    Fuse(const std::vector<Data::ArrayRead>& arrayReads);
-
-public:
-    std::string ConsensusSequence() const { return consensusSequence_; }
-
-private:
-    std::vector<Data::ArrayRead> FetchAlignedReads(const std::string& ccsInput) const;
-    std::string CreateConsensus(const std::vector<Data::ArrayRead>& arrayReads) const;
-    std::map<int, std::pair<std::string, int>> CollectInsertions(
-        const Data::MSAByColumn& msa) const;
-    std::pair<int, std::string> FindInsertions(
-        std::map<int, std::pair<std::string, int>>* posInsCov, int windowSize = 20) const;
-
-private:
-    const int minCoverageRecommended_ = 50;
-    const double minInsertionCoverageFreq_ = 0.5;
-
-    std::string consensusSequence_;
-};
+    switch (t) {
+        case 0:
+            return 'A';
+        case 1:
+            return 'C';
+        case 2:
+            return 'G';
+        case 3:
+            return 'T';
+        case 4:
+            return '-';
+        case 5:
+            return 'N';
+        default:
+            return '?';
+            // throw std::runtime_error("Woot is that tag? " + std::to_string(t));
+    }
 }
-}  // ::PacBio::Fuse
+// Convert {'A', 'C', 'G', 'T', '-', 'N'} to {0, 1, 2, 3, 4, 5}
+static constexpr uint8_t NucleotideToTag(char t)
+{
+    switch (t) {
+        case 'A':
+            return 0;
+        case 'C':
+            return 1;
+        case 'G':
+            return 2;
+        case 'T':
+            return 3;
+        case '-':
+            return 4;
+        case 'N':
+            return 5;
+        default:
+            return 255;
+            // throw std::runtime_error("Woot is that char " + std::to_string(t));
+    }
+}
+#endif
+}
+}  // ::PacBio::Data

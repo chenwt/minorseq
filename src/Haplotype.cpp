@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
+// Copyright (c) 2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,19 +35,38 @@
 
 // Author: Armin Töpfer
 
-#pragma once
+#include <numeric>
+
+#include <pacbio/juliet/Haplotype.h>
 
 namespace PacBio {
 namespace Juliet {
 
-enum class HaplotypeType : int
+std::string Haplotype::ConcatCodons() const
 {
-    REPORT = 0,
-    WITH_GAP = 1,
-    WITH_HETERODUPLEX = 2,
-    PARTIAL = 4,
-    LOW_COV = 8,
-    OFFTARGET = 16
-};
+    return std::accumulate(codons_.begin(), codons_.end(), std::string(""));
 }
-}  //::PacBio::Juliet
+
+void Haplotype::SetFlagsByCodons()
+{
+    for (const auto& c : codons_) {
+        if (c.find('-') != std::string::npos) AddFlag(HaplotypeType::WITH_GAP);
+        if (c.find('N') != std::string::npos) AddFlag(HaplotypeType::WITH_HETERODUPLEX);
+        if (c.find(' ') != std::string::npos) AddFlag(HaplotypeType::PARTIAL);
+    }
+}
+
+JSON::Json Haplotype::ToJson() const
+{
+    using namespace JSON;
+    Json root;
+    root["name"] = name_;
+    root["reads_hard"] = readNames_.size();
+    root["reads_soft"] = Size();
+    root["frequency"] = frequency_;
+    root["read_names"] = readNames_;
+    root["codons"] = codons_;
+    return root;
+}
+}
+}

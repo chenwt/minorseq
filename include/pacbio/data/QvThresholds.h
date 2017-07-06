@@ -37,23 +37,16 @@
 
 #pragma once
 
+#include <boost/optional.hpp>
+
 namespace PacBio {
 namespace Data {
 struct QvThresholds
 {
-    QvThresholds()
-    {
-        auto SetQV = [](const char* env, boost::optional<uint8_t>* qv,
-                        boost::optional<uint8_t> defaultQv = boost::none) {
-            char* val = std::getenv(env);
-            *qv = val == NULL ? defaultQv : std::stoi(std::string(val));
-        };
-        SetQV("DELQV", &DelQV);
-        SetQV("SUBQV", &SubQV, 42);
-        SetQV("INSQV", &InsQV);
-        SetQV("QUALQV", &QualQV);
-    }
+public:
+    QvThresholds();
 
+public:
     boost::optional<uint8_t> DelQV;
     boost::optional<uint8_t> SubQV;
     boost::optional<uint8_t> InsQV;

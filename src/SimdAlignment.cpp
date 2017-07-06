@@ -47,8 +47,8 @@
 
 namespace PacBio {
 namespace Align {
-PariwiseAlignmentFasta SimdNeedleWunschAlignment(const std::string& target,
-                                                 const std::string& query)
+void PariwiseAlignmentFasta::SimdNeedleWunschAlignment(const std::string& target,
+                                                       const std::string& query)
 {
     StripedSmithWaterman::Aligner aligner;
     StripedSmithWaterman::Filter filter;
@@ -109,14 +109,11 @@ PariwiseAlignmentFasta SimdNeedleWunschAlignment(const std::string& target,
         transcript += "P";
     }
 
-    PariwiseAlignmentFasta result;
-    result.Target = std::move(refAlign);
-    result.Query = std::move(qryAlign);
-    result.Transcript = std::move(transcript);
-
     assert(refAlign.size() == qryAlign.size());
 
-    return result;
+    this->Target = std::move(refAlign);
+    this->Query = std::move(qryAlign);
+    this->Transcript = std::move(transcript);
 }
 }
 }  // namespace PacBio::Align

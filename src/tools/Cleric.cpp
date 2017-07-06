@@ -45,7 +45,7 @@
 #include <pbbam/MD5.h>
 
 #include <pacbio/align/SimdAlignment.h>
-#include <pacbio/io/BamParser.h>
+#include <pacbio/io/BamUtils.h>
 
 #include <pacbio/cleric/Cleric.h>
 
@@ -54,7 +54,7 @@ namespace Cleric {
 void Cleric::Align(const std::string& fromReference, const std::string& toReference,
                    std::string* fromReferenceAligned, std::string* toReferenceAligned)
 {
-    auto align = Align::SimdNeedleWunschAlignment(fromReference, toReference);
+    auto align = Align::PariwiseAlignmentFasta(fromReference, toReference);
 
     *fromReferenceAligned = align.Target;
     *toReferenceAligned = align.Query;
@@ -67,7 +67,7 @@ void Cleric::Convert(std::string outputFile)
     using BAM::CigarOperationType;
 
     // Get data source
-    auto query = IO::BamQuery(alignmentPath_);
+    auto query = IO::BamUtils::BamQuery(alignmentPath_);
     std::unique_ptr<BAM::BamWriter> out;
 
     auto ProcessHeaderAndCreateBamWriter = [this, &outputFile, &out](const BAM::BamRecord& read) {
@@ -90,8 +90,8 @@ void Cleric::Convert(std::string outputFile)
 
         for (size_t pos = 0, i = 0; i < fromReferenceSequence_.size(); ++i) {
             if (fromReferenceSequence_.at(i) != '-') {
-                if (sam_pos_to_fasta_pos.find(i) == sam_pos_to_fasta_pos.cend()) {
-                    sam_pos_to_fasta_pos.emplace(pos, i);
+                if (refToSourcePos_.find(i) == refToSourcePos_.cend()) {
+                    refToSourcePos_.emplace(pos, i);
                 }
                 ++pos;
             }
@@ -99,8 +99,8 @@ void Cleric::Convert(std::string outputFile)
 
         for (size_t pos = 0, i = 0; i < toReferenceSequence_.size(); ++i) {
             if (toReferenceSequence_.at(i) != '-') {
-                if (fasta_pos_to_sam_pos.find(i) == fasta_pos_to_sam_pos.cend()) {
-                    fasta_pos_to_sam_pos.emplace(i, pos);
+                if (sourceToRefPos_.find(i) == sourceToRefPos_.cend()) {
+                    sourceToRefPos_.emplace(i, pos);
                 }
                 ++pos;
             }
@@ -137,33 +137,33 @@ void Cleric::Convert(std::string outputFile)
     // Convert and write to BAM
     for (auto read : *query) {
         if (!out) ProcessHeaderAndCreateBamWriter(read);
-        std::string source_str = fromReferenceSequence_;
-        std::string dest_str = toReferenceSequence_;
+        std::string sourceStr = fromReferenceSequence_;
+        std::string destStr = toReferenceSequence_;
 
         // Expand RLE cigar to flat vector
-        std::string expanded_cigar_ops;
+        std::string expandedCigarOps;
         for (const auto& c : read.CigarData(false))
             for (size_t i = 0; i < c.Length(); ++i)
-                expanded_cigar_ops += c.Char();
-        expanded_cigar_ops += "YZ";
+                expandedCigarOps += c.Char();
+        expandedCigarOps += "YZ";
 
-        CigarOperation old_cigar_state;  // UNKNOW_OP
-        CigarOperation new_cigar_state;  // UNKNOW_OP
+        CigarOperation oldCigarState;  // UNKNOW_OP
+        CigarOperation newCigarState;  // UNKNOW_OP
 
-        bool found_start = false;
-        int pos_in_read = 0;
-        int pos_in_cigar = 0;
-        int pos_in_source_ref = sam_pos_to_fasta_pos.at(read.ReferenceStart());
+        bool foundStart = false;
+        int posInRead = 0;
+        int posInCigar = 0;
+        int posInSourceRef = refToSourcePos_.at(read.ReferenceStart());
 
-        Cigar new_cigar_tuple;
+        Cigar newCigarTuple;
 
-        int new_sam_start = 0;
-        int pos_in_dest_ref = 0;
+        int newSamStart = 0;
+        int posInDestRef = 0;
 
-        while (pos_in_cigar < static_cast<int>(expanded_cigar_ops.size())) {
-            char op = expanded_cigar_ops.at(pos_in_cigar);
+        while (posInCigar < static_cast<int>(expandedCigarOps.size())) {
+            char op = expandedCigarOps.at(posInCigar);
 
-            CigarOperation new_state;  // UNKNOWN_OP
+            CigarOperation newState;  // UNKNOWN_OP
 
             bool isFirstCigarAfterEnd = false;
             bool isSecondCigarAfterEnd = false;
@@ -172,30 +172,29 @@ void Cleric::Convert(std::string outputFile)
                 case 'M':
                 case '=':
                 case 'X':
-                    if (!found_start) {
-                        if (source_str.at(pos_in_source_ref) == '-') {
+                    if (!foundStart) {
+                        if (sourceStr.at(posInSourceRef) == '-') {
                             // Dest:   A---AAA
                             // Source: AAA-AAA
                             // Read:     A-AAA
                             //            ^
 
-                            ++pos_in_source_ref;
+                            ++posInSourceRef;
                             continue;
                         }
 
                         // don't have a start POS yet
-                        if (fasta_pos_to_sam_pos.find(pos_in_source_ref) !=
-                            fasta_pos_to_sam_pos.cend()) {
-                            new_sam_start = fasta_pos_to_sam_pos.at(pos_in_source_ref);
+                        if (sourceToRefPos_.find(posInSourceRef) != sourceToRefPos_.cend()) {
+                            newSamStart = sourceToRefPos_.at(posInSourceRef);
                             // Dest:   ---AAA
                             // Source: AAAAAA
                             // Read:      AAA
                             //            ^
 
-                            new_state = newMatch_;
-                            pos_in_dest_ref = pos_in_source_ref;
-                            found_start = true;
-                            ++pos_in_dest_ref;
+                            newState = newMatch_;
+                            posInDestRef = posInSourceRef;
+                            foundStart = true;
+                            ++posInDestRef;
                         } else {
                             // Dest:   ----AA
                             // Source: AAAAAA
@@ -203,22 +202,22 @@ void Cleric::Convert(std::string outputFile)
                             //            ^
 
                             // left Clip
-                            new_state = newSoft_;
+                            newState = newSoft_;
                         }
 
-                        ++pos_in_cigar;
-                        ++pos_in_read;
-                        ++pos_in_source_ref;
+                        ++posInCigar;
+                        ++posInRead;
+                        ++posInSourceRef;
                     } else {
-                        if (source_str.at(pos_in_source_ref) == '-') {
-                            if (dest_str.at(pos_in_dest_ref) == '-') {
+                        if (sourceStr.at(posInSourceRef) == '-') {
+                            if (destStr.at(posInDestRef) == '-') {
                                 // Dest:   AAA-AAA
                                 // Source: AAA-AAA
                                 // Read:   AAA-AAA
                                 //            ^
 
-                                ++pos_in_source_ref;
-                                ++pos_in_dest_ref;
+                                ++posInSourceRef;
+                                ++posInDestRef;
                                 continue;
                             } else {
                                 // Dest:   AAAAAAA
@@ -227,50 +226,50 @@ void Cleric::Convert(std::string outputFile)
                                 //            ^
 
                                 // Deletion
-                                new_state = newDel_;
+                                newState = newDel_;
 
-                                ++pos_in_source_ref;
-                                ++pos_in_dest_ref;
+                                ++posInSourceRef;
+                                ++posInDestRef;
                             }
                         } else {
-                            if (dest_str.at(pos_in_dest_ref) == '-') {
+                            if (destStr.at(posInDestRef) == '-') {
                                 // Dest:   AAA-AAA
                                 // Source: AAAAAAA
                                 // Read:   AAAAAAA
                                 //            ^
 
                                 // Insertion
-                                new_state = newIns_;
+                                newState = newIns_;
 
-                                ++pos_in_source_ref;
-                                ++pos_in_dest_ref;
-                                ++pos_in_cigar;
-                                ++pos_in_read;
+                                ++posInSourceRef;
+                                ++posInDestRef;
+                                ++posInCigar;
+                                ++posInRead;
                             } else {
                                 // Dest:   AAAAAAA
                                 // Source: AAAAAAA
                                 // Read:   AAAAAAA
                                 //            ^
 
-                                new_state = newMatch_;
+                                newState = newMatch_;
 
-                                ++pos_in_source_ref;
-                                ++pos_in_dest_ref;
-                                ++pos_in_cigar;
-                                ++pos_in_read;
+                                ++posInSourceRef;
+                                ++posInDestRef;
+                                ++posInCigar;
+                                ++posInRead;
                             }
                         }
                     }
                     break;
                 case 'I':
-                    if (!found_start) {
-                        if (source_str.at(pos_in_source_ref) == '-') {
+                    if (!foundStart) {
+                        if (sourceStr.at(posInSourceRef) == '-') {
                             // Dest:   A---AAA
                             // Source: AAA-AAA
                             // Read:     AAAAA
                             //            ^
 
-                            ++pos_in_source_ref;
+                            ++posInSourceRef;
                             continue;
                         }
 
@@ -280,20 +279,20 @@ void Cleric::Convert(std::string outputFile)
                         //           ^
 
                         // left Clip
-                        new_state = newSoft_;
+                        newState = newSoft_;
 
-                        ++pos_in_cigar;
-                        ++pos_in_read;
+                        ++posInCigar;
+                        ++posInRead;
                     } else {
-                        if (source_str.at(pos_in_source_ref) == '-') {
-                            if (dest_str.at(pos_in_dest_ref) == '-') {
+                        if (sourceStr.at(posInSourceRef) == '-') {
+                            if (destStr.at(posInDestRef) == '-') {
                                 // Dest:   AAA -AAA
                                 // Source: AAA -AAA
                                 // Read:   AAAA AAA
                                 //            ^
 
-                                ++pos_in_source_ref;
-                                ++pos_in_dest_ref;
+                                ++posInSourceRef;
+                                ++posInDestRef;
                                 continue;
                             } else {
                                 // Dest:   AAA AAAA
@@ -301,12 +300,12 @@ void Cleric::Convert(std::string outputFile)
                                 // Read:   AAAA AAA
                                 //            ^
 
-                                new_state = newMatch_;
+                                newState = newMatch_;
 
-                                ++pos_in_source_ref;
-                                ++pos_in_dest_ref;
-                                ++pos_in_cigar;
-                                ++pos_in_read;
+                                ++posInSourceRef;
+                                ++posInDestRef;
+                                ++posInCigar;
+                                ++posInRead;
                             }
                         } else {
                             // Dest:   AAA -AAA
@@ -320,23 +319,23 @@ void Cleric::Convert(std::string outputFile)
                             //            ^
 
                             // Insertion
-                            new_state = newIns_;
+                            newState = newIns_;
 
-                            ++pos_in_cigar;
-                            ++pos_in_read;
+                            ++posInCigar;
+                            ++posInRead;
                         }
                     }
                     break;
                 case 'N':
                 case 'D':
-                    if (!found_start) {
-                        if (source_str.at(pos_in_source_ref) == '-') {
+                    if (!foundStart) {
+                        if (sourceStr.at(posInSourceRef) == '-') {
                             // Dest:   A---AAA
                             // Source: AAA-AAA
                             // Read:     A--AA
                             //            ^
 
-                            ++pos_in_source_ref;
+                            ++posInSourceRef;
                             continue;
                         }
 
@@ -345,20 +344,20 @@ void Cleric::Convert(std::string outputFile)
                         // Read:    A-AAA
                         //           ^
 
-                        ++pos_in_cigar;
-                        ++pos_in_source_ref;
+                        ++posInCigar;
+                        ++posInSourceRef;
                         continue;
                     } else {
                         // have start POS
-                        if (source_str.at(pos_in_source_ref) == '-') {
-                            if (dest_str.at(pos_in_dest_ref) == '-') {
+                        if (sourceStr.at(posInSourceRef) == '-') {
+                            if (destStr.at(posInDestRef) == '-') {
                                 // Dest:   AAA-AAA
                                 // Source: AAA-AAA
                                 // Read:   AAA-AAA
                                 //            ^
 
-                                ++pos_in_source_ref;
-                                ++pos_in_dest_ref;
+                                ++posInSourceRef;
+                                ++posInDestRef;
                                 continue;
                             } else {
                                 // Dest:   AAAAAAA
@@ -367,24 +366,24 @@ void Cleric::Convert(std::string outputFile)
                                 //            ^
 
                                 // Deletion
-                                new_state = newDel_;
+                                newState = newDel_;
 
-                                ++pos_in_source_ref;
-                                ++pos_in_dest_ref;
+                                ++posInSourceRef;
+                                ++posInDestRef;
                             }
                         } else {
-                            if (dest_str.at(pos_in_dest_ref) == '-') {
+                            if (destStr.at(posInDestRef) == '-') {
                                 // Dest:   AAA-AAA
                                 // Source: AAAAAAA
                                 // Read:   AAA-AAA
                                 //            ^
 
                                 // Padded deletion
-                                ++pos_in_source_ref;
-                                ++pos_in_dest_ref;
-                                ++pos_in_cigar;
+                                ++posInSourceRef;
+                                ++posInDestRef;
+                                ++posInCigar;
 
-                                new_state = newPad_;
+                                newState = newPad_;
                             } else {
                                 // Dest:   AAAAAAA
                                 // Source: AAAAAAA
@@ -392,50 +391,50 @@ void Cleric::Convert(std::string outputFile)
                                 //            ^
 
                                 // Deletion
-                                new_state = newDel_;
+                                newState = newDel_;
 
-                                ++pos_in_source_ref;
-                                ++pos_in_dest_ref;
-                                ++pos_in_cigar;
+                                ++posInSourceRef;
+                                ++posInDestRef;
+                                ++posInCigar;
                             }
                         }
                     }
                     break;
                 case 'S':
-                    new_state = newSoft_;
+                    newState = newSoft_;
 
-                    ++pos_in_cigar;
-                    ++pos_in_read;
+                    ++posInCigar;
+                    ++posInRead;
                     break;
                 case 'H':
-                    new_state = CigarOperation(CigarOperationType::HARD_CLIP, 1);
+                    newState = CigarOperation(CigarOperationType::HARD_CLIP, 1);
 
-                    ++pos_in_cigar;
+                    ++posInCigar;
                     break;
                 case 'P':
-                    if (found_start) {
+                    if (foundStart) {
                         // Dest:   ---AAA
                         // Source: AAAAAA
                         // Read:    A-AAA
                         //           ^
 
-                        ++pos_in_cigar;
-                        ++pos_in_source_ref;
+                        ++posInCigar;
+                        ++posInSourceRef;
                         continue;
 
                     } else {
                         // have start POS
-                        if (source_str.at(pos_in_source_ref) == '-') {
-                            if (dest_str.at(pos_in_dest_ref) == '-') {
+                        if (sourceStr.at(posInSourceRef) == '-') {
+                            if (destStr.at(posInDestRef) == '-') {
                                 // Dest:   AAA-AAA
                                 // Source: AAA-AAA
                                 // Read:   AAA-AAA
                                 //            ^
 
                                 // Padded deletion
-                                ++pos_in_cigar;
+                                ++posInCigar;
 
-                                new_state = newPad_;
+                                newState = newPad_;
                             } else {
                                 // Dest:   AAAAAAA
                                 // Source: AAA-AAA
@@ -443,11 +442,11 @@ void Cleric::Convert(std::string outputFile)
                                 //            ^
 
                                 // Deletion
-                                new_state = newDel_;
+                                newState = newDel_;
 
-                                ++pos_in_cigar;
-                                ++pos_in_source_ref;
-                                ++pos_in_dest_ref;
+                                ++posInCigar;
+                                ++posInSourceRef;
+                                ++posInDestRef;
                             }
                         } else {
                             // Dest:   AAA--AAA
@@ -461,18 +460,18 @@ void Cleric::Convert(std::string outputFile)
                             //            ^
 
                             // Padded deletion
-                            ++pos_in_cigar;
+                            ++posInCigar;
 
-                            new_state = newPad_;
+                            newState = newPad_;
                         }
                     }
                     break;
                 case 'Y':
-                    ++pos_in_cigar;
+                    ++posInCigar;
                     isFirstCigarAfterEnd = true;
                     break;
                 case 'Z':
-                    ++pos_in_cigar;
+                    ++posInCigar;
                     isSecondCigarAfterEnd = true;
                     break;
                 default:
@@ -481,94 +480,94 @@ void Cleric::Convert(std::string outputFile)
 
             // If we reached Z, we have processed the CIGAR and can push the
             // lastest cigar operation.
-            if (isSecondCigarAfterEnd) new_cigar_tuple.push_back(old_cigar_state);
+            if (isSecondCigarAfterEnd) newCigarTuple.push_back(oldCigarState);
 
-            if (new_state.Type() != new_cigar_state.Type()) {
+            if (newState.Type() != newCigarState.Type()) {
                 // I ...... Y (end)
-                if (new_state.Type() == CigarOperationType::UNKNOWN_OP && isFirstCigarAfterEnd &&
-                    new_cigar_state.Type() == CigarOperationType::INSERTION) {
-                    new_cigar_state.Type(CigarOperationType::SOFT_CLIP);
+                if (newState.Type() == CigarOperationType::UNKNOWN_OP && isFirstCigarAfterEnd &&
+                    newCigarState.Type() == CigarOperationType::INSERTION) {
+                    newCigarState.Type(CigarOperationType::SOFT_CLIP);
                 }
 
                 // have to rewrite CIGAR tuples if, a D and I operations are adjacent
                 // D + I
-                if (old_cigar_state.Type() == CigarOperationType::DELETION &&
-                    new_cigar_state.Type() == CigarOperationType::INSERTION) {
-                    const int num_del = old_cigar_state.Length();
-                    const int num_insert = new_cigar_state.Length();
-                    const int num_match = std::min(num_del, num_insert);
+                if (oldCigarState.Type() == CigarOperationType::DELETION &&
+                    newCigarState.Type() == CigarOperationType::INSERTION) {
+                    const int numDel = oldCigarState.Length();
+                    const int numInsert = newCigarState.Length();
+                    const int numMatch = std::min(numDel, numInsert);
 
-                    if (num_del == num_insert) {
+                    if (numDel == numInsert) {
                         // Dest:   GC AA-- TC      GC AA TC
                         // Read:   GC --AA TC  ->  GC AA TC
                         //            DDII            MM
-                        old_cigar_state = CigarOperation();
-                        new_cigar_state =
-                            CigarOperation(CigarOperationType::SEQUENCE_MATCH, num_match);
+                        oldCigarState = CigarOperation();
+                        newCigarState =
+                            CigarOperation(CigarOperationType::SEQUENCE_MATCH, numMatch);
 
-                    } else if (num_del > num_insert) {
+                    } else if (numDel > numInsert) {
                         // Dest:   GC AAA-- TC      GC AAA TC
                         // Read:   GC ---AA TC  ->  GC -AA TC
                         //            DDDII            DMM
-                        old_cigar_state =
-                            CigarOperation(CigarOperationType::DELETION, num_del - num_match);
-                        new_cigar_state =
-                            CigarOperation(CigarOperationType::SEQUENCE_MATCH, num_match);
+                        oldCigarState =
+                            CigarOperation(CigarOperationType::DELETION, numDel - numMatch);
+                        newCigarState =
+                            CigarOperation(CigarOperationType::SEQUENCE_MATCH, numMatch);
 
                     } else {
                         // Dest:   GC AA--- TC      GC AA- TC
                         // Read:   GC --AAA TC  ->  GC AAA TC
                         //            DDIII            MMI
-                        old_cigar_state =
-                            CigarOperation(CigarOperationType::SEQUENCE_MATCH, num_match);
-                        new_cigar_state =
-                            CigarOperation(CigarOperationType::INSERTION, num_insert - num_match);
+                        oldCigarState =
+                            CigarOperation(CigarOperationType::SEQUENCE_MATCH, numMatch);
+                        newCigarState =
+                            CigarOperation(CigarOperationType::INSERTION, numInsert - numMatch);
                     }
                 }
 
                 // I + D
-                if (old_cigar_state.Type() == CigarOperationType::INSERTION &&
-                    new_cigar_state.Type() == CigarOperationType::DELETION) {
-                    const int num_insert = old_cigar_state.Length();
-                    const int num_del = new_cigar_state.Length();
-                    const int num_match = std::min(num_del, num_insert);
+                if (oldCigarState.Type() == CigarOperationType::INSERTION &&
+                    newCigarState.Type() == CigarOperationType::DELETION) {
+                    const int numInsert = oldCigarState.Length();
+                    const int numDel = newCigarState.Length();
+                    const int numMatch = std::min(numDel, numInsert);
 
-                    if (num_del == num_insert) {
+                    if (numDel == numInsert) {
                         // Dest:   GC --AA TC  ->  GC AA TC
                         // Read:   GC AA-- TC      GC AA TC
                         //            IIDD            MM
-                        old_cigar_state = CigarOperation();
-                        new_cigar_state =
-                            CigarOperation(CigarOperationType::SEQUENCE_MATCH, num_match);
+                        oldCigarState = CigarOperation();
+                        newCigarState =
+                            CigarOperation(CigarOperationType::SEQUENCE_MATCH, numMatch);
 
-                    } else if (num_del > num_insert) {
+                    } else if (numDel > numInsert) {
                         // Dest:   GC --AAA TC  ->  GC AAA TC
                         // Read:   GC AA--- TC      GC AA- TC
                         //            IIDDD            MMD
-                        old_cigar_state =
-                            CigarOperation(CigarOperationType::SEQUENCE_MATCH, num_match);
-                        new_cigar_state =
-                            CigarOperation(CigarOperationType::DELETION, num_del - num_match);
+                        oldCigarState =
+                            CigarOperation(CigarOperationType::SEQUENCE_MATCH, numMatch);
+                        newCigarState =
+                            CigarOperation(CigarOperationType::DELETION, numDel - numMatch);
 
                     } else {
                         // Dest:   GC ---AA TC  ->  GC -AA TC
                         // Read:   GC AAA-- TC      GC AAA TC
                         //            IIIDD            IMM
-                        old_cigar_state =
-                            CigarOperation(CigarOperationType::INSERTION, num_insert - num_match);
-                        new_cigar_state =
-                            CigarOperation(CigarOperationType::SEQUENCE_MATCH, num_match);
+                        oldCigarState =
+                            CigarOperation(CigarOperationType::INSERTION, numInsert - numMatch);
+                        newCigarState =
+                            CigarOperation(CigarOperationType::SEQUENCE_MATCH, numMatch);
                     }
                 }
 
-                if ((old_cigar_state.Type() != CigarOperationType::UNKNOWN_OP)) {
-                    new_cigar_tuple.push_back(old_cigar_state);
+                if ((oldCigarState.Type() != CigarOperationType::UNKNOWN_OP)) {
+                    newCigarTuple.push_back(oldCigarState);
                 }
                 // swap old and new state
-                old_cigar_state = new_cigar_state;
-                new_cigar_state = CigarOperation(new_state.Type(), 1);
+                oldCigarState = newCigarState;
+                newCigarState = CigarOperation(newState.Type(), 1);
             } else {
-                new_cigar_state.Length(new_cigar_state.Length() + 1);
+                newCigarState.Length(newCigarState.Length() + 1);
             }
         }
 
@@ -577,47 +576,45 @@ void Cleric::Convert(std::string outputFile)
         //////////////////////////////////////
         // check left flanking region + merge M-M pairs
         int i = 0;
-        while (i < static_cast<int>(new_cigar_tuple.size()) - 1) {
-            CigarOperation left_op = new_cigar_tuple.at(i);
-            CigarOperation right_op = new_cigar_tuple.at(i + 1);
+        while (i < static_cast<int>(newCigarTuple.size()) - 1) {
+            CigarOperation leftOp = newCigarTuple.at(i);
+            CigarOperation rightOp = newCigarTuple.at(i + 1);
 
             // clang-format off
             // M + M:
-            if (left_op.Type() == CigarOperationType::SEQUENCE_MATCH && right_op.Type() == CigarOperationType::SEQUENCE_MATCH) {
-                new_cigar_tuple[i] =
-                    CigarOperation(CigarOperationType::SEQUENCE_MATCH, left_op.Length() + right_op.Length());
-                new_cigar_tuple.erase(new_cigar_tuple.begin() + i + 1);
+            if (leftOp.Type() == CigarOperationType::SEQUENCE_MATCH && rightOp.Type() == CigarOperationType::SEQUENCE_MATCH) {
+                newCigarTuple[i] = CigarOperation(CigarOperationType::SEQUENCE_MATCH, leftOp.Length() + rightOp.Length());
+                newCigarTuple.erase(newCigarTuple.begin() + i + 1);
             }
             // S + I:
-            else if (left_op.Type() == CigarOperationType::SOFT_CLIP && right_op.Type() == CigarOperationType::INSERTION) {
-                new_cigar_tuple[i] = CigarOperation(
-                    CigarOperationType::SOFT_CLIP, left_op.Length() + right_op.Length());
-                new_cigar_tuple.erase(new_cigar_tuple.begin() + i + 1);
+            else if (leftOp.Type() == CigarOperationType::SOFT_CLIP && rightOp.Type() == CigarOperationType::INSERTION) {
+                newCigarTuple[i] = CigarOperation(CigarOperationType::SOFT_CLIP, leftOp.Length() + rightOp.Length());
+                newCigarTuple.erase(newCigarTuple.begin() + i + 1);
             }
             // S + D:
-            else if (left_op.Type() == CigarOperationType::SOFT_CLIP && right_op.Type() == CigarOperationType::DELETION) {
-                new_cigar_tuple[i] = CigarOperation(CigarOperationType::SOFT_CLIP, left_op.Length());
-                new_cigar_tuple.erase(new_cigar_tuple.begin() + i + 1);
+            else if (leftOp.Type() == CigarOperationType::SOFT_CLIP && rightOp.Type() == CigarOperationType::DELETION) {
+                newCigarTuple[i] = CigarOperation(CigarOperationType::SOFT_CLIP, leftOp.Length());
+                newCigarTuple.erase(newCigarTuple.begin() + i + 1);
             }
             // S + P:
-            else if (left_op.Type() == CigarOperationType::SOFT_CLIP && right_op.Type() == CigarOperationType::PADDING) {
-                new_cigar_tuple[i] = CigarOperation(CigarOperationType::SOFT_CLIP, left_op.Length());
-                new_cigar_tuple.erase(new_cigar_tuple.begin() + i + 1);
+            else if (leftOp.Type() == CigarOperationType::SOFT_CLIP && rightOp.Type() == CigarOperationType::PADDING) {
+                newCigarTuple[i] = CigarOperation(CigarOperationType::SOFT_CLIP, leftOp.Length());
+                newCigarTuple.erase(newCigarTuple.begin() + i + 1);
             }
             // H + I:
-            else if (left_op.Type() == CigarOperationType::HARD_CLIP && right_op.Type() == CigarOperationType::INSERTION) {
-                new_cigar_tuple[i + 1] = CigarOperation(CigarOperationType::SOFT_CLIP, right_op.Length());
+            else if (leftOp.Type() == CigarOperationType::HARD_CLIP && rightOp.Type() == CigarOperationType::INSERTION) {
+                newCigarTuple[i + 1] = CigarOperation(CigarOperationType::SOFT_CLIP, rightOp.Length());
                 ++i;
             }
             // H + D:
-            else if (left_op.Type() == CigarOperationType::HARD_CLIP && right_op.Type() == CigarOperationType::DELETION) {
-                new_cigar_tuple[i] = CigarOperation(CigarOperationType::HARD_CLIP, left_op.Length());
-                new_cigar_tuple.erase(new_cigar_tuple.begin() + i + 1);
+            else if (leftOp.Type() == CigarOperationType::HARD_CLIP && rightOp.Type() == CigarOperationType::DELETION) {
+                newCigarTuple[i] = CigarOperation(CigarOperationType::HARD_CLIP, leftOp.Length());
+                newCigarTuple.erase(newCigarTuple.begin() + i + 1);
             }
             // H + P:
-            else if (left_op.Type() == CigarOperationType::HARD_CLIP && right_op.Type() == CigarOperationType::PADDING) {
-                new_cigar_tuple[i] = CigarOperation(CigarOperationType::HARD_CLIP, left_op.Length());
-                new_cigar_tuple.erase(new_cigar_tuple.begin() + i + 1);
+            else if (leftOp.Type() == CigarOperationType::HARD_CLIP && rightOp.Type() == CigarOperationType::PADDING) {
+                newCigarTuple[i] = CigarOperation(CigarOperationType::HARD_CLIP, leftOp.Length());
+                newCigarTuple.erase(newCigarTuple.begin() + i + 1);
             // H + S:
             } else {
                 ++i;
@@ -626,65 +623,52 @@ void Cleric::Convert(std::string outputFile)
         }
 
         // check right flanking region
-        i = new_cigar_tuple.size() - 2;
-        // cant_stop = True
+        i = newCigarTuple.size() - 2;
         while (i >= 0) {
-            // cant_stop = False
 
-            CigarOperation left_op = new_cigar_tuple.at(i);
-            CigarOperation right_op = new_cigar_tuple.at(i + 1);
+            CigarOperation leftOp = newCigarTuple.at(i);
+            CigarOperation rightOp = newCigarTuple.at(i + 1);
 
-            if (left_op.Type() == CigarOperationType::SEQUENCE_MATCH) {
+            if (leftOp.Type() == CigarOperationType::SEQUENCE_MATCH) {
                 // reached a match state, hence everything
                 // before will be compliant
                 break;
             }
             // I + S:
-            if (left_op.Type() == CigarOperationType::INSERTION &&
-                right_op.Type() == CigarOperationType::SOFT_CLIP) {
-                // cant_stop = True
-                new_cigar_tuple[i] = CigarOperation(CigarOperationType::SOFT_CLIP,
-                                                    left_op.Length() + right_op.Length());
-                new_cigar_tuple.erase(new_cigar_tuple.begin() + i + 1);
+            if (leftOp.Type() == CigarOperationType::INSERTION &&
+                rightOp.Type() == CigarOperationType::SOFT_CLIP) {
+                newCigarTuple[i] = CigarOperation(CigarOperationType::SOFT_CLIP,
+                                                  leftOp.Length() + rightOp.Length());
+                newCigarTuple.erase(newCigarTuple.begin() + i + 1);
             }
             // D + S:
-            else if (left_op.Type() == CigarOperationType::DELETION &&
-                     right_op.Type() == CigarOperationType::SOFT_CLIP) {
-                // cant_stop = True
-                new_cigar_tuple[i] =
-                    CigarOperation(CigarOperationType::SOFT_CLIP, right_op.Length());
-                new_cigar_tuple.erase(new_cigar_tuple.begin() + i + 1);
+            else if (leftOp.Type() == CigarOperationType::DELETION &&
+                     rightOp.Type() == CigarOperationType::SOFT_CLIP) {
+                newCigarTuple[i] = CigarOperation(CigarOperationType::SOFT_CLIP, rightOp.Length());
+                newCigarTuple.erase(newCigarTuple.begin() + i + 1);
             }
             // P + S:
-            else if (left_op.Type() == CigarOperationType::PADDING &&
-                     right_op.Type() == CigarOperationType::SOFT_CLIP) {
-                // cant_stop = True
-                new_cigar_tuple[i] =
-                    CigarOperation(CigarOperationType::SOFT_CLIP, right_op.Length());
-                new_cigar_tuple.erase(new_cigar_tuple.begin() + i + 1);
+            else if (leftOp.Type() == CigarOperationType::PADDING &&
+                     rightOp.Type() == CigarOperationType::SOFT_CLIP) {
+                newCigarTuple[i] = CigarOperation(CigarOperationType::SOFT_CLIP, rightOp.Length());
+                newCigarTuple.erase(newCigarTuple.begin() + i + 1);
             }
             // I + H:
-            else if (left_op.Type() == CigarOperationType::INSERTION &&
-                     right_op.Type() == CigarOperationType::HARD_CLIP) {
-                // cant_stop = True
-                new_cigar_tuple[i] =
-                    CigarOperation(CigarOperationType::SOFT_CLIP, left_op.Length());
+            else if (leftOp.Type() == CigarOperationType::INSERTION &&
+                     rightOp.Type() == CigarOperationType::HARD_CLIP) {
+                newCigarTuple[i] = CigarOperation(CigarOperationType::SOFT_CLIP, leftOp.Length());
             }
             // D + H:
-            else if (left_op.Type() == CigarOperationType::DELETION &&
-                     right_op.Type() == CigarOperationType::HARD_CLIP) {
-                // cant_stop = True
-                new_cigar_tuple[i] =
-                    CigarOperation(CigarOperationType::HARD_CLIP, right_op.Length());
-                new_cigar_tuple.erase(new_cigar_tuple.begin() + i + 1);
+            else if (leftOp.Type() == CigarOperationType::DELETION &&
+                     rightOp.Type() == CigarOperationType::HARD_CLIP) {
+                newCigarTuple[i] = CigarOperation(CigarOperationType::HARD_CLIP, rightOp.Length());
+                newCigarTuple.erase(newCigarTuple.begin() + i + 1);
             }
             // P + H:
-            else if (left_op.Type() == CigarOperationType::PADDING &&
-                     right_op.Type() == CigarOperationType::HARD_CLIP) {
-                // cant_stop = True
-                new_cigar_tuple[i] =
-                    CigarOperation(CigarOperationType::HARD_CLIP, right_op.Length());
-                new_cigar_tuple.erase(new_cigar_tuple.begin() + i + 1);
+            else if (leftOp.Type() == CigarOperationType::PADDING &&
+                     rightOp.Type() == CigarOperationType::HARD_CLIP) {
+                newCigarTuple[i] = CigarOperation(CigarOperationType::HARD_CLIP, rightOp.Length());
+                newCigarTuple.erase(newCigarTuple.begin() + i + 1);
             }
             --i;
         }
@@ -692,8 +676,8 @@ void Cleric::Convert(std::string outputFile)
         std::string new_seq = read.Sequence(BAM::Orientation::GENOMIC);
 
         // calculate edit distance (and possibly replace match states)
-        pos_in_read = 0;
-        pos_in_dest_ref = new_sam_start;
+        posInRead = 0;
+        posInDestRef = newSamStart;
         int new_edit_distance = 0;
         Cigar replace_cigar_tuple;
 
@@ -704,17 +688,17 @@ void Cleric::Convert(std::string outputFile)
                 return CigarOperationType::SEQUENCE_MISMATCH;
         };
 
-        for (const auto& op : new_cigar_tuple) {
-            const CigarOperationType cigar_op = op.Type();
-            const int cigar_op_count = op.Length();
+        for (const auto& op : newCigarTuple) {
+            const CigarOperationType cigarOp = op.Type();
+            const int cigarOp_count = op.Length();
 
-            if (cigar_op == CigarOperationType::SEQUENCE_MATCH) {
-                auto old_state = match_state_det(new_seq.at(pos_in_read),
-                                                 toReferenceGapless_.at(pos_in_dest_ref));
+            if (cigarOp == CigarOperationType::SEQUENCE_MATCH) {
+                auto old_state =
+                    match_state_det(new_seq.at(posInRead), toReferenceGapless_.at(posInDestRef));
                 int count = 1;
-                for (int i = 1; i < cigar_op_count; ++i) {
+                for (int i = 1; i < cigarOp_count; ++i) {
                     const auto next_state = match_state_det(
-                        new_seq.at(pos_in_read + i), toReferenceGapless_.at(pos_in_dest_ref + i));
+                        new_seq.at(posInRead + i), toReferenceGapless_.at(posInDestRef + i));
                     if (old_state != next_state) {
                         if (old_state == CigarOperationType::SEQUENCE_MISMATCH)
                             new_edit_distance += count;
@@ -729,29 +713,29 @@ void Cleric::Convert(std::string outputFile)
                 if (old_state == CigarOperationType::SEQUENCE_MISMATCH) new_edit_distance += count;
                 replace_cigar_tuple.emplace_back(old_state, count);
 
-                pos_in_read += cigar_op_count;
-                pos_in_dest_ref += cigar_op_count;
-            } else if (cigar_op == CigarOperationType::INSERTION) {
-                new_edit_distance += cigar_op_count;
-                replace_cigar_tuple.emplace_back(cigar_op, cigar_op_count);
-                pos_in_read += cigar_op_count;
-            } else if (cigar_op == CigarOperationType::DELETION) {
-                new_edit_distance += cigar_op_count;
-                replace_cigar_tuple.emplace_back(cigar_op, cigar_op_count);
-                pos_in_dest_ref += cigar_op_count;
-            } else if (cigar_op == CigarOperationType::SOFT_CLIP) {
-                replace_cigar_tuple.emplace_back(cigar_op, cigar_op_count);
-                pos_in_read += cigar_op_count;
-            } else if (cigar_op == CigarOperationType::HARD_CLIP ||
-                       cigar_op == CigarOperationType::PADDING) {
-                replace_cigar_tuple.emplace_back(cigar_op, cigar_op_count);
+                posInRead += cigarOp_count;
+                posInDestRef += cigarOp_count;
+            } else if (cigarOp == CigarOperationType::INSERTION) {
+                new_edit_distance += cigarOp_count;
+                replace_cigar_tuple.emplace_back(cigarOp, cigarOp_count);
+                posInRead += cigarOp_count;
+            } else if (cigarOp == CigarOperationType::DELETION) {
+                new_edit_distance += cigarOp_count;
+                replace_cigar_tuple.emplace_back(cigarOp, cigarOp_count);
+                posInDestRef += cigarOp_count;
+            } else if (cigarOp == CigarOperationType::SOFT_CLIP) {
+                replace_cigar_tuple.emplace_back(cigarOp, cigarOp_count);
+                posInRead += cigarOp_count;
+            } else if (cigarOp == CigarOperationType::HARD_CLIP ||
+                       cigarOp == CigarOperationType::PADDING) {
+                replace_cigar_tuple.emplace_back(cigarOp, cigarOp_count);
             } else {
                 throw std::runtime_error("STATE should not occur " +
-                                         std::to_string(static_cast<int>(cigar_op)));
+                                         std::to_string(static_cast<int>(cigarOp)));
             }
         }
         read.Impl().CigarData(replace_cigar_tuple);
-        read.Impl().Position(new_sam_start);
+        read.Impl().Position(newSamStart);
         if (read.Impl().HasTag("NM"))
             read.Impl().EditTag("NM", new_edit_distance);
         else

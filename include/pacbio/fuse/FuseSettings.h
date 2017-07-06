@@ -49,23 +49,24 @@ namespace Fuse {
 /// Contains user provided CLI configuration for ConsensusFixer
 struct FuseSettings
 {
-    std::string InputFile;
-    std::string OutputFile;
-    int MinCoverage = 0;
-    int RegionStart = 0;
-    int RegionEnd = std::numeric_limits<int>::max();
-
-    /// Parses the provided CLI::Results and retrieves a defined set of options.
-    FuseSettings(const PacBio::CLI::Results& options);
-
-    size_t ThreadCount(int n);
-
+public:
     /// Given the description of the tool and its version, create all
     /// necessary CLI::Options for the ccs executable.
     static PacBio::CLI::Interface CreateCLI();
 
     /// Splits region into ReconstructionStart and ReconstructionEnd.
     static void SplitRegion(const std::string& region, int* start, int* end);
+
+public:
+    /// Parses the provided CLI::Results and retrieves a defined set of options.
+    FuseSettings(const PacBio::CLI::Results& options);
+
+public:
+    std::string InputFile;
+    std::string OutputFile;
+    int MinCoverage = 0;
+    int RegionStart = 0;
+    int RegionEnd = std::numeric_limits<int>::max();
 };
 }
 }  // ::PacBio::Fuse

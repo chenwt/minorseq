@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2017, Pacific Biosciences of California, Inc.
+// Copyright (c) 2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,56 +35,29 @@
 
 // Author: Armin Töpfer
 
-#pragma once
-
-#include <map>
+#include <cstdlib>
 #include <string>
-#include <vector>
 
-#include <pacbio/data/ArrayRead.h>
-#include <pacbio/data/MSAByRow.h>
-#include <pacbio/data/MSAColumn.h>
+#include <pacbio/data/QvThresholds.h>
 
 namespace PacBio {
 namespace Data {
-/// Multiple sequence alignment containing counts
-class MSAByColumn
+QvThresholds::QvThresholds()
 {
-private:
-    using MsaVec = std::vector<MSAColumn>;
+    auto SetQV = [](const char* env, boost::optional<uint8_t>* qv,
+                    boost::optional<uint8_t> defaultQv = boost::none) {
+        char* val = std::getenv(env);
+        *qv = val == NULL ? defaultQv : std::stoi(std::string(val));
+    };
+    SetQV("DELQV", &DelQV);
+    SetQV("SUBQV", &SubQV, 42);
+    SetQV("INSQV", &InsQV);
+    SetQV("QUALQV", &QualQV);
+}
 
-public:
-    using MsaIt = MsaVec::iterator;
-    using MsaItConst = MsaVec::const_iterator;
-
-public:
-    MSAByColumn(const MSAByRow& nucMat);
-
-public:
-    /// Parameter is an index in ABSOLUTE reference space
-    MSAColumn operator[](int i) const { return counts[i - beginPos]; }
-    /// Parameter is an index in ABSOLUTE reference space
-    MSAColumn& operator[](int i) { return counts[i - beginPos]; }
-
-    bool has(int i) { return i >= beginPos && i < endPos; }
-
-    // clang-format off
-    MsaIt      begin()        { return counts.begin();  }
-    MsaIt      end()          { return counts.end();    }
-    MsaItConst begin() const  { return counts.begin();  }
-    MsaItConst end() const    { return counts.end();    }
-    MsaItConst cbegin() const { return counts.cbegin(); }
-    MsaItConst cend() const   { return counts.cend();   }
-    // clang-format on
-
-public:
-    MsaVec counts;
-    int beginPos = std::numeric_limits<int>::max();
-    int endPos = 0;
-
-private:
-    void BeginEnd(const Data::ArrayRead& read);
-    void FillCounts(const ArrayRead& read, const QvThresholds& qvThresholds);
-};
-}  // namespace Data
-}  // namespace PacBio
+boost::optional<uint8_t> DelQV;
+boost::optional<uint8_t> SubQV;
+boost::optional<uint8_t> InsQV;
+boost::optional<uint8_t> QualQV;
+}
+}
