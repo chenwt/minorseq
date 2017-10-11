@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
+// Copyright (c) 2014-2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,40 +35,22 @@
 
 // Author: Armin Töpfer
 
-#pragma once
-
-#include <fstream>
-#include <string>
-#include <vector>
-
-#include <pacbio/data/MSA.h>
-#include <pbbam/BamRecord.h>
+#include <pacbio/data/PlainOption.h>
 
 namespace PacBio {
-namespace Fuse {
-
-class Fuse
+namespace Data {
+PlainOption::PlainOption(const std::string& id, const std::vector<std::string>& cliOptions,
+                         const std::string& name, const std::string& description,
+                         const JSON::Json& defaultValue, const JSON::Json& choices,
+                         const CLI::OptionFlags& flags)
+    : id_(id)
+    , cliOptions_(cliOptions)
+    , name_(name)
+    , description_(description)
+    , defaultValue_(defaultValue)
+    , choices_(choices)
+    , flags_(flags)
 {
-public:
-    Fuse(const std::string& ccsInput, int minCoverage);
-    Fuse(const std::vector<Data::ArrayRead>& arrayReads);
-
-public:
-    std::string ConsensusSequence() const { return consensusSequence_; }
-
-private:
-    std::vector<Data::ArrayRead> FetchAlignedReads(const std::string& ccsInput) const;
-    std::string CreateConsensus(const std::vector<Data::ArrayRead>& arrayReads) const;
-    std::map<int, std::pair<std::string, int>> CollectInsertions(
-        const Data::MSAByColumn& msa) const;
-    std::pair<int, std::string> FindInsertions(
-        std::map<int, std::pair<std::string, int>>* posInsCov, int windowSize = 20) const;
-
-private:
-    const int minCoverageRecommended_ = 50;
-    const double minInsertionCoverageFreq_ = 0.5;
-
-    std::string consensusSequence_;
-};
 }
-}  // ::PacBio::Fuse
+}
+}  // :: PacBio::CLI

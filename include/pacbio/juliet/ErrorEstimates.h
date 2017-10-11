@@ -46,24 +46,20 @@
 namespace PacBio {
 namespace Juliet {
 /// Contains CCS error estimates
-class ErrorEstimates
+struct ErrorEstimates
 {
 public:
     ErrorEstimates() = default;
     ErrorEstimates(const std::string& chemistry);
     ErrorEstimates(const double substitutionRate, const double deletionRate);
 
-    double match = -1;
-    double substitution = -1;
-    double deletion = -1;
-    double insertion = -1;
-
-    friend std::ostream& operator<<(std::ostream& stream, const ErrorEstimates& r)
-    {
-        stream << "match:" << r.match << "\tsubstitution:" << r.substitution
-               << "\tdeletion:" << r.deletion << "\tinsertion:" << r.insertion;
-        return stream;
-    }
+public:
+    double Match = -1;
+    double Substitution = -1;
+    double Deletion = -1;
+    double Insertion = -1;
 };
 }
 }  // ::PacBio::Juliet
+
+#include "pacbio/juliet/internal/ErrorEstimates.inl"

@@ -35,40 +35,55 @@
 
 // Author: Armin Töpfer
 
-#include <array>
-#include <numeric>
-
-#include <pacbio/data/FisherResult.h>
-
-#include <pacbio/data/MSAColumn.h>
-
 namespace PacBio {
 namespace Data {
-int MSAColumn::Coverage() const { return std::accumulate(counts.cbegin(), counts.cend(), 0); }
-int MSAColumn::MaxElement() const
-{
-    return std::distance(counts.begin(), std::max_element(counts.begin(), counts.end()));
-}
-char MSAColumn::MaxBase() const
-{
-    static const char bases[]{'A', 'C', 'G', 'T', '-'};
-    int maxElement = MaxElement();
-    if (maxElement == 5)
-        return ' ';
-    else
-        return bases[maxElement];
-}
-int MSAColumn::Max() const { return counts.at(MaxElement()); }
 
-void MSAColumn::AddFisherResult(const FisherResult& f)
+inline int ArrayRead::ReferenceStart() const { return referenceStart_; }
+inline int ArrayRead::ReferenceEnd() const { return referenceEnd_; }
+inline const std::vector<ArrayBase>& ArrayRead::Bases() const
 {
-    pValues = f.pValues;
-    mask = f.mask;
-    hit = f.hit;
-    argMax = f.argMax;
+    return const_cast<std::vector<ArrayBase>&>(bases_);
+}
+inline const std::string& ArrayRead::Name() const { return name_; }
+
+inline std::string ArrayRead::SequencingChemistry() const { return ""; }
+
+inline std::string BAMArrayRead::SequencingChemistry() const
+{
+    return Record.ReadGroup().SequencingChemistry();
 }
 
-void MSAColumn::AddFisherResult(const std::map<std::string, double>& f) { insertionsPValues = f; }
+inline std::ostream& operator<<(std::ostream& stream, const ArrayRead& r)
+{
+    stream << r.ReferenceStart() << std::endl;
+    for (const auto& b : r.bases_)
+        stream << b.Cigar;
+    stream << std::endl;
+    for (const auto& b : r.bases_)
+        stream << b.Nucleotide;
+    return stream;
+}
 
+inline bool ArrayBase::MeetQVThresholds(const QvThresholds& qvs) const
+{
+    return MeetQualQVThreshold(qvs.QualQV) && MeetDelQVThreshold(qvs.DelQV) &&
+           MeetSubQVThreshold(qvs.SubQV) && MeetInsQVThreshold(qvs.InsQV);
+}
+inline bool ArrayBase::MeetQualQVThreshold(boost::optional<uint8_t> threshold) const
+{
+    return !threshold || !QualQV || *QualQV >= *threshold;
+}
+inline bool ArrayBase::MeetDelQVThreshold(boost::optional<uint8_t> threshold) const
+{
+    return !threshold || !DelQV || *DelQV >= *threshold;
+}
+inline bool ArrayBase::MeetSubQVThreshold(boost::optional<uint8_t> threshold) const
+{
+    return !threshold || !SubQV || *SubQV >= *threshold;
+}
+inline bool ArrayBase::MeetInsQVThreshold(boost::optional<uint8_t> threshold) const
+{
+    return !threshold || !InsQV || *InsQV >= *threshold;
+}
 }  // namespace Data
 }  // namespace PacBio

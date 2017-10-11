@@ -51,8 +51,6 @@
 namespace PacBio {
 namespace Juliet {
 
-/// Generate HTML output of variant amino acids
-
 void JsonToHtml::DRMView(std::ostream& out, const JSON::Json& j, const TargetConfig& config,
                          bool onlyKnownDRMs)
 {
@@ -166,7 +164,7 @@ void JsonToHtml::DRMView(std::ostream& out, const JSON::Json& j, const TargetCon
     out << "</table>" << std::endl;
 }
 
-void JsonToHtml::Encode(std::string& data)
+void JsonToHtml::Escape(std::string& data)
 {
     std::string buffer;
     buffer.reserve(data.size());
@@ -205,8 +203,8 @@ std::string JsonToHtml::Strip(const std::string& input)
 void JsonToHtml::HTML(std::ostream& out, const JSON::Json& j, const TargetConfig& config,
                       bool onlyKnownDRMs, std::string filename, std::string parameters)
 {
-    Encode(filename);
-    Encode(parameters);
+    Escape(filename);
+    Escape(parameters);
     // Count number of haplotypes
     auto CountNumHaplotypes = [&j]() {
         int i = -1;

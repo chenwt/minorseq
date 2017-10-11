@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2017, Pacific Biosciences of California, Inc.
+// Copyright (c) 2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,52 +35,54 @@
 
 // Author: Armin Töpfer
 
-#include <numeric>
-#include <vector>
+#include <stdexcept>
+#include <string>
 
-#include <pacbio/data/ArrayRead.h>
-#include <pacbio/data/MSAColumn.h>
-#include <pacbio/data/QvThresholds.h>
-
-#include <pacbio/data/MSAByColumn.h>
+#include <pacbio/data/NucleotideConversion.h>
 
 namespace PacBio {
 namespace Data {
-MSAByColumn::MSAByColumn(const MSAByRow& msaRows)
-{
-    beginPos = msaRows.BeginPos - 1;
-    endPos = msaRows.EndPos - 1;
-    counts.resize(msaRows.EndPos - msaRows.BeginPos);
-    int pos = msaRows.BeginPos;
-    for (auto& c : counts) {
-        c.refPos = pos;
-        ++pos;
-    }
 
-    for (const auto& row : msaRows.Rows) {
-        int localPos = 0;
-        for (const auto& c : row->Bases) {
-            switch (c) {
-                case 'A':
-                case 'C':
-                case 'G':
-                case 'T':
-                case '-':
-                case 'N':
-                    counts.at(localPos)[c]++;
-                    ++localPos;
-                    break;
-                case ' ':
-                    ++localPos;
-                    break;
-                default:
-                    throw std::runtime_error("Unexpected base " + std::string(1, c));
-            }
-        }
-        for (const auto& ins : row->Insertions) {
-            counts[ins.first].insertions[ins.second]++;
-        }
+#if __cplusplus < 201402L  // C++11
+char TagToNucleotide(uint8_t t)
+{
+    switch (t) {
+        case 0:
+            return 'A';
+        case 1:
+            return 'C';
+        case 2:
+            return 'G';
+        case 3:
+            return 'T';
+        case 4:
+            return '-';
+        case 5:
+            return 'N';
+        default:
+            throw std::runtime_error("Unsupported tag: " + std::to_string(t));
     }
 }
-}  // namespace Data
-}  // namespace PacBio
+
+uint8_t NucleotideToTag(char t)
+{
+    switch (t) {
+        case 'A':
+            return 0;
+        case 'C':
+            return 1;
+        case 'G':
+            return 2;
+        case 'T':
+            return 3;
+        case '-':
+            return 4;
+        case 'N':
+            return 5;
+        default:
+            throw std::runtime_error("Unsupported character: " + std::to_string(t));
+    }
+}
+#endif
+}
+}  // ::PacBio::Data

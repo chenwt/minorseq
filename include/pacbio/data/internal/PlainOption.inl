@@ -35,16 +35,16 @@
 
 // Author: Armin Töpfer
 
-#pragma once
-
-#include <string>
-
 namespace PacBio {
-namespace Juliet {
-struct TransitionTable
+namespace Data {
+inline PlainOption::operator CLI::Option() const
 {
-
-    double Transition(std::string ref, std::string read);
-};
+    return {id_, cliOptions_, description_, defaultValue_, choices_, flags_};
 }
+inline PlainOption::operator std::pair<std::string, std::string>() const
+{
+    return std::make_pair(id_, name_);
 }
+inline PlainOption::operator std::string() const { return id_; }
+}
+}  // :: PacBio::CLI

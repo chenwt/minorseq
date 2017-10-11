@@ -43,10 +43,10 @@ namespace Juliet {
 
 ErrorEstimates::ErrorEstimates(const std::string& chemistry)
 {
-    match = 0.9956844883;
-    substitution = 0.0005244257 / 3.0;
-    deletion = 0.003791086;
-    insertion = 0;
+    Match = 0.9956844883;
+    Substitution = 0.0005244257 / 3.0;
+    Deletion = 0.003791086;
+    Insertion = 0;
     if (chemistry == "P6-C4" || chemistry == "S/P1-C1/beta") {
         std::cerr << "+---------------------------------------------------+" << std::endl
                   << "|                     ATTENTION!                    |" << std::endl
@@ -59,10 +59,10 @@ ErrorEstimates::ErrorEstimates(const std::string& chemistry)
 }
 
 ErrorEstimates::ErrorEstimates(const double substitutionRate, const double deletionRate)
-    : match(1 - substitutionRate - deletionRate)
-    , substitution(substitutionRate / 3.0)
-    , deletion(deletionRate)
-    , insertion(0)
+    : Match(1 - substitutionRate - deletionRate)
+    , Substitution(substitutionRate / 3.0)
+    , Deletion(deletionRate)
+    , Insertion(0)
 {
 }
 }

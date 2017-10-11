@@ -1,5 +1,10 @@
 # MINORSEQ - CHANGELOG
 
+## [1.8.0]
+### Changed
+ - Major refactoring and documentation
+ - Removed --merge-outliers
+
 ## [1.7.5]
 ### Changed
  - Fuse: Do not output non-ascii chars if coverage drops to 0

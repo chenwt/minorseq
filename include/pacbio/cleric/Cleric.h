@@ -71,18 +71,12 @@ private:
 
 private:
     // clang-format off
-  const BAM::CigarOperation newMatch_ =
-      BAM::CigarOperation(BAM::CigarOperationType::SEQUENCE_MATCH, 1);
-  const BAM::CigarOperation newDel_ =
-      BAM::CigarOperation(BAM::CigarOperationType::DELETION, 1);
-  const BAM::CigarOperation newIns_ =
-      BAM::CigarOperation(BAM::CigarOperationType::INSERTION, 1);
-  const BAM::CigarOperation newPad_ =
-      BAM::CigarOperation(BAM::CigarOperationType::PADDING, 1);
-  const BAM::CigarOperation newSoft_ =
-      BAM::CigarOperation(BAM::CigarOperationType::SOFT_CLIP, 1);
-  const BAM::CigarOperation newHard_ =
-      BAM::CigarOperation(BAM::CigarOperationType::HARD_CLIP, 1);
+    const BAM::CigarOperation newMatch_ = BAM::CigarOperation(BAM::CigarOperationType::SEQUENCE_MATCH, 1);
+    const BAM::CigarOperation newDel_   = BAM::CigarOperation(BAM::CigarOperationType::DELETION, 1);
+    const BAM::CigarOperation newIns_   = BAM::CigarOperation(BAM::CigarOperationType::INSERTION, 1);
+    const BAM::CigarOperation newPad_   = BAM::CigarOperation(BAM::CigarOperationType::PADDING, 1);
+    const BAM::CigarOperation newSoft_  = BAM::CigarOperation(BAM::CigarOperationType::SOFT_CLIP, 1);
+    const BAM::CigarOperation newHard_  = BAM::CigarOperation(BAM::CigarOperationType::HARD_CLIP, 1);
     // clang-format on
 
 private:
@@ -93,10 +87,10 @@ private:
     std::string toReferenceName_;
 
     std::string toReferenceGapless_;
-    std::map<int, int> fasta_pos_to_sam_pos;
+    std::map<int, int> sourceToRefPos_;
 
     std::string fromReferenceGapless_;
-    std::map<int, int> sam_pos_to_fasta_pos;
+    std::map<int, int> refToSourcePos_;
 };
 }
 }  // ::PacBio::Cleric

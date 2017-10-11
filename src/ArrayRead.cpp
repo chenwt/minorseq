@@ -37,21 +37,18 @@
 
 #include <algorithm>
 #include <array>
-#include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
 
 #include <pbbam/BamRecord.h>
 
-#include <pacbio/data/ArrayBase.h>
-
 #include <pacbio/data/ArrayRead.h>
 
 namespace PacBio {
 namespace Data {
 
-ArrayRead::ArrayRead(const int idx, const std::string& name) : Idx(idx), Name(name){};
+ArrayRead::ArrayRead(const int idx, const std::string& name) : idx_(idx), name_(name){};
 
 BAMArrayRead::BAMArrayRead(const BAM::BamRecord& record, int idx)
     : ArrayRead(idx, record.FullName())
@@ -88,66 +85,41 @@ BAMArrayRead::BAMArrayRead(const BAM::BamRecord& record, int idx)
         assert(seq.size() == qual.size());
     }
 
-    Bases.reserve(cigar.length());
+    bases_.reserve(cigar.length());
     if (richQVs)
         for (size_t i = 0; i < cigar.length(); ++i)
-            Bases.emplace_back(cigar.at(i), seq.at(i), qual.at(i), subQV.at(i), delQV.at(i),
-                               insQV.at(i));
+            bases_.emplace_back(cigar.at(i), seq.at(i), qual.at(i), subQV.at(i), delQV.at(i),
+                                insQV.at(i));
     else if (hasQualities)
         for (size_t i = 0; i < cigar.length(); ++i)
-            Bases.emplace_back(cigar.at(i), seq.at(i), qual.at(i));
+            bases_.emplace_back(cigar.at(i), seq.at(i), qual.at(i));
     else
         for (size_t i = 0; i < cigar.length(); ++i)
-            Bases.emplace_back(cigar.at(i), seq.at(i), 0);
+            bases_.emplace_back(cigar.at(i), seq.at(i), 0);
 }
 
-std::string ArrayRead::SequencingChemistry() const { return ""; }
-
-std::string BAMArrayRead::SequencingChemistry() const
+ArrayBase::ArrayBase(char cigar, char nucleotide, uint8_t qualQV, uint8_t subQV, uint8_t delQV,
+                     uint8_t insQV)
+    : Cigar(cigar)
+    , Nucleotide(nucleotide)
+    , QualQV(qualQV)
+    , DelQV(delQV)
+    , SubQV(subQV)
+    , InsQV(insQV)
+    , ProbTrue(1 - pow(10, -1.0 * qualQV / 10.0))
+    , ProbCorrectBase(1 - pow(10, -1.0 * subQV / 10.0))
+    , ProbNoDeletion(1 - pow(10, -1.0 * delQV / 10.0))
+    , ProbNoInsertion(1 - pow(10, -1.0 * insQV / 10.0))
 {
-    return Record.ReadGroup().SequencingChemistry();
 }
-
-#if __cplusplus < 201402L  // C++11
-char TagToNucleotide(uint8_t t)
+ArrayBase::ArrayBase(char cigar, char nucleotide, uint8_t qualQV)
+    : Cigar(cigar)
+    , Nucleotide(nucleotide)
+    , QualQV(qualQV)
+    , ProbTrue(1 - pow(10, -1.0 * qualQV / 10.0))
 {
-    switch (t) {
-        case 0:
-            return 'A';
-        case 1:
-            return 'C';
-        case 2:
-            return 'G';
-        case 3:
-            return 'T';
-        case 4:
-            return '-';
-        case 5:
-            return 'N';
-        default:
-            throw std::runtime_error("Unsupported tag: " + std::to_string(t));
-    }
 }
+ArrayBase::ArrayBase(char cigar, char nucleotide) : Cigar(cigar), Nucleotide(nucleotide) {}
 
-uint8_t NucleotideToTag(char t)
-{
-    switch (t) {
-        case 'A':
-            return 0;
-        case 'C':
-            return 1;
-        case 'G':
-            return 2;
-        case 'T':
-            return 3;
-        case '-':
-            return 4;
-        case 'N':
-            return 5;
-        default:
-            throw std::runtime_error("Unsupported character: " + std::to_string(t));
-    }
-}
-#endif
 }  // namespace Data
 }  // namespace PacBio

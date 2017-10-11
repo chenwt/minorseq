@@ -37,35 +37,56 @@
 
 #pragma once
 
-#include <array>
-#include <cmath>
-#include <exception>
-#include <fstream>
-#include <functional>
-#include <iostream>
-#include <limits>
-#include <list>
 #include <memory>
-#include <numeric>
-#include <sstream>
-#include <unordered_map>
 #include <vector>
 
-#include <pacbio/data/MSAByColumn.h>
-#include <pacbio/data/MSAByRow.h>
+#include <pacbio/data/MSA.h>
 #include <pacbio/juliet/ErrorEstimates.h>
 #include <pacbio/juliet/Haplotype.h>
-#include <pacbio/juliet/JulietSettings.h>
 #include <pacbio/juliet/TargetConfig.h>
-#include <pacbio/juliet/TransitionTable.h>
 #include <pacbio/juliet/VariantGene.h>
 #include <pbcopper/json/JSON.h>
 
 namespace PacBio {
 namespace Juliet {
-/// Given a MSA and p-values for each nucleotide of each position,
-/// generate machine-interpretable and human-readable output about mutated
-/// amino acids.
+struct JulietSettings;
+
+/// Stores performance metrics of juliet
+struct PerformanceMetrics
+{
+public:
+    double TruePositives = 0;
+    double FalsePositives = 0;
+    double FalseNegative = 0;
+    double TrueNegative = 0;
+    const double NumberOfTests;
+    const double NumExpectedMinors;
+
+public:
+    PerformanceMetrics(double numberOfTests, double numExpectedMinors)
+        : NumberOfTests(numberOfTests), NumExpectedMinors(numExpectedMinors)
+    {
+    }
+
+public:
+    std::string ToJson() const;
+
+public:
+    double TruePositiveRate() const;
+    double FalsePositiveRate() const;
+    double Accuracy() const;
+};
+
+/// Contains a single codon, it's abundance, and the translated amino acid
+struct MajorityCall
+{
+    std::string Codon;
+    int Coverage = 0;
+    char AA;
+};
+
+/// Given a MSA, target config, and noise model, compute variant amino acids
+/// and generate machine-interpretable output.
 class AminoAcidCaller
 {
 public:
@@ -80,22 +101,34 @@ public:
     void PhaseVariants();
 
 private:
+    /// Finds the major codon given the codon map
+    static MajorityCall FindMajorityCodon(const std::map<std::string, int>& codons);
+
+private:
     static constexpr float alpha = 0.01;
     void CallVariants();
+
+    /// Counts the number of tests that will be performed.
+    /// This number can be used to bonferroni correct p-values.
     int CountNumberOfTests(const std::vector<TargetGene>& genes) const;
+
+    /// Find those drugs associated with the current variant and generate
+    /// a summary string.
     std::string FindDRMs(const std::string& geneName, const std::vector<TargetGene>& genes,
                          const DMutation curDRM) const;
+
+    /// Compute the probability that the two strings generated each other
+    /// via sequencing noise.
     double Probability(const std::string& a, const std::string& b);
-    std::pair<bool, bool> MeasurePerformance(const TargetGene& tg,
-                                             const std::pair<std::string, int>& codon_counts,
-                                             const int& codonPos, const int& i, const double& p,
-                                             const int& coverage, const std::string& geneName,
-                                             double* truePositives, double* falsePositives,
-                                             double* falseNegative, double* trueNegative);
+
+    /// Compute if the current variant hits an expected minor and
+    /// use it to measure the performance of juliet.
+    bool MeasurePerformance(const TargetGene& tg, const std::string& codon,
+                            const bool& variableSite, const int& aaPos, const double& p,
+                            PerformanceMetrics* pm);
 
 private:
     Data::MSAByRow msaByRow_;
-    TransitionTable transitions_;
 
 public:
     Data::MSAByColumn msaByColumn_;
@@ -104,11 +137,9 @@ private:
     std::vector<VariantGene> variantGenes_;
     std::vector<Haplotype> reconstructedHaplotypes_;
     std::vector<Haplotype> filteredHaplotypes_;
-    int noConfOffset = 0;
     const ErrorEstimates error_;
     const TargetConfig targetConfig_;
     const bool verbose_;
-    const bool mergeOutliers_;
     const bool debug_;
     const bool drmOnly_;
     const double minimalPerc_;
@@ -123,3 +154,5 @@ private:
 };
 }
 }  // ::PacBio::Juliet
+
+#include "pacbio/juliet/internal/AminoAcidCaller.inl"

@@ -44,12 +44,19 @@ namespace Align {
 
 struct PariwiseAlignmentFasta
 {
+public:
+    PariwiseAlignmentFasta(const std::string& target, const std::string& query)
+    {
+        SimdNeedleWunschAlignment(target, query);
+    }
+
     std::string Target;
     std::string Query;
     std::string Transcript;
+
+private:
+    void SimdNeedleWunschAlignment(const std::string& target, const std::string& query);
 };
 
-PariwiseAlignmentFasta SimdNeedleWunschAlignment(const std::string& target,
-                                                 const std::string& query);
 }  // namespace Align
 }  // namespace PacBio

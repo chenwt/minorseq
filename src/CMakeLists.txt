@@ -22,7 +22,7 @@ add_library(minorseq STATIC
 )
 
 target_link_libraries(minorseq
-    ${ZLIB_LIBRARIES}
+    ${ZLIB_LDFLAGS}
     ${HTSLIB_LIBRARIES}
     ${PacBioBAM_LIBRARIES}
     ${pbcopper_LIBRARIES}

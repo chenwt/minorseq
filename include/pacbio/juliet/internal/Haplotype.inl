@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Pacific Biosciences of California, Inc.
+// Copyright (c) 2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,19 +35,41 @@
 
 // Author: Armin Töpfer
 
-#pragma once
-
 namespace PacBio {
 namespace Juliet {
 
-enum class HaplotypeType : int
+inline double Haplotype::Size() const { return readNames_.size() + softCollapses_; }
+
+inline const std::vector<std::string>& Haplotype::ReadNames() const
 {
-    REPORT = 0,
-    WITH_GAP = 1,
-    WITH_HETERODUPLEX = 2,
-    PARTIAL = 4,
-    LOW_COV = 8,
-    OFFTARGET = 16
-};
+    return const_cast<std::vector<std::string>&>(readNames_);
 }
-}  //::PacBio::Juliet
+
+inline const std::string& Haplotype::Codon(const int i) { return codons_.at(i); }
+
+inline size_t Haplotype::NumCodons() const { return numCodons_; }
+
+inline int Haplotype::Flags() const { return flags_; }
+
+inline std::string Haplotype::Name() { return name_; }
+
+inline void Haplotype::AddFlag(const HaplotypeType& flag) { flags_ |= static_cast<int>(flag); }
+
+inline void Haplotype::Frequency(const double& freq) { frequency_ = freq; }
+
+inline void Haplotype::AddReadName(const std::string& name) { readNames_.push_back(name); }
+
+inline void Haplotype::AddSoftReadCount(const double s) { softCollapses_ += s; }
+
+inline void Haplotype::Name(const std::string& name) { name_ = name; }
+
+inline std::ostream& operator<<(std::ostream& stream, const Haplotype& h)
+{
+    stream << h.Size() << "\t";
+    for (const auto& c : h.codons_) {
+        stream << " " << c;
+    }
+    return stream;
+}
+}
+}

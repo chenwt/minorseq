@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2017, Pacific Biosciences of California, Inc.
+// Copyright (c) 2017, Pacific Biosciences of California, Inc.
 //
 // All rights reserved.
 //
@@ -35,31 +35,38 @@
 
 // Author: Armin Töpfer
 
-#pragma once
+#include <numeric>
 
-#include <pacbio/data/FisherResult.h>
-#include <pacbio/statistics/Fisher.h>
+#include <pacbio/juliet/Haplotype.h>
 
 namespace PacBio {
-namespace Statistics {
-class Tests
+namespace Juliet {
+
+std::string Haplotype::ConcatCodons() const
 {
-public:
-    /// Compute Fisher's exact test for CCS substitutions and deletions
-    static std::map<std::string, double> FisherCCS(const std::array<int, 5>& observed,
-                                                   const std::map<std::string, int> insertions);
-
-    /// Compute Fisher's exact test for CCS substitutions and deletions
-    static Data::FisherResult FisherCCS(const std::array<int, 5>& observed);
-
-private:
-    static constexpr float alpha = 0.01;
-
-private:
-    static std::array<double, 5> CalculatePml(const std::array<int, 5>& observed, int* argMax,
-                                              double* sum);
-
-    static std::array<double, 5> CalculatePriors(const int argMax);
-};
+    return std::accumulate(codons_.begin(), codons_.end(), std::string(""));
 }
-}  // ::PacBio::Statistics
+
+void Haplotype::SetFlagsByCodons()
+{
+    for (const auto& c : codons_) {
+        if (c.find('-') != std::string::npos) AddFlag(HaplotypeType::WITH_GAP);
+        if (c.find('N') != std::string::npos) AddFlag(HaplotypeType::WITH_HETERODUPLEX);
+        if (c.find(' ') != std::string::npos) AddFlag(HaplotypeType::PARTIAL);
+    }
+}
+
+JSON::Json Haplotype::ToJson() const
+{
+    using namespace JSON;
+    Json root;
+    root["name"] = name_;
+    root["reads_hard"] = readNames_.size();
+    root["reads_soft"] = Size();
+    root["frequency"] = frequency_;
+    root["read_names"] = readNames_;
+    root["codons"] = codons_;
+    return root;
+}
+}
+}
