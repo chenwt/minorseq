@@ -99,7 +99,7 @@ int AminoAcidCaller::CountNumberOfTests(const std::vector<TargetGene>& genes) co
             numberOfTests += codons.size();
         }
     }
-    return numberOfTests;
+    return numberOfTests == 0 ? 1 : numberOfTests;
 }
 
 std::string AminoAcidCaller::FindDRMs(const std::string& geneName,
@@ -398,17 +398,17 @@ void AminoAcidCaller::CallVariants()
 {
     auto genes = targetConfig_.targetGenes;
 
-    const int numberOfTests = CountNumberOfTests(genes);
-    PerformanceMetrics pm(numberOfTests, targetConfig_.NumExpectedMinors());
-
-    const bool hasExpectedMinors = pm.NumExpectedMinors > 0;
-    const bool hasReference = !targetConfig_.referenceSequence.empty();
-
     // If no user config has been provided, use complete input region
     if (genes.empty()) {
         TargetGene tg(msaByRow_.BeginPos(), msaByRow_.EndPos(), "Unnamed ORF", {});
         genes.emplace_back(tg);
     }
+
+    const int numberOfTests = CountNumberOfTests(genes);
+    PerformanceMetrics pm(numberOfTests, targetConfig_.NumExpectedMinors());
+
+    const bool hasExpectedMinors = pm.NumExpectedMinors > 0;
+    const bool hasReference = !targetConfig_.referenceSequence.empty();
 
     for (const auto& gene : genes) {
         VariantGene curVariantGene(gene.name, gene.begin);
