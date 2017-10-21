@@ -45,9 +45,18 @@
 
 namespace PacBio {
 namespace Cleric {
+namespace OptionNames {
+
+PacBio::Data::PlainOption PrealignedFile{"aln",
+                                         {"aln"},
+                                         "Alignment",
+                                         "Pairwise alignment of reference to target",
+                                         CLI::Option::StringType{}};
+}
 
 ClericSettings::ClericSettings(const PacBio::CLI::Results& options)
     : InputFiles(options.PositionalArguments())
+    , PrealignedFile(std::forward<std::string>(options[OptionNames::PrealignedFile]))
 {
 }
 PacBio::CLI::Interface ClericSettings::CreateCLI()
@@ -70,8 +79,8 @@ PacBio::CLI::Interface ClericSettings::CreateCLI()
         {"output", "Output BAM", "FILE"}
     });
 
-    i.AddOptions(
-    {
+    i.AddOptions({
+        OptionNames::PrealignedFile
     });
 
     const std::string id = "minorseq.tasks.cleric";

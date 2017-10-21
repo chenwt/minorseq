@@ -137,7 +137,7 @@ static int Runner(const PacBio::CLI::Results& options)
         std::cerr << "ERROR: Please provide BAM input, see --help" << std::endl;
         return EXIT_FAILURE;
     }
-    if (options.PositionalArguments().size() < 3 || options.PositionalArguments().size() >= 5) {
+    if (options.PositionalArguments().size() < 2 || options.PositionalArguments().size() >= 5) {
         std::cerr << "ERROR: Please provide _one_ BAM input, maximal _two_ "
                      "FASTA files, and _one_ output file. See --help"
                   << std::endl;
@@ -153,14 +153,70 @@ static int Runner(const PacBio::CLI::Results& options)
     std::string toReference;
     std::string toReferenceName;
     std::string outputFile;
+    bool alreadyAligned = false;
 
     ParsePositionalArgs(settings.InputFiles, &bamPath, &fromReference, &fromReferenceName,
                         &toReference, &toReferenceName, &outputFile);
 
+    // parse pre-aligned FASTA file
+    if (options.PositionalArguments().size() == 2) {
+        if (settings.PrealignedFile.empty()) {
+            std::cerr << "ERROR: You need to provide a pre-aligned FASTA file with --aln"
+                      << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        if (!PacBio::Utility::FileExists(settings.PrealignedFile)) {
+            std::cerr << "ERROR: The pre-aligned FASTA file '" << settings.PrealignedFile
+                      << "' does not exist" << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        // Load all pre-aligned sequence at once
+        std::vector<BAM::FastaSequence> allPrealignedSeqs{
+            BAM::FastaReader::ReadAll(settings.PrealignedFile)};
+
+        if (allPrealignedSeqs.size() != 2) {
+            std::cerr << "ERROR: The pre-aligned FASTA file '" << settings.PrealignedFile
+                      << "' has to contain _exactly_ 2 sequences (contains "
+                      << allPrealignedSeqs.size() << ')' << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        if (allPrealignedSeqs.front().Name() == fromReferenceName) {
+            fromReference = allPrealignedSeqs.front().Bases();
+
+            toReferenceName = allPrealignedSeqs.back().Name();
+            toReference = allPrealignedSeqs.back().Bases();
+        } else {
+            if (allPrealignedSeqs.back().Name() == fromReferenceName) {
+                fromReference = allPrealignedSeqs.back().Bases();
+
+                toReferenceName = allPrealignedSeqs.front().Name();
+                toReference = allPrealignedSeqs.front().Bases();
+            } else {
+                std::cerr << "ERROR: The pre-aligned FASTA file '" << settings.PrealignedFile
+                          << "' does not contain a sequence with name '" << fromReferenceName
+                          << '\'' << std::endl;
+                return EXIT_FAILURE;
+            }
+        }
+
+        if (fromReference.size() != toReference.size()) {
+            std::cerr << "ERROR: The reference sequence '" << fromReferenceName
+                      << "' and the query sequence '" << toReferenceName
+                      << "' have different lengths (" << fromReference.size() << " vs "
+                      << toReference.size() << ')' << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        alreadyAligned = true;
+    }
+
     if (outputFile.empty()) outputFile = PacBio::Utility::FilePrefix(bamPath) + "_cleric";
 
     Cleric cleric(bamPath, outputFile, fromReference, fromReferenceName, toReference,
-                  toReferenceName);
+                  toReferenceName, alreadyAligned);
 
     return EXIT_SUCCESS;
 }
