@@ -55,12 +55,23 @@ class Cleric
 public:
     Cleric(const std::string& alignmentPath, const std::string& outputFile,
            const std::string& fromReference, const std::string& fromReferenceName,
-           const std::string& toReference, const std::string& toReferenceName)
+           const std::string& toReference, const std::string& toReferenceName,
+           const bool alreadyAligned)
         : alignmentPath_(alignmentPath)
         , fromReferenceName_(fromReferenceName)
         , toReferenceName_(toReferenceName)
     {
-        Align(fromReference, toReference, &fromReferenceSequence_, &toReferenceSequence_);
+        if (alreadyAligned) {
+            // everything already aligned, can directly
+            // load strings into aligned sequence members
+            fromReferenceSequence_ = fromReference;
+            toReferenceSequence_ = toReference;
+        } else {
+            // standard case, sequences not aligned,
+            // need to first align
+            Align(fromReference, toReference, &fromReferenceSequence_, &toReferenceSequence_);
+        }
+
         Convert(outputFile);
     }
 

@@ -81,10 +81,10 @@ void JsonToHtml::DRMView(std::ostream& out, const JSON::Json& j, const TargetCon
                         v.refAA = variantPosition["ref_amino_acid"];
                         v.refPos =
                             std::to_string(static_cast<int>(variantPosition["ref_position"]));
-                        v.curAA += variant_amino_acid["amino_acid"];
+                        v.curAA += variant_amino_acid["amino_acid"].get_ref<const std::string&>();
                         v.frequency = variant_codon["frequency"];
                         std::string key = geneStart[gene["name"]] + "|";
-                        key += gene["name"];
+                        key += gene["name"].get_ref<const std::string&>();
                         drmsWithVariants[d][key].emplace_back(v);
                     }
                 }

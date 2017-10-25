@@ -60,6 +60,7 @@ public:
 
 public:
     std::vector<std::string> InputFiles;
+    std::string PrealignedFile;
     std::string OutputPrefix;
 };
 }
