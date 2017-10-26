@@ -134,20 +134,21 @@ std::string TargetConfig::DetermineConfigInput(std::string input)
 {
     if (input.size() == 0) return "";
 
+    // Target assignment
+    std::string output;
+    if ((input.at(0) == '<' && input.at(input.size() - 1) == '>') ||
+        (input.at(0) == '\"' && input.at(input.size() - 1) == '\"') ||
+        input.at(0) == '\'' && input.at(input.size() - 1) == '\'')
+        input = input.substr(1, input.size() - 2);
+
     // Pre-process TC tags
     if (input == "HIV_HXB2") input = "HIV";
 
-    // Target assignment
-    std::string output;
     if (input.at(0) == '{') {
         output = input;
     } else if (Utility::FileExists(input)) {
         std::ifstream t(input);
         output = std::string((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
-    } else if (input.at(0) == '<' && input.at(input.size() - 1) == '>' &&
-               predefinedConfigs_.find(input.substr(1, input.size() - 2)) !=
-                   predefinedConfigs_.end()) {
-        output = predefinedConfigs_.at(input.substr(1, input.size() - 2));
     } else if (predefinedConfigs_.find(input) != predefinedConfigs_.end()) {
         output = predefinedConfigs_.at(input);
     } else {

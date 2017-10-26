@@ -113,7 +113,7 @@ const PlainOption TargetConfigCLI{
     "target_config_universal",
     { "config", "c" },
     "Target Config",
-    "Path to the target config JSON file, predefined target config tag, or the JSON string.",
+    "Defines genes of interest within the reference for reporting purposes. Enter either 1) the predefined target config \"HIV_HXB2\" or a custom target config through either 2a) the path to the target config JSON file or 2b) the JSON string.",
     CLI::Option::StringType(""),
 };
 const PlainOption Verbose{
