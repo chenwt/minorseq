@@ -1,5 +1,11 @@
 # MINORSEQ - CHANGELOG
 
+## [1.10.0]
+### Changed
+ - Reword --min-perc and --max-perc, add both to the TC
+ - Reword target config TC
+ - Strip target config input, leading and tailing "", '', <>
+
 ## [1.8.0]
 ### Changed
  - Major refactoring and documentation
