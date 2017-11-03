@@ -96,7 +96,7 @@ const PlainOption DeletionRate{
 const PlainOption MinimalPerc{
     "minimal_percentage",
     { "min-perc", "m" },
-    "Minimum Variant Frequency to Report (%).",
+    "Minimum Variant Frequency to Report (%)",
     "Report only variants whose percentage of the total population exceeds this value. Increasing it helps to remove PCR noise.",
     CLI::Option::FloatType(0.1)
 };
