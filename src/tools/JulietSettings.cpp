@@ -96,9 +96,9 @@ const PlainOption DeletionRate{
 const PlainOption MinimalPerc{
     "minimal_percentage",
     { "min-perc", "m" },
-    "Minimal Variant Percentage.",
-    "Minimal variant percentage to report.",
-    CLI::Option::FloatType(0)
+    "Minimum Variant Frequency to Report (%)",
+    "Report only variants whose percentage of the total population exceeds this value. Increasing it helps to remove PCR noise.",
+    CLI::Option::FloatType(0.1)
 };
 const PlainOption TargetConfigTC{
     "target_config",
@@ -113,7 +113,7 @@ const PlainOption TargetConfigCLI{
     "target_config_universal",
     { "config", "c" },
     "Target Config",
-    "Path to the target config JSON file, predefined target config tag, or the JSON string.",
+    "Defines genes of interest within the reference for reporting purposes. Enter either 1) the predefined target config \"HIV_HXB2\" or a custom target config through either 2a) the path to the target config JSON file or 2b) the JSON string.",
     CLI::Option::StringType(""),
 };
 const PlainOption Verbose{
@@ -126,8 +126,8 @@ const PlainOption Verbose{
 const PlainOption MaximalPerc{
     "maximal_percentage",
     { "max-perc", "n" },
-    "Maximal Variant Percentage",
-    "Maximal variant percentage to report.",
+    "Maximum Variant Frequency to Report (%)",
+    "Report only variants whose percentage of the total population is less than this value. Lowering it helps to phase low frequency variants when the highest-frequency variant is different from the reference.",
     CLI::Option::FloatType(100)
 };
 const PlainOption Debug{
@@ -249,6 +249,8 @@ PacBio::CLI::Interface JulietSettings::CreateCLI()
     tcTask.AddOption(OptionNames::SubstitutionRate);
     tcTask.AddOption(OptionNames::DeletionRate);
     tcTask.AddOption(OptionNames::Debug);
+    tcTask.AddOption(OptionNames::MaximalPerc);
+    tcTask.AddOption(OptionNames::MinimalPerc);
 
     tcTask.InputFileTypes({
         {
