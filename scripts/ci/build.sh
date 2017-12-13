@@ -4,7 +4,7 @@ set -euo pipefail
 # Main script
 echo "# LOAD MODULES"
 source /mnt/software/Modules/current/init/bash
-module load git gcc/4.9.2 python/2.7.9 cmake cram/0.7 swig ccache virtualenv zlib/1.2.8 ninja boost htslib/1.3.1
+module load git gcc/6.4.0 python/2.7.9 cmake cram/0.7 swig ccache virtualenv zlib/1.2.11 ninja boost htslib
 
 echo "# PRE-BUILD HOOK"
 echo "## Check formatting"
