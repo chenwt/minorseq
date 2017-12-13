@@ -6,6 +6,13 @@ echo "# LOAD MODULES"
 source /mnt/software/Modules/current/init/bash
 module load git gcc/6.4.0 python/2.7.9 cmake cram swig ccache virtualenv zlib ninja boost htslib
 
+if [[ $USER == "bamboo" ]]; then
+  export CCACHE_DIR=/mnt/secondary/Share/tmp/bamboo.mobs.ccachedir
+  export CCACHE_TEMPDIR=/scratch/bamboo.ccache_tempdir
+fi
+export CCACHE_COMPILERCHECK='%compiler% -dumpversion'
+export CCACHE_BASEDIR=$PWD
+
 echo "# PRE-BUILD HOOK"
 echo "## Check formatting"
 ./tools/check-formatting --all
