@@ -4,7 +4,14 @@ set -euo pipefail
 # Main script
 echo "# LOAD MODULES"
 source /mnt/software/Modules/current/init/bash
-module load git gcc/4.9.2 python/2.7.9 cmake cram/0.7 swig ccache virtualenv zlib/1.2.8 ninja boost htslib/1.3.1
+module load git gcc python/2 cmake cram swig ccache zlib ninja boost htslib
+
+if [[ $USER == "bamboo" ]]; then
+  export CCACHE_DIR=/mnt/secondary/Share/tmp/bamboo.mobs.ccachedir
+  export CCACHE_TEMPDIR=/scratch/bamboo.ccache_tempdir
+fi
+export CCACHE_COMPILERCHECK='%compiler% -dumpversion'
+export CCACHE_BASEDIR=$PWD
 
 echo "# PRE-BUILD HOOK"
 echo "## Check formatting"
@@ -29,7 +36,7 @@ if [ ! -d pbcommand ]; then
   git clone ssh://git@bitbucket.nanofluidics.com:7999/sl/pbcommand.git
 fi
 rm -rf venv_tmp
-python /mnt/software/v/virtualenv/13.0.1/virtualenv.py venv_tmp
+virtualenv venv_tmp
 set +u
 source venv_tmp/bin/activate
 set -u
